@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.env
+*.ipynb_checkpoints/
+data/rss_slices/*.csv
+data/rss_slices/rss_dumps.csv
