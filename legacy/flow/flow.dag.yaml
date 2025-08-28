@@ -1,0 +1,83 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+
+
+inputs:
+  id_digest:
+    type: string
+  digest_group_id:
+    type: string
+  window_type:
+    type: string
+  topic:
+    type: string
+  group_number:
+    type: string
+  content:
+    type: string
+    description: "Raw data containing headlines with id, Topic, Title, Published, Source, Source URL."
+
+outputs:
+  digest_group_id:
+    type: string
+    reference: ${inputs.digest_group_id}
+  id_digest:
+    type: string
+    reference: ${inputs.id_digest}
+  window_type:
+    type: string
+    reference: ${inputs.window_type}
+  topic:
+    type: string
+    reference: ${inputs.topic}
+  group_number:
+    type: string
+    reference: ${inputs.group_number}
+  clustered_agenda_table:
+    type: object
+    reference: ${parse_and_cluster.output}
+  seed_ideas:
+    type: object
+    reference: ${generate_ideas.output}
+
+nodes:
+  - name: parse_and_cluster_prompt
+    type: prompt
+    source:
+      type: jinja2
+      path: 01_parse_and_cluster_articles.jinja2
+    inputs:
+      content: ${inputs.content}
+  
+  - name: parse_and_cluster
+    type: python
+    source:
+      type: code
+      path: llm_wrapper.py
+    inputs:
+      prompt: ${parse_and_cluster_prompt.output}
+      schema_path: ./01_parse_and_cluster_articles.json
+      deployment_name: gpt-4o-mini
+    connection: open_ai_connection
+    outputs:
+      output: ${parse_and_cluster.result}
+
+  - name: generate_ideas_prompt
+    type: prompt
+    source:
+      type: jinja2
+      path: 02_generate_agenda_and_ideas.jinja2
+    inputs:
+      clustered_agenda_table: ${parse_and_cluster.output}
+
+  - name: generate_ideas
+    type: python
+    source:
+      type: code
+      path: llm_wrapper.py
+    inputs:
+      prompt: ${generate_ideas_prompt.output}
+      schema_path: ./02_generate_agenda_and_ideas.json
+      deployment_name: gpt-4o-mini
+    connection: open_ai_connection
+    outputs:
+      output: ${generate_ideas.result}

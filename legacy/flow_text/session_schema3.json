@@ -1,0 +1,55 @@
+{
+  "name": "parsed_message",
+  "description": "Schema for categorizing job postings, supporting the automated job application pipeline and compatible with the task management API.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "job_title": {
+        "type": "string",
+        "description": "Title of the job posting."
+      },
+      "company_name": {
+        "type": "string",
+        "description": "Name of the company offering the job."
+      },
+      "potential_match": {
+        "type": "string",
+        "enum": ["Yes", "No", "Maybe"],
+        "description": "Indicates whether the job aligns well with Matías' profile."
+      },
+      "significant_experience_gaps": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "List of significant experience gaps identified in the job description."
+      },
+      "country": {
+        "type": "string",
+        "description": "Country where the job is located."
+      },
+      "visa_sponsorship_required": {
+        "type": "string",
+        "description": "Indicates what visa sponsorship it would need for Argentinian passport."
+      },
+      "recommend_apply": {
+        "type": "string",
+        "enum": ["Yes", "No"],
+        "description": "Recommendation on whether Matías should apply for this role."
+      },
+      "company_culture": {
+        "type": "string",
+        "enum": ["Startup", "Scale-up", "Corporate", "Unclear"],
+        "description": "Culture of the company based on the job description and general industry knowledge."
+      },
+      "recommendation_reasons": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Concise bullet-point reasons supporting the recommendation decision."
+      }
+    },
+    "required": ["session_id", "day", "job_title", "company_name", "potential_match", "significant_experience_gaps", "country", "visa_sponsorship_required", "recommend_apply", "company_culture", "recommendation_reasons"]
+  }
+}

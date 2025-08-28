@@ -1,0 +1,46 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+
+
+inputs:
+  line_number:
+    type: string
+  filename:
+    type: string
+  content:
+    type: string
+
+
+outputs:
+  id:
+    type: string
+    reference: ${inputs.line_number}
+  filename:
+    type: string
+    reference: ${inputs.filename}
+  response:
+    type: object
+    reference: ${llm_node.output}
+
+
+
+nodes:
+  - name: prompt_template
+    type: prompt
+    source:
+      type: jinja2
+      path: section_adapter.jinja2
+    inputs:
+      filename: ${inputs.filename}
+      content: ${inputs.content}
+
+  - name: llm_node
+    type: python
+    source:
+      type: code
+      path: llm_wrapper.py
+    inputs:
+      prompt: ${prompt_template.output}
+      deployment_name: gpt-4o-mini
+    connection: open_ai_connection
+    outputs:
+      output: ${llm_node.result}

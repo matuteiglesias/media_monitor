@@ -4,3 +4,22 @@ __pycache__/
 *.ipynb_checkpoints/
 data/rss_slices/*.csv
 data/rss_slices/rss_dumps.csv
+
+
+cat > .gitignore << 'EOF'
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Data & artifacts
+data/
+*.jsonl
+*.csv
+*.log
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+EOF

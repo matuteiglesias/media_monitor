@@ -1,0 +1,65 @@
+{
+  "name": "parsed_message",
+  "description": "Esquema para estructurar ideas semilla generadas por el asistente, enriquecidas con información adicional para apoyar la estrategia editorial.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "seed_ideas": {
+        "type": "array",
+        "description": "Lista de Ideas Semilla generadas por el modelo.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "idea_id": {
+              "type": "string",
+              "description": "Un identificador único para la Idea Semilla, por ejemplo 'XX01'."
+            },
+            "topic": {
+              "type": "string",
+              "description": "El tema relevante proveniente de la agenda agrupada."
+            },
+            "idea_title": {
+              "type": "string",
+              "description": "Un título breve y atractivo para la idea."
+            },
+            "source_ids": {
+              "type": "array",
+              "items": { "type": "integer" },
+              "description": "Lista de IDs de artículos o referencias de fuente vinculadas a esta idea."
+            },
+            "draft_editorial_angle": {
+              "type": "string",
+              "description": "Una explicación breve (1-2 frases) sobre por qué esta idea es importante y cómo se puede desarrollar."
+            },
+            "key_facts": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Lista de datos clave (cifras, hechos relevantes) que refuercen la precision informativa."
+            },
+            "potential_controversies": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Lista de controversias o ángulos de debate que podrían alimentar la estrategia editorial."
+            },
+            "relevant_quotes": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Lista de citas directas o parafraseadas que complementen la idea."
+            }
+          },
+          "required": [
+            "idea_id",
+            "topic",
+            "idea_title",
+            "source_ids",
+            "draft_editorial_angle",
+            "key_data_points",
+            "potential_controversies",
+            "relevant_quotes"
+          ]
+        }
+      }
+    },
+    "required": ["seed_ideas"]
+  }
+}

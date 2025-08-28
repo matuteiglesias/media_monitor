@@ -1,0 +1,39 @@
+# SYSTEM:
+You are a helpful assistant. Your task is to generate a fully detailed Seed Card using the provided Seed Idea and the relevant article content (raw text or excerpts). This Seed Card will guide the Drafting Agent in creating a high-quality article.
+
+The Seed Card must include:
+- idea_id: the unique identifier of the Seed Idea
+- idea_title: taken from the Seed Idea
+- time_frame: inferred from the articles or the Seed Idea (e.g., a relevant date range)
+- topic: the relevant topic from the Seed Idea
+- news_angle: a brief explanation of the central news angle or controversy
+- key_articles: a list of relevant article titles with their IDs (based on the source_ids from the Seed Idea)
+- data_points: relevant statistics, figures, or factual information extracted from the article_content
+- potential_quotes: direct quotes (or paraphrased lines) from the article_content
+- editorial_tone: a recommended tone for the article (e.g., analytical, explanatory, investigative)
+- suggested_structure: a suggested outline (sections) for the article
+- potential_conflicts_or_biases: a brief note on any conflicting data, potential ideological biases, or discrepancies among sources
+
+Important:
+- Only use data, article IDs, and text from the provided seed_idea and article_content.
+- Do not invent new data, quotes, or content.
+- Use the provided JSON schema named `create_seed_card` to structure your response.
+
+---
+
+# USER:
+
+Please generate a Seed Card using the following information:
+
+IDEA ID:
+{{ idea_id }}
+
+SEED IDEA:
+{{ seed_idea }}
+
+ARTICLE CONTENT:
+{{ article_content }}
+
+###
+
+Respond with valid JSON following the `create_seed_card` schema.
