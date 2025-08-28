@@ -1,6 +1,6 @@
 import argparse
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import feedparser
 import csv
 import pandas as pd
@@ -17,7 +17,7 @@ RSS_FEEDS = {
 
 }
 
-DUMP_PATH = "./data/rss_slices/rss_dumps.csv"
+DUMP_PATH = "./data/rss_slices/rss_dumps"
 SLICE_DIR = "./data/rss_slices/"
 MAX_ARTICLES = 100
 os.makedirs(SLICE_DIR, exist_ok=True)
@@ -26,8 +26,18 @@ os.makedirs(SLICE_DIR, exist_ok=True)
 def clean_title(title):
     return title.rsplit(" - ", 1)[0].strip()
 
-def fetch_and_save_news(rss_dict, output_csv, max_articles=100):
-    rows = []
+import hashlib
+
+def compute_uid(title, source):
+    raw = f"{title}_{source}"
+    return hashlib.sha1(raw.encode('utf-8')).hexdigest()[:10]  # hash corto
+
+
+
+def fetch_and_save_news(rss_dict, output_csv, max_articles=100, digest_id=None):
+    articles = []
+    seen_uids = set()
+
     for topic, url in rss_dict.items():
         feed = feedparser.parse(url)
         entries = feed.entries[:max_articles]
@@ -37,23 +47,44 @@ def fetch_and_save_news(rss_dict, output_csv, max_articles=100):
             published = entry.get("published", "")
             source = entry.source.title if hasattr(entry, "source") else "N/A"
             source_url = entry.source.href if hasattr(entry, "source") else "N/A"
+            uid = compute_uid(title, source)
 
-            rows.append([topic, title, link, published, source, source_url])
-            # rows.append([topic, title, published, source])
-    
-    # 💾 Escribir a CSV
-    with open(output_csv, mode="w", newline="", encoding="utf-8-sig") as f:
-        writer = csv.writer(f)
-        writer.writerow(["Topic", "Title", "Link", "Published", "Source", "Source URL"])
-        # writer.writerow(["Topic", "Title", "Published", "Source"])
-        writer.writerows(rows)
-    
-    print(f"\n✅ Guardado: {output_csv} con {len(rows)} artículos.")
+            if uid in seen_uids:
+                continue  # Skip duplicates
+            seen_uids.add(uid)
+
+            articles.append({
+                "digest_id": digest_id,
+                "uid": uid,
+                "Topic": topic,
+                "Title": title,
+                "Link": link,
+                "Published": published,
+                "Source": source,
+                "Source URL": source_url,
+            })
+
+    # Convert to DataFrame
+    df = pd.DataFrame(articles)
+
+    # Robust date parsing
+    df["Published"] = pd.to_datetime(df["Published"], errors="coerce", utc=True)
+    df = df.dropna(subset=["Published"])  # Drop entries with invalid date
+    df = df.sort_values("Published").reset_index(drop=True)
+
+    # Assign article_id sequentially
+    df.insert(0, "article_id", df.index + 1)
+
+    # Save to CSV
+    df.to_csv(output_csv, index=False, encoding="utf-8-sig")
+    print(f"\n✅ Saved: {output_csv} with {len(df)} unique and sorted articles.")
+
 
 def load_rss_dataset(csv_path):
     df = pd.read_csv(csv_path)
     df["Published"] = pd.to_datetime(df["Published"], errors="coerce", utc=True)
     df = df.dropna(subset=["Published"])
+    df = df.sort_values("Published")
     return df
 
 def compute_slices(trigger_time: datetime):
@@ -67,6 +98,7 @@ def compute_slices(trigger_time: datetime):
     h = trigger_time.hour
     d = trigger_time.day
 
+
     if h % 4 == 0:
         add_slice("4h_window", 2, 8)
     if h % 8 == 0:
@@ -79,21 +111,51 @@ def compute_slices(trigger_time: datetime):
             add_slice("weekly_window", 168, 336)
         if d % 14 == 0:
             add_slice("fortnight_window", 360, 1080)
+        
+    print(slices)
     return slices
+
+
 
 def apply_slices(df_news, slices, trigger_time):
     saved_files = []
+    df_news["Published"] = pd.to_datetime(df_news["Published"], utc=True)
+    
     for s in slices:
         label = s["label"]
-        start = pd.to_datetime(s["start"]).tz_convert("UTC")
-        end = pd.to_datetime(s["end"]).tz_convert("UTC")
+        
+        start = pd.to_datetime(s["start"])
+        if start.tzinfo is None:
+            start = start.tz_localize("UTC")
+        else:
+            start = start.tz_convert("UTC")        
+
+        end = pd.to_datetime(s["end"])
+        if end.tzinfo is None:
+            end = end.tz_localize("UTC")
+        else:
+            end = end.tz_convert("UTC")
+
+
         sliced_df = df_news[(df_news["Published"] >= start) & (df_news["Published"] <= end)]
+        print(sliced_df.head(2))
+
         if not sliced_df.empty:
-            filename = f"{label}_{trigger_time.strftime('%Y%m%dT%H%M')}.csv"
-            filepath = os.path.join(SLICE_DIR, filename)
+            filename_prefix = f"{label}_{trigger_time.strftime('%Y%m%dT%H%M')}"
+            filepath = os.path.join(SLICE_DIR, f"rss_dumps/{filename_prefix}.csv")
             sliced_df.to_csv(filepath, index=False)
-            saved_files.append(filepath)
+            saved_files.append({
+                "filename": filepath,
+                "prefix": filename_prefix,
+                "label": label,
+                "start": start,
+                "end": end,
+                "num_articles": len(sliced_df)
+            })
+
     return saved_files
+
+
 
 # ======================= MAIN =======================
 if __name__ == "__main__":
@@ -103,13 +165,26 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.trigger_time:
-        trigger_time = datetime.fromisoformat(args.trigger_time).astimezone(tz=datetime.timezone.utc)
+        trigger_time = datetime.fromisoformat(args.trigger_time).astimezone(timezone.utc)
+        is_default_hourly = False
     else:
         trigger_time = datetime.utcnow()
+        is_default_hourly = True
 
-    fetch_and_save_news(RSS_FEEDS, DUMP_PATH, MAX_ARTICLES)
-    df_news = load_rss_dataset(DUMP_PATH)
+    digest_id = trigger_time.strftime('%Y%m%dT%H%M')
+
+    hourly_dir = "./data/rss_slices/rss_hourly_dumps/"
+    full_dir = "./data/rss_slices/rss_hourly_dumps/"
+    output_dir = hourly_dir if is_default_hourly else full_dir
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Fetch raw news but do not save with digest_id alone
+    raw_filename = os.path.join(output_dir, f"rss_dumps_{digest_id}.csv")
+    fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
+    df_news = load_rss_dataset(raw_filename)
+
     slices = compute_slices(trigger_time)
+
     saved = apply_slices(df_news, slices, trigger_time)
 
     print(f"✅ {len(saved)} archivos guardados: ")

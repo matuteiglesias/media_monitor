@@ -1,0 +1,89 @@
+{
+  "name": "create_seed_card",
+  "description": "Generates a fully detailed Seed Card from a provided Seed Idea and relevant article content. The Seed Card guides the Drafting Agent in creating a high-quality article.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "idea_id": {
+        "type": "string",
+        "description": "The unique identifier of the Seed Idea."
+      },
+      "idea_title": {
+        "type": "string",
+        "description": "The title of the Seed Idea, carried over from the Seed Idea input."
+      },
+      "time_frame": {
+        "type": "string",
+        "description": "A relevant date range inferred from the article content or the Seed Idea, e.g. '2025-05-25 to 2025-05-31'."
+      },
+      "topic": {
+        "type": "string",
+        "description": "The main topic of the Seed Idea."
+      },
+      "news_angle": {
+        "type": "string",
+        "description": "A brief explanation of the central news angle or controversy."
+      },
+      "key_articles": {
+        "type": "array",
+        "description": "List of relevant article titles with their IDs.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "article_id": {
+              "type": "integer",
+              "description": "The unique ID of the article."
+            },
+            "title": {
+              "type": "string",
+              "description": "The article's title."
+            }
+          },
+          "required": ["article_id", "title"]
+        }
+      },
+      "data_points": {
+        "type": "array",
+        "description": "Relevant statistics, figures, or factual information extracted from the article content.",
+        "items": {
+          "type": "string"
+        }
+      },
+      "potential_quotes": {
+        "type": "array",
+        "description": "Direct quotes (or paraphrased lines) from the article content.",
+        "items": {
+          "type": "string"
+        }
+      },
+      "editorial_tone": {
+        "type": "string",
+        "description": "Recommended tone for the article (e.g., analytical, explanatory, investigative)."
+      },
+      "suggested_structure": {
+        "type": "array",
+        "description": "A suggested outline (sections) for the article.",
+        "items": {
+          "type": "string"
+        }
+      },
+      "potential_conflicts_or_biases": {
+        "type": "string",
+        "description": "Notes on conflicting data, potential ideological biases, or discrepancies among sources."
+      }
+    },
+    "required": [
+      "idea_id",
+      "idea_title",
+      "time_frame",
+      "topic",
+      "news_angle",
+      "key_articles",
+      "data_points",
+      "potential_quotes",
+      "editorial_tone",
+      "suggested_structure",
+      "potential_conflicts_or_biases"
+    ]
+  }
+}
