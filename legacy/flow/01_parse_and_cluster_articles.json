@@ -1,0 +1,34 @@
+{
+  "name": "parsed_message",
+  "description": "Esquema para agrupar artículos en grupos temáticos con títulos deduplicados.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "clustered_agenda_table": {
+        "type": "array",
+        "description": "Lista de grupos temáticos, cada uno con su tema principal, frecuencia, IDs de artículos y títulos deduplicados.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "topic": {
+              "type": "string",
+              "description": "El tema o enfoque principal del grupo."
+            },
+            "article_ids": {
+              "type": "array",
+              "items": { "type": "integer" },
+              "description": "Lista de identificadores únicos de cada artículo dentro del grupo."
+            },
+            "deduplicated_titles": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Lista de títulos de artículos únicos y deduplicados dentro del grupo."
+            }
+          },
+          "required": ["topic", "article_ids", "deduplicated_titles"]
+        }
+      }
+    },
+    "required": ["clustered_agenda_table"]
+  }
+}

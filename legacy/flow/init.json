@@ -1,0 +1,6 @@
+{
+  "model_config": {
+    "connection": "open_ai_connection",
+    "model": "gpt-4o-mini"
+  }
+}
