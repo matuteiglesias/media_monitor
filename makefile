@@ -46,6 +46,11 @@ preflight-runtime: ## Validate runtime prerequisites without changing pipeline s
 	 else \
 	   echo "[preflight] WARN stage01 deps missing in project python (need pandas/feedparser)"; \
 	 fi; \
+	 if "$(PYTHON)" -c "import os, psycopg; psycopg.connect(os.getenv('PG_DSN', 'dbname=newsdb'), connect_timeout=2).close()" >/dev/null 2>&1; then \
+	   echo "[preflight] postgres connectivity: OK"; \
+	 else \
+	   echo "[preflight] WARN postgres unreachable (stages continue with quarantine fallbacks)"; \
+	 fi; \
 	 if [ -n "$(PF_PYTHON)" ] && command -v "$(PF_PYTHON)" >/dev/null 2>&1; then \
 	   echo "[preflight] PF python candidate: $(PF_PYTHON)"; \
 	   if "$(PF_PYTHON)" -c "import promptflow" >/dev/null 2>&1; then echo "[preflight] promptflow import: OK via PF_PYTHON"; else echo "[preflight] WARN promptflow import failed via PF_PYTHON"; fi; \
