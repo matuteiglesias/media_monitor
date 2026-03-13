@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/news_ref.v1.json",
+  "title": "news_ref.v1",
+  "description": "Stable canonical reference row derived from current master_ref + digest_map seams.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": { "const": "news_ref.v1" },
+    "schema_status": { "const": "stable" },
+    "index_id": { "type": "string", "pattern": "^[A-Z2-7]{10}$" },
+    "source": { "type": "string", "minLength": 1 },
+    "link": { "type": "string", "format": "uri" },
+    "first_seen": { "type": "string", "format": "date-time" },
+    "last_seen": { "type": "string", "format": "date-time" },
+    "topics": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "meta": {
+      "type": "object",
+      "default": {}
+    },
+    "digest_file": { "type": "string", "minLength": 1 },
+    "article_id": { "type": "string", "minLength": 1 },
+    "join_key": {
+      "type": "string",
+      "description": "Operational join seam digest_file::article_id (documented, not replaced)."
+    }
+  },
+  "required": [
+    "schema_name",
+    "schema_status",
+    "index_id",
+    "source",
+    "link",
+    "first_seen",
+    "last_seen",
+    "topics",
+    "meta",
+    "digest_file",
+    "article_id",
+    "join_key"
+  ]
+}

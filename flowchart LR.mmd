@@ -1,0 +1,152 @@
+flowchart LR
+    %% Media Monitor - contracts-first with systemd + workers
+
+    %% === ORCHESTRATION ===
+    subgraph Systemd
+      direction TB
+      T0[("news-scheduler.timer<br/>OnCalendar=hourly")]:::unit
+      SVC0["news-scheduler.service<br/>scripts/scheduler_hourly.py"]:::unit
+      T1[("news-worker@scrape.timer<br/>*/2 min")]:::unit
+      SVC1["news-worker@scrape.service<br/>scripts/worker_scrape.py"]:::unit
+      T2[("news-worker@promptflow.timer<br/>*/3 min")]:::unit
+      SVC2["news-worker@promptflow.service<br/>scripts/worker_promptflow.py"]:::unit
+      T3[("news-worker@explode.timer<br/>*/3 min")]:::unit
+      SVC3["news-worker@explode.service<br/>scripts/worker_explode.py"]:::unit
+      ENV[("/etc/news.env<br/>PG_DSN, BATCH, DATA_DIR")]:::unit
+      T0 --> SVC0
+      T1 --> SVC1
+      T2 --> SVC2
+      T3 --> SVC3
+      ENV -. "EnvironmentFile" .- SVC0
+      ENV -. "EnvironmentFile" .- SVC1
+      ENV -. "EnvironmentFile" .- SVC2
+      ENV -. "EnvironmentFile" .- SVC3
+    end
+
+    %% === ADAPTERS LAYER ===
+    subgraph Adapters
+      direction TB
+      ADP["adapters.py<br/>stable_index_id, append_jsonl, push_work,<br/>upsert_master"]:::adapter
+      IDS["ids.py"]:::adapter
+      IO["io.py"]:::adapter
+      DBH["db.py<br/>pop_work, complete_work, fail_work,<br/>upsert_master_ref, runs"]:::adapter
+      MOD["models.py<br/>ScrapeRecordV1, ArticleDraftV1, ArticleV1"]:::adapter
+      SLUG["slugs.py"]:::adapter
+      IDS --- ADP
+      IO --- ADP
+      DBH --- ADP
+      MOD --- ADP
+      SLUG --- ADP
+    end
+
+    %% === PULL LANE (legacy invoked by scheduler) ===
+    subgraph Pull
+      direction LR
+      A01["01_digests.py<br/>RSS / Google News fetch"]:::script
+      V01{{"validate: title, source, link, published"}}:::validator
+      A02["02_master_index_update.py<br/>dedupe + catalog upsert"]:::script
+      A01 --> V01 --> A02
+    end
+
+    %% === DIGEST LANE ===
+    subgraph Digest
+      direction LR
+      A03["03_headlines_digests.py<br/>topic windows -> MD + JSONL"]:::script
+      A04["04_promptflow_run.py<br/>Promptflow pipeline run"]:::script
+      A05["05_explode_pf_outputs.py<br/>explode clusters + seed ideas"]:::script
+      V05{{"validate draft minimal<br/>(topic, headline or seed, citation url)"}}:::validator
+      A02 --> A03 --> A04 --> A05 --> V05
+    end
+
+    %% === SCRAPE LANE (worker) ===
+    subgraph Scrape
+      direction LR
+      A06["06_scrape_contents.py<br/>fetch HTML (Playwright/Puppeteer)"]:::script
+      A05 --> A06
+    end
+
+    %% === SYNTHESIS ===
+    subgraph Synthesis
+      direction LR
+      GEN["Generator (LLM)<br/>fill body_html / dek / citations<br/>(idempotent)"]:::generator
+      PUB["Publisher<br/>persist (DB) + index (Meili) + revalidate"]:::publisher
+      A06 --> GEN --> PUB
+    end
+
+    %% === STATE & INDEXES ===
+    DB[("(Postgres)")]:::db
+    MEI[("(Meilisearch)")]:::db
+    SITE["Next.js (Stablo)"]:::frontend
+
+    %% === CONTRACTED ARTIFACTS ===
+    storeScrape[("data/scrape/*.jsonl<br/><b>ScrapeRecordV1</b><br/>seed + enriched (final_url, text_hash, fetched_at)")]:::data
+    storeDrafts[("data/drafts/*.jsonl<br/><b>ArticleDraftV1</b>")]:::data
+    storePublished[("data/published/*.jsonl<br/><b>ArticleV1</b> ground truth copy")]:::data
+    storeQ[("data/quarantine/*.jsonl<br/>validation failures (with run_id)")]:::quarantine
+    MRDB[("master_ref (DB)<br/>(index_id, first_seen, topics, meta)")]:::db
+    MRCSV[("data/master_ref.csv<br/>(mirror)")]:::data
+
+    %% === CONTROL PLANE (DB) ===
+    WQ[("work_items (DB)<br/>stage, key, state, attempts, payload")]:::control
+    RUNS[("runs (DB)<br/>run_id, stage, start/end, ok/fail, meta")]:::control
+
+    %% === SCHEDULER ACTIONS ===
+    SVC0 -->|"import 01,02 as libs"| A01
+    SVC0 -->|"import 01,02 as libs"| A02
+    SVC0 -->|"enqueue digest work<br/>(promptflow, explode)"| WQ
+
+    %% === WORKERS ACTIONS ===
+    SVC1 -. "pop 'scrape' jobs" .- WQ
+    SVC2 -. "pop 'promptflow' jobs" .- WQ
+    SVC3 -. "pop 'explode' jobs" .- WQ
+
+    %% === DATA FLOWS ===
+    A01 -- "ScrapeRecordV1 (seed) via IO.append_jsonl" --> storeScrape
+    A06 -- "enrich by index_id<br/>(final_url, text_hash, fetched_at)" --> storeScrape
+
+    A02 -- "upsert_master_ref" --> MRDB
+    A02 -- "mirror CSV" --> MRCSV
+
+    A05 -- "ArticleDraftV1 (per digest hour)" --> storeDrafts
+
+    GEN -- "ready drafts (same IDs)" --> storeDrafts
+    PUB -- "ArticleV1" --> storePublished
+    PUB --> DB
+    PUB --> MEI
+    PUB --> SITE
+
+    %% === READS ===
+    storeScrape -. "for clustering / context" .- A03
+    storeScrape -. "for seed text / QA" .- A05
+    MRDB -. "join by index_id or digest_file" .- A05
+    storeDrafts -. "read drafts" .- GEN
+    storeDrafts -. "read ready drafts" .- PUB
+
+    %% === VALIDATION -> QUARANTINE ===
+    V01 -- "bad rows -> quarantine" --> storeQ
+    V05 -- "bad drafts -> quarantine" --> storeQ
+
+    %% === RUN LOGS ===
+    SVC0 --> RUNS
+    SVC1 --> RUNS
+    SVC2 --> RUNS
+    SVC3 --> RUNS
+    A01 --> RUNS
+    A05 --> RUNS
+    A06 --> RUNS
+    GEN --> RUNS
+    PUB --> RUNS
+
+    %% === STYLE DEFINITIONS ===
+    classDef orchestrator fill:#e7f1ff,stroke:#2b6cb0,stroke-width:1px,color:#0b3d91;
+    classDef script fill:#f8f9fa,stroke:#495057,stroke-width:1px,color:#212529;
+    classDef generator fill:#fffbea,stroke:#c05621,stroke-width:1px,color:#7b341e;
+    classDef publisher fill:#fff4e6,stroke:#d9480f,stroke-width:1px,color:#7f3708;
+    classDef frontend fill:#e6fffa,stroke:#2c7a7b,stroke-width:1px,color:#285e61;
+    classDef db fill:#ede7f6,stroke:#6a1b9a,stroke-width:1px,color:#4a148c;
+    classDef data fill:#f1f3f5,stroke:#868e96,stroke-dasharray: 5 5,color:#343a40;
+    classDef quarantine fill:#ffe3e3,stroke:#c92a2a,stroke-width:1px,color:#7b1515;
+    classDef validator fill:#e2e3ff,stroke:#343a40,stroke-width:1px,color:#343a40;
+    classDef control fill:#eef2ff,stroke:#6366f1,stroke-width:1px,color:#3730a3;
+    classDef unit fill:#eefbf3,stroke:#2f855a,stroke-width:1px,color:#22543d;
+    classDef adapter fill:#f0f9ff,stroke:#3182ce,stroke-width:1px,color:#2b6cb0;

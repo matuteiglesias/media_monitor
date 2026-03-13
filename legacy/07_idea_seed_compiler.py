@@ -6,10 +6,10 @@ import pandas as pd
 import re
 
 # === Load paths ===
-ideas_path = "/home/matias/Documents/media_monitor/data/idea_cluster/seed_ideas_exploded.jsonl"
-articles_path = "/home/matias/Documents/media_monitor/data/article_quotes/articles_exploded.jsonl"
-scraped_path = "/home/matias/Documents/media_monitor/data/scraped_links.jsonl"
-master_ref_path = "/home/matias/Documents/media_monitor/data/master_ref.csv"
+ideas_path = "/home/matias/repos/media_monitor/data/idea_cluster/seed_ideas_exploded.jsonl"
+articles_path = "/home/matias/repos/media_monitor/data/article_quotes/articles_exploded.jsonl"
+scraped_path = "/home/matias/repos/media_monitor/data/scraped_links.jsonl"
+master_ref_path = "/home/matias/repos/media_monitor/data/master_ref.csv"
 
 
 def enrich_idea_cluster():
@@ -68,7 +68,7 @@ def enrich_idea_cluster():
 
 
 # Optional: save enriched ideas for downstream usage
-output_path = "/home/matias/Documents/media_monitor/data/idea_cluster/enriched_seed_ideas.jsonl"
+output_path = "/home/matias/repos/media_monitor/data/idea_cluster/enriched_seed_ideas.jsonl"
 
 if __name__ == "__main__":
     enriched_df = enrich_idea_cluster()
