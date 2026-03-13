@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/news_seed_idea.v1.json",
+  "title": "news_seed_idea.v1",
+  "description": "Experimental structured seed idea from PromptFlow generated outputs.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": { "const": "news_seed_idea.v1" },
+    "schema_status": { "const": "experimental_structured" },
+    "digest_group_id": { "type": "string", "minLength": 1 },
+    "idea_id": { "type": "string", "minLength": 1 },
+    "topic": { "type": "string", "minLength": 1 },
+    "headline": { "type": "string", "minLength": 1 },
+    "dek": { "type": "string" },
+    "rationale": { "type": "string" },
+    "supporting_article_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "required": [
+    "schema_name",
+    "schema_status",
+    "digest_group_id",
+    "idea_id",
+    "topic",
+    "headline",
+    "supporting_article_ids"
+  ]
+}

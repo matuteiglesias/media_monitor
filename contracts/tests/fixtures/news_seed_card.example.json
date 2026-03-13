@@ -1,0 +1,21 @@
+{
+  "schema_name": "news_seed_card.v1",
+  "schema_status": "experimental_structured",
+  "card_id": "card-001",
+  "idea_id": "idea-001",
+  "digest_group_id": "20260101T10:A:Economia:1",
+  "topic": "Economia",
+  "angle": "Impacto en hogares y pymes",
+  "summary_bullets": [
+    "La inflación desacelera por tercer mes consecutivo.",
+    "Baja la presión en tasas de referencia."
+  ],
+  "citations": [
+    {
+      "article_id": "42",
+      "title": "Inflación baja en diciembre",
+      "source": "EL PAIS",
+      "url": "https://elpais.com/economia/2026-01-01/example.html"
+    }
+  ]
+}
