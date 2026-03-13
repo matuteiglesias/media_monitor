@@ -1,0 +1,8 @@
+{
+  "schema_name": "news_topic_cluster.v1",
+  "schema_status": "experimental_structured",
+  "digest_group_id": "20260101T10:A:Economia:1",
+  "topic": "Economia",
+  "article_ids": ["42", "73"],
+  "deduplicated_titles": ["Inflación baja en diciembre", "El banco central recorta tasas"]
+}

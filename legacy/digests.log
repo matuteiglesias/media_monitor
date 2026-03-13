@@ -1,29 +1,29 @@
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/digests.py", line 4, in <module>
+  File "/home/matias/repos/media_monitor/digests.py", line 4, in <module>
     import feedparser
 ModuleNotFoundError: No module named 'feedparser'
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/digests.py", line 4, in <module>
+  File "/home/matias/repos/media_monitor/digests.py", line 4, in <module>
     import feedparser
 ModuleNotFoundError: No module named 'feedparser'
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/digests.py", line 4, in <module>
+  File "/home/matias/repos/media_monitor/digests.py", line 4, in <module>
     import feedparser
 ModuleNotFoundError: No module named 'feedparser'
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/digests.py", line 4, in <module>
+  File "/home/matias/repos/media_monitor/digests.py", line 4, in <module>
     import feedparser
 ModuleNotFoundError: No module named 'feedparser'
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/digests.py", line 4, in <module>
+  File "/home/matias/repos/media_monitor/digests.py", line 4, in <module>
     import feedparser
 ModuleNotFoundError: No module named 'feedparser'
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/digests.py", line 4, in <module>
+  File "/home/matias/repos/media_monitor/digests.py", line 4, in <module>
     import feedparser
 ModuleNotFoundError: No module named 'feedparser'
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/digests.py", line 4, in <module>
+  File "/home/matias/repos/media_monitor/digests.py", line 4, in <module>
     import feedparser
 ModuleNotFoundError: No module named 'feedparser'
 
@@ -61,10 +61,10 @@ ModuleNotFoundError: No module named 'feedparser'
 ✅ Guardado: ./data/rss_slices/rss_dumps.csv con 656 artículos.
 [{'label': '4h_window', 'start': datetime.datetime(2025, 5, 28, 19, 41, 2, 447076), 'end': datetime.datetime(2025, 5, 29, 1, 41, 2, 447076)}, {'label': '8h_window', 'start': datetime.datetime(2025, 5, 28, 11, 41, 2, 447076), 'end': datetime.datetime(2025, 5, 28, 23, 41, 2, 447076)}]
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/digests.py", line 119, in <module>
+  File "/home/matias/repos/media_monitor/digests.py", line 119, in <module>
     saved = apply_slices(df_news, slices, trigger_time)
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/matias/Documents/media_monitor/digests.py", line 93, in apply_slices
+  File "/home/matias/repos/media_monitor/digests.py", line 93, in apply_slices
     start = pd.to_datetime(s["start"]).tz_convert("UTC")
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "timestamps.pyx", line 2350, in pandas._libs.tslibs.timestamps.Timestamp.tz_convert
@@ -73,10 +73,10 @@ TypeError: Cannot convert tz-naive Timestamp, use tz_localize to localize
 ✅ Guardado: ./data/rss_slices/rss_dumps.csv con 656 artículos.
 [{'label': '4h_window', 'start': datetime.datetime(2025, 5, 28, 19, 42, 2, 185657), 'end': datetime.datetime(2025, 5, 29, 1, 42, 2, 185657)}, {'label': '8h_window', 'start': datetime.datetime(2025, 5, 28, 11, 42, 2, 185657), 'end': datetime.datetime(2025, 5, 28, 23, 42, 2, 185657)}]
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/digests.py", line 119, in <module>
+  File "/home/matias/repos/media_monitor/digests.py", line 119, in <module>
     saved = apply_slices(df_news, slices, trigger_time)
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/matias/Documents/media_monitor/digests.py", line 93, in apply_slices
+  File "/home/matias/repos/media_monitor/digests.py", line 93, in apply_slices
     start = pd.to_datetime(s["start"]).tz_convert("UTC")
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "timestamps.pyx", line 2350, in pandas._libs.tslibs.timestamps.Timestamp.tz_convert
@@ -85,10 +85,10 @@ TypeError: Cannot convert tz-naive Timestamp, use tz_localize to localize
 ✅ Guardado: ./data/rss_slices/rss_dumps.csv con 656 artículos.
 [{'label': '4h_window', 'start': datetime.datetime(2025, 5, 28, 19, 43, 2, 303414), 'end': datetime.datetime(2025, 5, 29, 1, 43, 2, 303414)}, {'label': '8h_window', 'start': datetime.datetime(2025, 5, 28, 11, 43, 2, 303414), 'end': datetime.datetime(2025, 5, 28, 23, 43, 2, 303414)}]
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/digests.py", line 119, in <module>
+  File "/home/matias/repos/media_monitor/digests.py", line 119, in <module>
     saved = apply_slices(df_news, slices, trigger_time)
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/matias/Documents/media_monitor/digests.py", line 93, in apply_slices
+  File "/home/matias/repos/media_monitor/digests.py", line 93, in apply_slices
     start = pd.to_datetime(s["start"]).tz_convert("UTC")
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "timestamps.pyx", line 2350, in pandas._libs.tslibs.timestamps.Timestamp.tz_convert
@@ -97,10 +97,10 @@ TypeError: Cannot convert tz-naive Timestamp, use tz_localize to localize
 ✅ Guardado: ./data/rss_slices/rss_dumps.csv con 656 artículos.
 [{'label': '4h_window', 'start': datetime.datetime(2025, 5, 28, 19, 44, 2, 451985), 'end': datetime.datetime(2025, 5, 29, 1, 44, 2, 451985)}, {'label': '8h_window', 'start': datetime.datetime(2025, 5, 28, 11, 44, 2, 451985), 'end': datetime.datetime(2025, 5, 28, 23, 44, 2, 451985)}]
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/digests.py", line 119, in <module>
+  File "/home/matias/repos/media_monitor/digests.py", line 119, in <module>
     saved = apply_slices(df_news, slices, trigger_time)
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/matias/Documents/media_monitor/digests.py", line 93, in apply_slices
+  File "/home/matias/repos/media_monitor/digests.py", line 93, in apply_slices
     start = pd.to_datetime(s["start"]).tz_convert("UTC")
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "timestamps.pyx", line 2350, in pandas._libs.tslibs.timestamps.Timestamp.tz_convert
@@ -236,10 +236,10 @@ TypeError: Cannot convert tz-naive Timestamp, use tz_localize to localize
 
 ✅ Guardado: ./data/rss_slices/rss_dumps con 656 artículos.
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/digests.py", line 120, in <module>
+  File "/home/matias/repos/media_monitor/digests.py", line 120, in <module>
     df_news = load_rss_dataset(filename)
               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/matias/Documents/media_monitor/digests.py", line 54, in load_rss_dataset
+  File "/home/matias/repos/media_monitor/digests.py", line 54, in load_rss_dataset
     df = pd.read_csv(csv_path)
          ^^^^^^^^^^^^^^^^^^^^^
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/io/parsers/readers.py", line 1026, in read_csv
@@ -3907,9 +3907,9 @@ FileNotFoundError: [Errno 2] No such file or directory: './data/rss_slices/rss_d
 []
 ✅ 0 archivos guardados: 
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 71, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 71, in fetch_and_save_news
     df["Published"] = pd.to_datetime(df["Published"], errors="coerce", utc=True)
                                      ~~^^^^^^^^^^^^^
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/core/frame.py", line 4102, in __getitem__
@@ -3919,9 +3919,9 @@ Traceback (most recent call last):
     raise KeyError(key)
 KeyError: 'Published'
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 71, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 71, in fetch_and_save_news
     df["Published"] = pd.to_datetime(df["Published"], errors="coerce", utc=True)
                                      ~~^^^^^^^^^^^^^
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/core/frame.py", line 4102, in __getitem__
@@ -3931,9 +3931,9 @@ Traceback (most recent call last):
     raise KeyError(key)
 KeyError: 'Published'
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 71, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 71, in fetch_and_save_news
     df["Published"] = pd.to_datetime(df["Published"], errors="coerce", utc=True)
                                      ~~^^^^^^^^^^^^^
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/core/frame.py", line 4102, in __getitem__
@@ -3943,9 +3943,9 @@ Traceback (most recent call last):
     raise KeyError(key)
 KeyError: 'Published'
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 71, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 71, in fetch_and_save_news
     df["Published"] = pd.to_datetime(df["Published"], errors="coerce", utc=True)
                                      ~~^^^^^^^^^^^^^
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/core/frame.py", line 4102, in __getitem__
@@ -3955,9 +3955,9 @@ Traceback (most recent call last):
     raise KeyError(key)
 KeyError: 'Published'
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 71, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 71, in fetch_and_save_news
     df["Published"] = pd.to_datetime(df["Published"], errors="coerce", utc=True)
                                      ~~^^^^^^^^^^^^^
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/core/frame.py", line 4102, in __getitem__
@@ -3967,9 +3967,9 @@ Traceback (most recent call last):
     raise KeyError(key)
 KeyError: 'Published'
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 71, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 71, in fetch_and_save_news
     df["Published"] = pd.to_datetime(df["Published"], errors="coerce", utc=True)
                                      ~~^^^^^^^^^^^^^
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/core/frame.py", line 4102, in __getitem__
@@ -5648,7 +5648,7 @@ KeyError: 'Published'
 ✅ Saved: ./data/rss_slices/rss_hourly_dumps/rss_dumps_20250707T2200.csv with 637 unique and sorted articles.
 []
 ✅ 0 archivos guardados: 
-/home/matias/Documents/media_monitor/01_digests.py:71: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+/home/matias/repos/media_monitor/01_digests.py:71: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
   df["Published"] = pd.to_datetime(df["Published"], errors="coerce", utc=True)
 
 ✅ Saved: ./data/rss_slices/rss_hourly_dumps/rss_dumps_20250707T2300.csv with 635 unique and sorted articles.
@@ -5869,9 +5869,9 @@ KeyError: 'Published'
 []
 ✅ 0 archivos guardados: 
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 79, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 79, in fetch_and_save_news
     df.to_csv(output_csv, index=False, encoding="utf-8-sig")
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/util/_decorators.py", line 333, in wrapper
     return func(*args, **kwargs)
@@ -5892,9 +5892,9 @@ Traceback (most recent call last):
   File "writers.pyx", line 73, in pandas._libs.writers.write_csv_rows
 OSError: [Errno 28] No space left on device
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 79, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 79, in fetch_and_save_news
     df.to_csv(output_csv, index=False, encoding="utf-8-sig")
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/util/_decorators.py", line 333, in wrapper
     return func(*args, **kwargs)
@@ -5915,9 +5915,9 @@ Traceback (most recent call last):
   File "writers.pyx", line 73, in pandas._libs.writers.write_csv_rows
 OSError: [Errno 28] No space left on device
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 79, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 79, in fetch_and_save_news
     df.to_csv(output_csv, index=False, encoding="utf-8-sig")
   File 
 ✅ Saved: ./data/rss_slices/rss_hourly_dumps/rss_dumps_20250709T1500.csv with 650 unique and sorted articles.
@@ -8200,9 +8200,9 @@ Traceback (most recent call last):
 []
 ✅ 0 archivos guardados: 
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 79, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 79, in fetch_and_save_news
     df.to_csv(output_csv, index=False, encoding="utf-8-sig")
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/util/_decorators.py", line 333, in wrapper
     return func(*args, **kwargs)
@@ -8227,9 +8227,9 @@ OSError: [Errno 28] No space left on device
 []
 ✅ 0 archivos guardados: 
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 79, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 79, in fetch_and_save_news
     df.to_csv(output_csv, index=False, encoding="utf-8-sig")
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/util/_decorators.py", line 333, in wrapper
     return func(*args, **kwargs)
@@ -8250,17 +8250,17 @@ Traceback (most recent call last):
   File "writers.pyx", line 73, in pandas._libs.writers.write_csv_rows
 OSError: [Errno 28] No space left on device
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 79, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 79, in fetch_and_save_news
     df.to_csv(output_csv, index=False, encoding="utf-8-sig")
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/util/_decorators.py", line 333, in wrapper
     return func(*args, **kwargs)
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/core/generic.py", line 3967, in to_csv
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 79, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 79, in fetch_and_save_news
     df.to_csv(output_csv, index=False, encoding="utf-8-sig")
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/util/_decorators.py", line 333, in wrapper
     return func(*args, **kwargs)
@@ -8281,9 +8281,9 @@ Traceback (most recent call last):
   File "writers.pyx", line 73, in pandas._libs.writers.write_csv_rows
 OSError: [Errno 28] No space left on device
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 79, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 79, in fetch_and_save_news
     df.to_csv(output_csv, index=False, encoding="utf-8-sig")
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/util/_decorators.py", line 333, in wrapper
     return func(*args, **kwargs)
@@ -8578,9 +8578,9 @@ OSError: [Errno 28] No space left on device
 []
 ✅ 0 archivos guardados: 
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 79, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 79, in fetch_and_save_news
     df.to_csv(output_csv, index=False, encoding="utf-8-sig")
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/util/_decorators.py", line 333, in wrapper
     return func(*args, **kwargs)
@@ -10157,9 +10157,9 @@ OSError: [Errno 28] No space left on device
 []
 ✅ 0 archivos guardados: 
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 79, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 79, in fetch_and_save_news
     df.to_csv(output_csv, index=False, encoding="utf-8-sig")
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/util/_decorators.py", line 333, in wrapper
     return func(*args, **kwargs)
@@ -10226,9 +10226,9 @@ OSError: [Errno 28] No space left on device
 []
 ✅ 0 archivos guardados: 
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 71, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 71, in fetch_and_save_news
     df["Published"] = pd.to_datetime(df["Published"], errors="coerce", utc=True)
                                      ~~^^^^^^^^^^^^^
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/core/frame.py", line 4102, in __getitem__
@@ -10260,9 +10260,9 @@ KeyError: 'Published'
 ✅ 1 archivos guardados: 
  - {'filename': './data/rss_slices/rss_dumps/4h_window_20250810T2000.csv', 'prefix': '4h_window_20250810T2000', 'label': '4h_window', 'start': Timestamp('2025-08-10 12:00:02.197347+0000', tz='UTC'), 'end': Timestamp('2025-08-10 18:00:02.197347+0000', tz='UTC'), 'num_articles': 60}
 Traceback (most recent call last):
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 183, in <module>
+  File "/home/matias/repos/media_monitor/01_digests.py", line 183, in <module>
     fetch_and_save_news(RSS_FEEDS, raw_filename, MAX_ARTICLES)
-  File "/home/matias/Documents/media_monitor/01_digests.py", line 79, in fetch_and_save_news
+  File "/home/matias/repos/media_monitor/01_digests.py", line 79, in fetch_and_save_news
     df.to_csv(output_csv, index=False, encoding="utf-8-sig")
   File "/home/matias/anaconda3/envs/new_env/lib/python3.11/site-packages/pandas/util/_decorators.py", line 333, in wrapper
     return func(*args, **kwargs)

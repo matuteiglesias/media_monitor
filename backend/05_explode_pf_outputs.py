@@ -2,6 +2,7 @@ import pandas as pd
 from pathlib import Path
 import json
 import argparse
+from backend import ids, io, models, db
 
 # At the top of your script
 parser = argparse.ArgumentParser()
@@ -169,6 +170,19 @@ else:
 combined_articles.to_json(ARTICLE_OUT_PATH, orient="records", lines=True, force_ascii=False)
 combined_ideas.to_json(IDEA_OUT_PATH, orient="records", lines=True, force_ascii=False)
 combined_articles.to_json(ENRICHED_OUT_PATH, orient="records", lines=True, force_ascii=False)
+
+
+
+from adapters import append_jsonl, push_job
+from models import ArticleDraftV1
+from pathlib import Path
+
+draft = ArticleDraftV1(**obj)  # raises if contract broken  :contentReference[oaicite:17]{index=17}
+append_jsonl(Path("data/drafts")/f"{draft.cluster_id}.jsonl", draft)   # :contentReference[oaicite:18]{index=18}
+push_job("generate", work_key=draft.slug, payload={"cluster_id": draft.cluster_id})
+
+
+
 
 print(f"✅ Guardados:")
 print(f"  - Artículos     → {ARTICLE_OUT_PATH}")

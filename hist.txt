@@ -1,0 +1,50 @@
+ 1861  1760980190 code .
+ 1862  1760992536 cd Documents/Pictures/
+ 1863  1760992537 ls
+ 1864  1760992539 cd lebon/
+ 1865  1760992540 ls
+ 1866  1760992564 cd le\ bon\ george\ finales/
+ 1867  1760992566 ls
+ 1868  1760992851 mkdir -p ../lebon-light/{full,thumb} && find . -type f -iregex '.*\.\(jpe?g\)$' -print0 | while IFS= read -r -d '' f; do   base="$(basename "${f%.*}")"
+ 1869  1761166533   magick "$f" -auto-orient -strip -resize '1600x1600>'          -sampling-factor 4:2:0 -interlace Plane -quality 72 "../lebon-light/full/${base}.jpg";   magick "$f" -auto-orient -strip -resize '1600x1600>'          -quality 70 -define webp:method=6 -define webp:alpha-quality=80 "../lebon-light/full/${base}.webp"
+ 1870  1761166533   magick "$f" -auto-orient -strip -resize '640x640>'          -sampling-factor 4:2:0 -interlace Plane -quality 70 "../lebon-light/thumb/${base}.jpg";   magick "$f" -auto-orient -strip -resize '640x640>'          -quality 65 -define webp:method=6 -define webp:alpha-quality=80 "../lebon-light/thumb/${base}.webp"; done
+ 1871  1760992896 magick --version
+ 1872  1760992945 mkdir -p ../lebon-light/{full,thumb} && find . -type f -iregex '.*\.\(jpe?g\)$' -print0 | while IFS= read -r -d '' f; do   base="$(basename "${f%.*}")"
+ 1873  1761166533   convert "$f" -auto-orient -strip -resize '1600x1600>'           -sampling-factor 4:2:0 -interlace Plane -quality 72 "../lebon-light/full/${base}.jpg";   convert "$f" -auto-orient -strip -resize '1600x1600>'           -quality 70 "../lebon-light/full/${base}.webp"
+ 1874  1761166533   convert "$f" -auto-orient -strip -resize '640x640>'           -sampling-factor 4:2:0 -interlace Plane -quality 70 "../lebon-light/thumb/${base}.jpg";   convert "$f" -auto-orient -strip -resize '640x640>'           -quality 65 "../lebon-light/thumb/${base}.webp"; done
+ 1875  1760978554 google-chrome
+ 1876  1761076207 cd ..
+ 1877  1761076211 tree -L 2
+ 1878  1761076214 tree -L 3
+ 1879  1761076218 tree -L 2
+ 1880  1761163084 cd repos/textflow/
+ 1881  1761163098 cd Documents/GPT_digests/
+ 1882  1761163100 ls
+ 1883  1761163124 tree
+ 1884  1761163128 tree -L 2
+ 1885  1761163131 tree -L 3
+ 1886  1761163136 tree -L 2
+ 1887  1761163137 tree -L 3
+ 1888  1761164908 code .
+ 1889  1761164965 makefile
+ 1890  1761165022 make touch
+ 1891  1761165068 make ingest
+ 1892  1761165197 code .
+ 1893  1761166324 cd ~/repos/textflow && git add -A && git commit -m "checkpoint: pre-integration brief & Makefile"
+ 1894  1761166324 cd ~/Documents/GPT_digests && git add -A && git commit -m "checkpoint: bridge + runbook alignment"
+ 1895  1761166336 cd ~/repos/textflow && git add -A && git commit -m "checkpoint: pre-integration brief & Makefile"
+ 1896  1761166336 cd ~/Documents/GPT_digests && git add -A && git commit -m "checkpoint: bridge + runbook alignment"
+ 1897  1761166351 cd ~/repos/textflow
+ 1898  1761166362 cd ~/Documents/GPT_digests
+ 1899  1761166365 cd ~/repos/textflow
+ 1900  1761166370 make ingest
+ 1901  1761166541 cd repos/media_monitor/
+ 1902  1761166541 ls
+ 1903  1761166543 tree
+ 1904  1761166547 history 
+ 1905  1761166595 history | awk '{ cmd=$0; split(cmd,a," "); if (a[2] ~ /^[0-9]+$/) { "date -d @"a[2]" +\"%Y-%m-%d %H:%M:%S\"" | getline t; print t, $0 } else { print $0 } }'
+ 1906  1761166608 while read n ts rest; do   [ -z "$ts" ] && continue;   date_str=$(date -d @"$ts" '+%Y-%m-%d %H:%M:%S');   echo "$date_str  $n  $ts  $rest"; done < hist.txt
+ 1907  1761166616 cat hist.txt | while read n ts rest; do date -d @"$ts" '+%F %T'; echo "  $rest"; done
+ 1908  1761166623 perl -lane 'print scalar localtime $F[1], " ", join(" ", @F)' hist.txt
+ 1909  1761166649 history | awk '{ if ($2 ~ /^[0-9]+$/) { cmd=$0; "date -d @"$2" \"+%Y-%m-%d %H:%M:%S\"" | getline t; print t, substr(cmd, index(cmd,$3)) } }'
+ 1910  1761166674 history | tail -n 50 > hist.txt

@@ -1,6 +1,5 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 
-
 inputs:
   id_digest:
     type: string
@@ -14,15 +13,16 @@ inputs:
     type: string
   content:
     type: string
-    description: "Raw data containing headlines with id, Topic, Title, Published, Source, Source URL."
+    description: "Markdown digest for the group (one line per item, no links needed)."
 
 outputs:
-  digest_group_id:
-    type: string
-    reference: ${inputs.digest_group_id}
+  # Pass-through IDs so downstream stages can join on groups deterministically
   id_digest:
     type: string
     reference: ${inputs.id_digest}
+  digest_group_id:
+    type: string
+    reference: ${inputs.digest_group_id}
   window_type:
     type: string
     reference: ${inputs.window_type}
@@ -32,6 +32,8 @@ outputs:
   group_number:
     type: string
     reference: ${inputs.group_number}
+
+  # Editorial outputs
   clustered_agenda_table:
     type: object
     reference: ${parse_and_cluster.output}
@@ -44,10 +46,10 @@ nodes:
     type: prompt
     source:
       type: jinja2
-      path: 01_parse_and_cluster_articles.jinja2
+      path: news.articles.parse_and_cluster.topic_clusters.v1.jinja2
     inputs:
       content: ${inputs.content}
-  
+
   - name: parse_and_cluster
     type: python
     source:
@@ -65,9 +67,12 @@ nodes:
     type: prompt
     source:
       type: jinja2
-      path: 02_generate_agenda_and_ideas.jinja2
+      path: news.agenda.generate.seed_ideas.v1.jinja2
     inputs:
       clustered_agenda_table: ${parse_and_cluster.output}
+      # You can also pass topic/window_type here if your template wants it:
+      # topic: ${inputs.topic}
+      # window_type: ${inputs.window_type}
 
   - name: generate_ideas
     type: python
