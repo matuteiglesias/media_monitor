@@ -1,0 +1,21 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json
+
+flow: .
+
+# NOTE: 04_promptflow_run.py passes --data explicitly.
+# This default is only used if you run `pf run create` manually without --data.
+data: ../data/digest_jsonls/${run.digest_id}.jsonl
+
+environment_variables:
+  OPENAI_API_KEY: ${open_ai_connection.api_key}
+  AZURE_OPENAI_API_BASE: ${open_ai_connection.api_base}
+  AZURE_OPENAI_API_TYPE: azure
+
+# Map columns from digest-level JSONL (one line per group)
+column_mapping:
+  id_digest:       ${data.id_digest}
+  digest_group_id: ${data.digest_group_id}
+  window_type:     ${data.window_type}
+  topic:           ${data.topic}
+  group_number:    ${data.group_number}
+  content:         ${data.content}

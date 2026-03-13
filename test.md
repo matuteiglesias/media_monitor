@@ -1,0 +1,107 @@
+flowchart LR
+    %% Title
+    %% Media Monitor — Contracts-first pipeline (hardened)
+
+    %% === ORCHESTRATION ===
+    Scheduler(["00_daemon.py<br/>or cron/systemd"]):::orchestrator
+
+    %% === PULL ===
+    subgraph Pull
+      direction LR
+      A01["01_digests.py<br/>RSS / Google News fetch"]:::script
+      V01{{"validate: title, source, link, published"}}:::validator
+      A02["02_master_index_update.py<br/>dedupe / index / join keys"]:::script
+      A01 --> V01 --> A02
+    end
+
+    %% === DIGEST ===
+    subgraph Digest
+      direction LR
+      A03["03_headlines_digests.py<br/>topic windows → MD + JSONL"]:::script
+      A04["04_promptflow_run.py<br/>Promptflow pipeline run"]:::script
+      A05["05_explode_pf_outputs.py<br/>explode clusters + seed ideas"]:::script
+      V05{{"validate draft minimal<br/>(topic, headline/seed, link)"}}:::validator
+      A02 --> A03 --> A04 --> A05 --> V05
+    end
+
+    %% === SCRAPE ===
+    subgraph Scrape
+      direction LR
+      A06["06_scrape_contents.py<br/>fetch HTML (Playwright/Puppeteer)"]:::script
+      A05 --> A06
+    end
+
+    %% === SYNTHESIS ===
+    subgraph Synthesis
+      direction LR
+      GEN["Generator (LLM)<br/>fill body_html / dek / citations<br/>(idempotent)"]:::generator
+      PUB["Publisher<br/>persist (DB) + index (Meili) + revalidate"]:::publisher
+      A06 --> GEN --> PUB
+    end
+
+    %% === STATE & INDEXES ===
+    DB[("(Postgres)")]:::db
+    MEI[("(Meilisearch)")]:::db
+    SITE["Next.js (Stablo)"]:::frontend
+
+    %% === CONTRACTED ARTIFACTS ===
+    storeScrape[("data/scrape/*.jsonl<br/><b>ScrapeRecordV1</b><br/>seed + enriched (final_url, text_hash, fetched_at)")]:::data
+    storeDrafts[("data/drafts/*.jsonl<br/><b>ArticleDraftV1</b>")]:::data
+    storePublished[("data/published/*.jsonl<br/><b>ArticleV1</b> (ground truth copy)")]:::data
+    storeQ[("data/quarantine/*.jsonl<br/>validation failures (with run_id)")]:::quarantine
+    MRDB[("master_ref (DB)<br/>(index_id, first_seen, topics, meta)")]:::db
+    MRCSV[("data/master_ref.csv<br/>(mirror)") ]:::data
+
+    %% === CONTROL PLANE ===
+    WQ[("work_items (DB)<br/>stage, key, state, attempts")]:::control
+    RUNS[("runs (DB)<br/>run_id, stage, start/end, ok/fail, meta")]:::control
+
+    %% === DATA FLOWS ===
+    Scheduler --> A01
+    A01 -- "ScrapeRecordV1 (seed)" --> storeScrape
+    A06 -- "enrich by index_id<br/>(final_url, text_hash, fetched_at)" --> storeScrape
+
+    A02 -- "upsert" --> MRDB
+    A02 -- "mirror" --> MRCSV
+
+    A05 -- "ArticleDraftV1 (per digest hour)" --> storeDrafts
+
+    GEN -- "ready drafts (same IDs)" --> storeDrafts
+    PUB -- "ArticleV1" --> storePublished
+    PUB --> DB
+    PUB --> MEI
+    PUB --> SITE
+
+    %% === READS ===
+    storeScrape -. "for clustering / context" .- A03
+    storeScrape -. "for seed text / QA" .- A05
+    MRDB -. "join by index_id/digest_file" .- A05
+    storeDrafts -. "read drafts" .- GEN
+    storeDrafts -. "read ready drafts" .- PUB
+
+    %% === VALIDATION → QUARANTINE ===
+    V01 -- "bad rows" --> storeQ
+    V05 -- "bad drafts" --> storeQ
+
+    %% === CONTROL ===
+    Scheduler --> WQ
+    A06 -. "pop 'scrape' jobs (index_id)" .- WQ
+    GEN  -. "pop 'generate' jobs (digest_id, article_id)" .- WQ
+    PUB  -. "pop 'publish' jobs (article_id, version)" .- WQ
+    A01 --> RUNS
+    A05 --> RUNS
+    A06 --> RUNS
+    GEN --> RUNS
+    PUB --> RUNS
+
+    %% === STYLE DEFINITIONS ===
+    classDef orchestrator fill:#e7f1ff,stroke:#2b6cb0,stroke-width:1px,color:#0b3d91;
+    classDef script fill:#f8f9fa,stroke:#495057,stroke-width:1px,color:#212529;
+    classDef generator fill:#fffbea,stroke:#c05621,stroke-width:1px,color:#7b341e;
+    classDef publisher fill:#fff4e6,stroke:#d9480f,stroke-width:1px,color:#7f3708;
+    classDef frontend fill:#e6fffa,stroke:#2c7a7b,stroke-width:1px,color:#285e61;
+    classDef db fill:#ede7f6,stroke:#6a1b9a,stroke-width:1px,color:#4a148c;
+    classDef data fill:#f1f3f5,stroke:#868e96,stroke-dasharray: 5 5,color:#343a40;
+    classDef quarantine fill:#ffe3e3,stroke:#c92a2a,stroke-width:1px,color:#7b1515;
+    classDef validator fill:#e2e3ff,stroke:#343a40,stroke-width:1px,color:#343a40;
+    classDef control fill:#eef2ff,stroke:#6366f1,stroke-width:1px,color:#3730a3;
