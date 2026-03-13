@@ -24,7 +24,7 @@ define _env_prefix
 DIGEST_AT=$(DIGEST_AT) DRY_RUN=$(DRY_RUN) LIMIT=$(LIMIT) SAMPLE=$(SAMPLE) NULL_SINK=$(NULL_SINK)
 endef
 
-.PHONY: help hour env s01 s02 s03 s04 s05 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null
+.PHONY: help hour env preflight-runtime s01 s02 s03 s04 s05 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null
 
 help:      ## Show help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' Makefile | sed 's/:.*## / — /' | sort
@@ -35,6 +35,27 @@ hour:      ## Print current UTC hour bucket
 env:       ## Print effective env knobs
 	@echo "DIGEST_AT=$(DIGEST_AT)  DRY_RUN=$(DRY_RUN)  LIMIT=$(LIMIT)  SAMPLE=$(SAMPLE)  NULL_SINK=$(NULL_SINK)  PF_MODE=$(PF_MODE)"
 	@echo "PYTHON=$(PYTHON)  PF_PYTHON=$(PF_PYTHON)  FLOW_DIR=$(FLOW_DIR)"
+
+preflight-runtime: ## Validate runtime prerequisites without changing pipeline state
+	@set -euo pipefail; \
+	 echo "[preflight] repo=$(PWD)"; \
+	 if [ ! -x "$(PYTHON)" ]; then echo "[preflight] ERROR missing project python: $(PYTHON)"; exit 2; fi; \
+	 echo "[preflight] project python: $$($(PYTHON) --version 2>&1)"; \
+	 if "$(PYTHON)" -c "import pandas, feedparser" >/dev/null 2>&1; then \
+	   echo "[preflight] stage01 deps import: OK (pandas, feedparser)"; \
+	 else \
+	   echo "[preflight] WARN stage01 deps missing in project python (need pandas/feedparser)"; \
+	 fi; \
+	 if [ -n "$(PF_PYTHON)" ] && command -v "$(PF_PYTHON)" >/dev/null 2>&1; then \
+	   echo "[preflight] PF python candidate: $(PF_PYTHON)"; \
+	   if "$(PF_PYTHON)" -c "import promptflow" >/dev/null 2>&1; then echo "[preflight] promptflow import: OK via PF_PYTHON"; else echo "[preflight] WARN promptflow import failed via PF_PYTHON"; fi; \
+	 elif command -v conda >/dev/null 2>&1; then \
+	   echo "[preflight] PF runtime fallback available: conda"; \
+	 else \
+	   echo "[preflight] WARN no PF_PYTHON executable and no conda fallback"; \
+	 fi; \
+	 for d in data/rss_slices/rss_dumps data/digest_map data/digest_jsonls data/pf_out data/drafts data/quarantine; do mkdir -p "$$d"; done; \
+	 echo "[preflight] required data dirs ensured"
 
 ls:        ## Quick listing of hour-scoped artifacts
 	@echo "== rss_dumps =="; ls -1 data/rss_slices/rss_dumps/*_$(DIGEST_AT)00.csv 2>/dev/null || true; \
@@ -147,9 +168,3 @@ scrape-one:   ## Replay one index_id through scraper: make scrape-one KEY=UI4BXX
 
 requeue-fails: ## Requeue failures in the last 24h: make requeue-fails STAGE=generate
 	@$(PYTHON) scripts/requeue_failed.py --stage $(STAGE) --since 24h
-
-pf-legacy:  ## Force PF over digest-level file
-	@$(MAKE) s04 PF_MODE=legacy
-
-pf-article: ## Force PF over per-article pfin file
-	@$(MAKE) s04 PF_MODE=new

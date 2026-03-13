@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/news_digest_group.v1.json",
+  "title": "news_digest_group.v1",
+  "description": "Experimental structured digest grouping contract aligned with stage03 digest_jsonls.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": { "const": "news_digest_group.v1" },
+    "schema_status": { "const": "experimental_structured" },
+    "digest_group_id": { "type": "string", "minLength": 1 },
+    "digest_id_hour": { "type": "string", "pattern": "^[0-9]{8}T[0-9]{2}$" },
+    "window_type": { "type": "string", "enum": ["A", "B", "C", "D", "E", "F"] },
+    "topic": { "type": "string", "minLength": 1 },
+    "group_number": { "type": "integer", "minimum": 1 },
+    "content": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "article_id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "source": { "type": "string", "minLength": 1 },
+          "link": { "type": "string", "format": "uri" },
+          "published": { "type": "string", "format": "date-time" }
+        },
+        "required": ["article_id", "title", "source", "link", "published"]
+      }
+    }
+  },
+  "required": [
+    "schema_name",
+    "schema_status",
+    "digest_group_id",
+    "digest_id_hour",
+    "window_type",
+    "topic",
+    "group_number",
+    "content"
+  ]
+}

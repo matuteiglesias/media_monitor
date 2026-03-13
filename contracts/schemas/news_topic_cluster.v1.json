@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/news_topic_cluster.v1.json",
+  "title": "news_topic_cluster.v1",
+  "description": "Experimental structured topic-cluster record from PromptFlow clustered agenda outputs.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": { "const": "news_topic_cluster.v1" },
+    "schema_status": { "const": "experimental_structured" },
+    "digest_group_id": { "type": "string", "minLength": 1 },
+    "topic": { "type": "string", "minLength": 1 },
+    "article_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "deduplicated_titles": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "required": [
+    "schema_name",
+    "schema_status",
+    "digest_group_id",
+    "topic",
+    "article_ids",
+    "deduplicated_titles"
+  ]
+}
