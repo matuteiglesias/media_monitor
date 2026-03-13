@@ -6,8 +6,8 @@ from datetime import datetime
 import argparse
 
 # === CONFIGURACIÓN ===
-FLOW_DIR = "/home/matias/Documents/media_monitor/flow"
-# DATA_FILE = "/home/matias/Documents/media_monitor/data/digest_jsonls/20250611T04.jsonl"
+FLOW_DIR = "/home/matias/repos/media_monitor/flow"
+# DATA_FILE = "/home/matias/repos/media_monitor/data/digest_jsonls/20250611T04.jsonl"
 RUNS_DIR = Path.home() / ".promptflow/.runs"
 OUTPUT_DIR = Path("./data/pf_out")
 JSONL_BASE_DIR = Path("./data/digest_jsonls")

@@ -78,34 +78,6 @@ def fully_processed(digest_id_h):
     return all(status["status"].get(s["name"]) == "ok" for s in STAGES)
 
 
-
-# def run_pipeline(ts):
-#     print(f"🚀 Starting pipeline for: {ts['digest_id_h']}")
-
-#     subprocess.run([
-#         "python", "01_digests.py",
-#         "--trigger-time", ts['trigger_time']
-#     ], check=True)
-
-#     subprocess.run([
-#         "python", "02_master_index_update.py"
-#     ], check=True)
-
-#     subprocess.run([
-#         "python", "03_headlines_digests.py",
-#         "--digest-id", ts['digest_id_h']
-#     ], check=True)
-
-#     subprocess.run([
-#         "python", "04_scrape_contents.py",
-#         "--day", ts['day'],
-#         "--hour", str(ts['hour'])
-#     ], check=True)
-
-#     print(f"✅ Done with: {ts['digest_id_h']}\n")
-
-
-
 def daemon_loop(interval_minutes=5, backfill_hours=0):
     seen = set()
 

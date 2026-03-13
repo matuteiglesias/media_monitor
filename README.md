@@ -35,7 +35,7 @@ media_monitor/
 Ejecuta el script cada 4 horas (ejemplo con Anaconda):
 
 ```
-0 */4 * * * cd /home/matias/Documents/media_monitor && /home/matias/anaconda3/bin/python digests.py
+0 */4 * * * cd /home/matias/repos/media_monitor && /home/matias/anaconda3/bin/python digests.py
 ```
 
 Esto garantiza que el sistema:

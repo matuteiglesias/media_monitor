@@ -1,0 +1,11 @@
+{
+  "schema_name": "news_seed_idea.v1",
+  "schema_status": "experimental_structured",
+  "digest_group_id": "20260101T10:A:Economia:1",
+  "idea_id": "idea-001",
+  "topic": "Economia",
+  "headline": "Qué implica la desaceleración de la inflación",
+  "dek": "Análisis de efectos sobre consumo y crédito.",
+  "rationale": "Se detecta convergencia temática en artículos líderes.",
+  "supporting_article_ids": ["42", "73"]
+}

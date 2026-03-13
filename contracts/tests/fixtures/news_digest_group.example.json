@@ -1,0 +1,18 @@
+{
+  "schema_name": "news_digest_group.v1",
+  "schema_status": "experimental_structured",
+  "digest_group_id": "20260101T10:A:Economia:1",
+  "digest_id_hour": "20260101T10",
+  "window_type": "A",
+  "topic": "Economia",
+  "group_number": 1,
+  "content": [
+    {
+      "article_id": "42",
+      "title": "Inflación baja en diciembre",
+      "source": "EL PAIS",
+      "link": "https://elpais.com/economia/2026-01-01/example.html",
+      "published": "2026-01-01T09:30:00Z"
+    }
+  ]
+}
