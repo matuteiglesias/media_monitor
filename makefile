@@ -24,7 +24,7 @@ define _env_prefix
 DIGEST_AT=$(DIGEST_AT) DRY_RUN=$(DRY_RUN) LIMIT=$(LIMIT) SAMPLE=$(SAMPLE) NULL_SINK=$(NULL_SINK)
 endef
 
-.PHONY: help hour env preflight-runtime s01 s02 s03 s04 s05 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null
+.PHONY: help hour env preflight-runtime s01 s02 s03 s04 s05 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null export-pr3a
 
 help:      ## Show help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' Makefile | sed 's/:.*## / — /' | sort
@@ -138,6 +138,9 @@ pf-article: ## Force PF over per-article pfin file
 
 s05:       ## Stage 05 — explode PF outputs → drafts + enqueue generate
 	@$(_env_prefix) $(PYTHON) -m legacy.stage05_explode_pf_outputs
+
+export-pr3a: ## PR3a real exports: legacy outputs -> storage buses/indexes
+	@$(PYTHON) scripts/export_pr3a_buses.py --digest-at $(DIGEST_AT)
 
 # ------------ Pipelines ------------
 prep:      ## 01+02 on fixed hour (safe defaults DRY_RUN=1)

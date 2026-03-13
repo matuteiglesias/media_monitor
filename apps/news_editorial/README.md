@@ -1,12 +1,64 @@
-# news_editorial (wrapper placeholder)
+# news_editorial (PR4b owner module)
 
-`apps/news_editorial` is the future owner for editorial grouping and idea generation.
+`apps/news_editorial` is the explicit owner module for the editorial structuring layer in the migration plan.
 
-Current state (PR2):
-- This folder is scaffolding only.
-- Runtime editorial processing still executes via legacy stages (`stage03`/`stage04`/`stage05`).
-- Existing seams (digest JSONL, PF outputs, digest-map joins) remain operational while contracts are formalized.
+This PR is additive: it clarifies ownership and operator entrypoints while preserving the current runtime path.
 
-Contract classification relevant to editorial:
-- Stable now inputs: `news_ref.v1`, `scrape_request.v1`, `scraped_article.v1`.
-- Experimental structured outputs: `news_digest_group.v1`, `news_topic_cluster.v1`, `news_seed_idea.v1`, `news_seed_card.v1`.
+## Ownership declaration
+
+### Owned runtime/raw boundaries
+- `flow/` (PromptFlow definition and editorial generation logic)
+- `data/digest_jsonls/*` (operational editorial input seam today)
+- `data/pf_out/*` (PromptFlow output seam today)
+- `data/drafts/*` (downstream editorial-derived drafts after stage05)
+- `data/quarantine/*` entries produced by editorial stages (`V03`, `V05`)
+
+### Buses consumed
+- `storage/buses/news_digest_group/v1/*` (structured digest groups when available)
+- legacy digest input seam `data/digest_jsonls/<DIGEST_AT>.jsonl` remains active source of truth for current runtime
+
+### Buses intended to be written by editorial adapters
+- `news_topic_cluster.v1`
+- `news_seed_idea.v1`
+- `news_seed_card.v1`
+
+(These remain planned adapter outputs; this PR does not change contract shapes nor replace runtime.)
+
+
+## Implementation location (PR4d)
+Editorial primary implementation now lives under:
+- `apps/news_editorial/src/news_editorial/stage04_promptflow_run.py`
+- `apps/news_editorial/src/news_editorial/stage05_explode_pf_outputs.py`
+- `apps/news_editorial/src/news_editorial/{ids,io,db,slugs}.py`
+
+Compatibility wrappers remain at:
+- `legacy/stage04_promptflow_run.py`
+- `legacy/stage05_explode_pf_outputs.py`
+
+`flow/` remains in its current top-level location for runtime safety and is treated as an editorial-owned transitional seam in this PR.
+
+## Entrypoint
+
+Use owner wrapper:
+
+```bash
+apps/news_editorial/entrypoints/run_editorial_owner.sh
+```
+
+Wrapper delegates to canonical runtime targets:
+1. `make s04`
+2. `make s05`
+
+## External dependency boundary (explicit)
+- PromptFlow runtime/env/connectivity is an external dependency boundary for this module.
+- Current runtime keeps PF invocation in canonical make target logic.
+- This PR documents dependency ownership but does not solve PF runtime connectivity.
+
+See operational details in [`runbook.md`](./runbook.md).
+
+## Non-goals in PR4b
+- No replacement of `bin/run_hour.sh`.
+- No replacement of `make s04` / `make s05`.
+- No PromptFlow refactor.
+- No schema edits under `contracts/schemas`.
+- No ownership migration for `news_enrich` (reserved for PR4c).
