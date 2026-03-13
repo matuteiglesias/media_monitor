@@ -6,7 +6,7 @@ import pandas as pd
 import hashlib
 
 # Configurations
-RSS_DIR = '/home/matias/Documents/media_monitor/data/rss_slices/'
+RSS_DIR = '/home/matias/repos/media_monitor/data/rss_slices/'
 MASTER_INDEX_PATH = './data/master_index.csv'
 PROCESSED_FILES_LOG = './data/processed_files.txt'
 DATA_DIR = './data/'
@@ -129,6 +129,23 @@ def update_master_index_from_directory(rss_dir, master_index_path, processed_fil
     # Save final master index
     save_master_index(deduped_df, master_index_path)
     save_processed_files(processed_files, processed_files_log)
+
+
+
+from adapters import upsert_master
+from datetime import timezone
+rows = []
+for r in batch_iter:  # your new rows
+    rows.append({
+        "index_id": r["index_id"],
+        "source": r["Source"],
+        "link": r["Link"],
+        "first_seen": r["Published"].astimezone(timezone.utc),
+        "last_seen": r["Published"].astimezone(timezone.utc),
+        "topics": r.get("topics", []),
+        "meta": {"digest_file": r["digest_file"], "article_id": r["article_id"]}
+    })
+upsert_master(rows)  # single network trip, conflict-safe  :contentReference[oaicite:12]{index=12}
 
 
 

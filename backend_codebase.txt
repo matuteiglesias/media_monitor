@@ -1,0 +1,260 @@
+
+===== backend/models.py =====
+from pydantic import BaseModel, Field, HttpUrl, AwareDatetime, field_validator
+from typing import List, Optional, Literal, Dict
+
+Lang = Literal["es", "en"]
+
+
+class ScrapedData(BaseModel):
+    final_url: Optional[HttpUrl] = None
+    text: Optional[str] = None           # normalized text/plain (optional; can be large)
+    text_hash: Optional[str] = None      # sha256 of normalized text
+    byte_size: Optional[int] = None
+    fetched_at: Optional[str] = None     # ISO-8601 UTC
+
+
+class ScrapeRecordV1(BaseModel):
+    schema_version: Literal["ScrapeRecordV1"] = "ScrapeRecordV1"
+    index_id: str = Field(min_length=10, max_length=10)
+    digest_id_hour: str = Field(min_length=11, max_length=11)  # YYYYMMDDTHH
+    topic: str
+    source: str
+    title: str
+    published: AwareDatetime
+    original_link: HttpUrl
+    final_url: HttpUrl
+    redirects: List[str] = []
+    status: int
+    fetch_latency_ms: int
+    raw_html_len: int
+    main_text: str
+    main_text_len: int
+    lang: Optional[Lang] = None
+    canonical_url: Optional[HttpUrl] = None
+    byline: Optional[str] = None
+    lead_image_url: Optional[HttpUrl] = None
+    extraction_engine: Literal["trafilatura", "readability", "playwright"]
+    quality: Dict[str, float] = {}
+    fetched_at: AwareDatetime
+
+    @field_validator("digest_id_hour")
+    @classmethod
+    def _check_did(cls, v: str) -> str:
+        # Very light format check
+        assert len(v) == 11 and v[8] == "T", "digest_id_hour must be YYYYMMDDTHH"
+        return v
+
+    scraped_data: Optional[ScrapedData] = None
+
+    @field_validator("title", "source", "original_link", mode="before", check_fields=False)
+    @classmethod
+    def _strip_strings(cls, v):
+        return v.strip() if isinstance(v, str) else v
+
+    def validate_minimal(self) -> Optional[str]:
+        if not (self.title and self.source and self.original_link):
+            return "missing: title/source/original_link"
+        if self.published is None:
+            return "missing: published"
+        return None
+
+
+class CitationV1(BaseModel):
+    title: str
+    source: str
+    url: HttpUrl
+    published: Optional[AwareDatetime] = None
+
+
+class ArticleDraftV1(BaseModel):
+    schema_version: Literal["ArticleDraftV1"] = "ArticleDraftV1"
+    cluster_id: str
+    slug: str
+    lang: Lang
+    headline: str
+    dek: Optional[str] = None
+    body_html: str
+    bullet_summary: List[str] = []
+    citations: List[CitationV1]
+    topic: str
+    tags: List[str] = []
+    seo: Dict[str, str] = {}              # meta_title, meta_description
+    created_at: AwareDatetime
+    flow_version: str                     # prompt/provenance
+    first_seen_at: AwareDatetime
+
+
+class ArticleV1(BaseModel):
+    schema_version: Literal["ArticleV1"] = "ArticleV1"
+    article_id: str
+    slug: str
+    lang: Lang
+    headline: str
+    dek: Optional[str] = None
+    body_html: str
+    topic: str
+    tags: List[str]
+    citations: List[CitationV1]
+    related_ids: List[str] = []
+    published_at: AwareDatetime           # site publish time
+    first_seen_at: AwareDatetime          # earliest member
+    cluster_id: str
+    version: int = 1
+    meta: Dict[str, str] = {}
+
+===== backend/ids.py =====
+# backend/ids.py
+import hashlib, base64, unicodedata
+
+from datetime import datetime, timezone
+from typing import Optional, Tuple
+
+
+def digest_id_hour(digest_at: Optional[str] = None) -> Tuple[str, datetime]:
+    """
+    Convert a timestamp string (YYYYMMDDTHH) or None into a digest ID and UTC datetime.
+
+    If digest_at is a string in the format YYYYMMDDTHH, parse it as a UTC datetime.
+    Otherwise, use the current UTC time.
+
+    Returns:
+        digest_id: str formatted as YYYYMMDDTHH
+        dt: datetime object in UTC
+    """
+    if isinstance(digest_at, str):
+        try:
+            # Parse 'YYYYMMDDTHH' as UTC
+            dt = datetime.strptime(digest_at, "%Y%m%dT%H").replace(tzinfo=timezone.utc)
+        except ValueError:
+            raise ValueError(f"Invalid digest_at format '{digest_at}', expected YYYYMMDDTHH")
+    else:
+        dt = datetime.now(timezone.utc)
+
+    digest_id = dt.strftime("%Y%m%dT%H")
+    return digest_id, dt
+
+def _norm(s: str) -> str:
+    s = unicodedata.normalize("NFKC", (s or "").strip())
+    return " ".join(s.split())
+
+def stable_index_id(title: str, source: str, url: str="") -> str:
+    key = f"{_norm(title)}|{_norm(source)}|{url.strip().lower()}"
+    h = hashlib.sha1(key.encode("utf-8")).digest()
+    return base64.b32encode(h)[:10].decode("ascii")
+
+
+===== backend/slugs.py =====
+# backend/slugs.py
+import re, unicodedata
+
+def slugify(title: str) -> str:
+    s = unicodedata.normalize("NFKD", title).encode("ascii", "ignore").decode("ascii")
+    s = re.sub(r"[^a-zA-Z0-9]+", "-", s).strip("-").lower()
+    s = re.sub(r"-{2,}", "-", s)
+    return s or "nota"
+
+===== backend/db.py =====
+# backend/db.py
+import os, json, psycopg
+from typing import Iterable
+
+def get_conn():
+    dsn = os.getenv("PG_DSN", "dbname=newsdb")
+    return psycopg.connect(dsn)
+
+def upsert_master_ref(rows: Iterable[dict]):
+    sql = """
+    insert into master_ref (index_id, source, link, first_seen, last_seen, topics, meta)
+    values (%(index_id)s, %(source)s, %(link)s, %(first_seen)s, %(last_seen)s, %(topics)s, %(meta)s::jsonb)
+    on conflict (index_id) do update set
+      last_seen = excluded.last_seen,
+      topics    = (select array(select distinct unnest(master_ref.topics || excluded.topics))),
+      meta      = master_ref.meta || excluded.meta;
+    """
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.executemany(sql, rows)
+        conn.commit()
+
+def push_work(stage: str, work_key: str, payload: dict):
+    sql = """
+    insert into work_items(stage, work_key, state, payload)
+    values (%s,%s,'queued',%s)
+    on conflict (stage, work_key) do nothing;
+    """
+    with get_conn() as c, c.cursor() as cur:
+        cur.execute(sql, (stage, work_key, json.dumps(payload)))
+
+def pop_work(stage: str, limit: int = 10):
+    sql = """
+    update work_items wi set state='running', attempts=wi.attempts+1, updated_at=now()
+    where (stage,state)=(%s,'queued')
+    returning stage, work_key, payload;
+    """
+    with get_conn() as c, c.cursor() as cur:
+        cur.execute(sql, (stage,))
+        rows = cur.fetchmany(limit)
+        return [{"stage": r[0], "work_key": r[1], "payload": r[2]} for r in rows]
+
+def complete_work(stage: str, work_key: str):
+    with get_conn() as c, c.cursor() as cur:
+        cur.execute("update work_items set state='done', updated_at=now() where stage=%s and work_key=%s",
+                    (stage, work_key))
+
+def fail_work(stage: str, work_key: str, err: str):
+    with get_conn() as c, c.cursor() as cur:
+        cur.execute("update work_items set state='failed', last_error=%s, updated_at=now() where stage=%s and work_key=%s",
+                    (err, stage, work_key))
+
+def start_run(run_id: str, stage: str, meta: dict):
+    with get_conn() as c, c.cursor() as cur:
+        cur.execute("insert into runs(run_id,stage,started_at,meta) values (%s,%s,now(),%s::jsonb)",
+                    (run_id, stage, json.dumps(meta)))
+
+def finish_run(run_id: str, ok: int, fail: int):
+    with get_conn() as c, c.cursor() as cur:
+        cur.execute("update runs set finished_at=now(), ok_count=%s, fail_count=%s where run_id=%s",
+                    (ok, fail, run_id))
+
+===== backend/io.py =====
+# backend/io.py
+from pathlib import Path
+from pydantic import BaseModel
+import os, tempfile, json
+
+def append_jsonl(path: Path, obj: BaseModel | dict):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    line = obj.model_dump_json() if isinstance(obj, BaseModel) else json.dumps(obj, ensure_ascii=False)
+    with path.open("a", encoding="utf-8") as f:
+        f.write(line + "\n")
+
+def atomic_write_jsonl(path: Path, rows: list[str]):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile("w", delete=False, dir=path.parent, encoding="utf-8") as tmp:
+        for line in rows:
+            tmp.write(line.rstrip("\n") + "\n")
+        temp_name = tmp.name
+    os.replace(temp_name, path)
+
+===== backend/adapters.py =====
+# adapters.py
+from pathlib import Path
+from backend import db, ids, io
+from models import ScrapeRecordV1, ArticleDraftV1
+
+def stable_index_id_from_row(row: dict) -> str:
+    # prefer final_url if known, else original link
+    url = (row.get("final_url") or row.get("original_link") or "").strip()
+    return ids.stable_index_id(row.get("Title") or row.get("title",""),
+                               row.get("Source") or row.get("source",""),
+                               url)
+
+def append_jsonl(path: Path, obj) -> None:
+    io.append_jsonl(path, obj)
+
+def upsert_master(rows: list[dict]) -> None:
+    db.upsert_master_ref(rows)
+
+def push_job(stage: str, work_key: str, payload: dict) -> None:
+    db.push_work(stage, work_key, payload)
