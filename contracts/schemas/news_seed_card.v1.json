@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/news_seed_card.v1.json",
+  "title": "news_seed_card.v1",
+  "description": "Experimental structured seed card for downstream editorial packaging.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": { "const": "news_seed_card.v1" },
+    "schema_status": { "const": "experimental_structured" },
+    "card_id": { "type": "string", "minLength": 1 },
+    "idea_id": { "type": "string", "minLength": 1 },
+    "digest_group_id": { "type": "string", "minLength": 1 },
+    "topic": { "type": "string", "minLength": 1 },
+    "angle": { "type": "string", "minLength": 1 },
+    "summary_bullets": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "citations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "article_id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "source": { "type": "string", "minLength": 1 },
+          "url": { "type": "string", "format": "uri" }
+        },
+        "required": ["article_id", "title", "source", "url"]
+      }
+    }
+  },
+  "required": [
+    "schema_name",
+    "schema_status",
+    "card_id",
+    "idea_id",
+    "digest_group_id",
+    "topic",
+    "angle",
+    "summary_bullets",
+    "citations"
+  ]
+}

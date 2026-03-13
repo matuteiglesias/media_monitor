@@ -1,0 +1,21 @@
+{
+  "schema_name": "scraped_article.v1",
+  "schema_status": "stable",
+  "index_id": "ABCDEFGHJK",
+  "digest_id_hour": "20260101T10",
+  "topic": "Economia",
+  "source": "EL PAIS",
+  "title": "Inflación baja en diciembre",
+  "published": "2026-01-01T09:30:00Z",
+  "original_link": "https://news.google.com/articles/xyz",
+  "final_url": "https://elpais.com/economia/2026-01-01/example.html",
+  "status": 200,
+  "fetch_latency_ms": 250,
+  "raw_html_len": 12345,
+  "main_text": "Texto normalizado del artículo.",
+  "main_text_len": 31,
+  "lang": "es",
+  "extraction_engine": "trafilatura",
+  "quality": {"readability": 0.91},
+  "fetched_at": "2026-01-01T10:02:00Z"
+}

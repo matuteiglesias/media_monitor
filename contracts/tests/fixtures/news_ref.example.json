@@ -1,0 +1,14 @@
+{
+  "schema_name": "news_ref.v1",
+  "schema_status": "stable",
+  "index_id": "ABCDEFGHJK",
+  "source": "EL PAIS",
+  "link": "https://elpais.com/economia/2026-01-01/example.html",
+  "first_seen": "2026-01-01T10:00:00Z",
+  "last_seen": "2026-01-01T10:00:00Z",
+  "topics": ["Economia"],
+  "meta": {"ingest": "rss"},
+  "digest_file": "digest_A_20260101T10.csv",
+  "article_id": "42",
+  "join_key": "digest_A_20260101T10.csv::42"
+}
