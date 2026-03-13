@@ -1,0 +1,14 @@
+{
+  "schema_name": "scrape_request.v1",
+  "schema_status": "stable",
+  "digest_id_hour": "20260101T10",
+  "index_id": "ABCDEFGHJK",
+  "topic": "Economia",
+  "source": "EL PAIS",
+  "title": "Inflación baja en diciembre",
+  "original_link": "https://news.google.com/articles/xyz",
+  "published": "2026-01-01T09:30:00Z",
+  "digest_file": "digest_A_20260101T10.csv",
+  "article_id": "42",
+  "join_key": "digest_A_20260101T10.csv::42"
+}
