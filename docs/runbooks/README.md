@@ -9,6 +9,7 @@ Guía rápida para distinguir qué documento usar según objetivo.
 
 ## Consolidation and pruning
 
+- `pr9-newspaper-skin-implementation-prs.md` — PRs concretos para construir la capa pública tipo news outlet (site + ops + read API).
 - `pr5-pruning-diagnostic-and-phased-plan.md` — pruning guiado por runtime con guardrails.
 - `pr5-observability-indexes-prep.md` — preparación de índices de observabilidad compacta.
 - `pr6-wrapper-surface-inventory.md` — inventario de wrappers/helpers y shortlist canónica de comandos operativos.
