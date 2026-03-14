@@ -87,3 +87,9 @@ DIGEST_AT=20260313T15 PF_MODE=new apps/news_editorial/entrypoints/run_editorial_
 - No refactor of PromptFlow internals.
 - No changes to schema definitions.
 - No file moves/deletes in legacy.
+
+
+## Legacy fallback policy (stage05)
+- Default mode: `LEGACY_EDITORIAL_FALLBACK=emergency` (fallback allowed only as emergency path).
+- Set `LEGACY_EDITORIAL_FALLBACK=off` to fail fast when `news_piece_brief.v1` is missing.
+- Every fallback activation writes explicit quarantine evidence (`legacy_fallback_emergency_activated`).
