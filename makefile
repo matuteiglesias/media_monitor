@@ -24,7 +24,7 @@ define _env_prefix
 DIGEST_AT=$(DIGEST_AT) DRY_RUN=$(DRY_RUN) LIMIT=$(LIMIT) SAMPLE=$(SAMPLE) NULL_SINK=$(NULL_SINK)
 endef
 
-.PHONY: help hour env preflight-runtime s01 s02 s03 s04 s05 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null export-pr3a
+.PHONY: help hour env preflight-runtime s01 s02 s03 s04 s05 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null export-pr3a heartbeat-start heartbeat-stop heartbeat-status
 
 help:      ## Show help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' Makefile | sed 's/:.*## / — /' | sort
@@ -176,3 +176,19 @@ scrape-one:   ## Replay one index_id through scraper: make scrape-one KEY=UI4BXX
 
 requeue-fails: ## Requeue failures in the last 24h: make requeue-fails STAGE=generate
 	@$(PYTHON) scripts/requeue_failed.py --stage $(STAGE) --since 24h
+
+
+heartbeat-start: ## Start sensing heartbeat in background (writes storage/observability/heartbeat.log)
+	@mkdir -p storage/observability
+	@if [ -f storage/observability/heartbeat.pid ] && kill -0 "$$(cat storage/observability/heartbeat.pid)" 2>/dev/null; then 	  echo "heartbeat already running pid=$$(cat storage/observability/heartbeat.pid)"; 	  exit 0; 	fi
+	@nohup env INTERVAL_SEC=$${INTERVAL_SEC:-3600} DRY_RUN=$${DRY_RUN:-0} PROJECT_ID=$${PROJECT_ID:-media_monitor} OPERATOR=$${OPERATOR:-heartbeat} TRIGGER_TYPE=$${TRIGGER_TYPE:-timer} ATTEMPT=$${ATTEMPT:-1} RUN_RECORD_ALL_LANES=$${RUN_RECORD_ALL_LANES:-0} 	  bin/run_sensing_heartbeat.sh > /dev/null 2>&1 & echo $$! > storage/observability/heartbeat.pid
+	@echo "heartbeat started pid=$$(cat storage/observability/heartbeat.pid)"
+
+heartbeat-stop: ## Stop sensing heartbeat background process
+	@if [ ! -f storage/observability/heartbeat.pid ]; then echo "heartbeat pid file missing"; exit 0; fi
+	@pid="$$(cat storage/observability/heartbeat.pid)"; 	 if kill -0 "$$pid" 2>/dev/null; then kill "$$pid" && echo "heartbeat stopped pid=$$pid"; else echo "heartbeat pid not running: $$pid"; fi
+	@rm -f storage/observability/heartbeat.pid
+
+heartbeat-status: ## Show heartbeat process and latest log lines
+	@if [ -f storage/observability/heartbeat.pid ] && kill -0 "$$(cat storage/observability/heartbeat.pid)" 2>/dev/null; then 	  echo "heartbeat running pid=$$(cat storage/observability/heartbeat.pid)"; 	else 	  echo "heartbeat not running"; 	fi
+	@tail -n 20 storage/observability/heartbeat.log 2>/dev/null || true
