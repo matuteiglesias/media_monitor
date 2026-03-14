@@ -5,6 +5,7 @@ import json
 import os
 import re
 import sys
+from jsonschema import Draft202012Validator
 from pathlib import Path
 from typing import Iterable, Optional, Tuple
 
@@ -96,6 +97,29 @@ def _brief_id(digest_id: str, digest_group_id: str, idea: dict, ordinal: int) ->
     return f"npb_{digest}"
 
 
+
+
+def _schema_validator() -> Draft202012Validator:
+    schema_dir_env = os.getenv("CONTRACTS_SCHEMAS_DIR")
+    if schema_dir_env:
+        schema_path = Path(schema_dir_env) / "news_piece_brief.v1.json"
+    else:
+        schema_path = Path.cwd() / "contracts" / "schemas" / "news_piece_brief.v1.json"
+        if not schema_path.exists():
+            schema_path = Path(__file__).resolve().parents[4] / "contracts" / "schemas" / "news_piece_brief.v1.json"
+    with schema_path.open("r", encoding="utf-8") as f:
+        schema = json.load(f)
+    return Draft202012Validator(schema)
+
+
+def _validate_piece_brief(validator: Draft202012Validator, piece_brief: dict) -> tuple[bool, str | None]:
+    errors = sorted(validator.iter_errors(piece_brief), key=lambda e: list(e.path))
+    if not errors:
+        return True, None
+    first = errors[0]
+    path = ".".join(str(p) for p in first.path)
+    return False, f"{path}: {first.message}" if path else first.message
+
 def run() -> int:
     ensure_dirs()
 
@@ -110,6 +134,16 @@ def run() -> int:
 
     stage_name = "06_build_piece_briefs"
     run_id = run_id or f"{stage_name}:{digest_id}"
+
+    try:
+        validator = _schema_validator()
+    except Exception as e:
+        bio.append_jsonl(quarantine_path("V06", run_id), {"reason": "schema_load_error", "error": str(e)})
+        try:
+            db.finish_run(run_id, ok=0, fail=1)
+        except Exception:
+            pass
+        return 1
 
     try:
         db.start_run(run_id, stage_name, {"digest_id": digest_id})
@@ -204,6 +238,7 @@ def run() -> int:
                 brief_id = _brief_id(digest_id, digest_group_id, idea, ordinal)
                 piece_brief = {
                     "schema_name": "news_piece_brief.v1",
+                    "schema_status": "experimental_structured",
                     "brief_id": brief_id,
                     "digest_id_hour": digest_id,
                     "digest_group_id": digest_group_id,
@@ -226,6 +261,16 @@ def run() -> int:
 
                 if not piece_brief["working_title"]:
                     bio.append_jsonl(quarantine_path("V06", run_id), {"reason": "missing_working_title", "brief_id": brief_id})
+                    bad_briefs += 1
+                    continue
+
+                valid, err = _validate_piece_brief(validator, piece_brief)
+                if not valid:
+                    bio.append_jsonl(quarantine_path("V06", run_id), {
+                        "reason": "schema_validation_error",
+                        "brief_id": brief_id,
+                        "error": err,
+                    })
                     bad_briefs += 1
                     continue
 
