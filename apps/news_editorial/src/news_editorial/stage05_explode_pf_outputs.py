@@ -251,6 +251,7 @@ def run() -> int:
     run_id = os.getenv("RUN_ID")
     limit = _env_float("LIMIT", None)
     sample = _env_float("SAMPLE", None)
+    fallback_mode = (os.getenv("LEGACY_EDITORIAL_FALLBACK", "emergency") or "emergency").strip().lower()
 
     if digest_at_env:
         digest_id, _ = ids.digest_id_hour(digest_at_env)
@@ -373,11 +374,35 @@ def run() -> int:
                 if not enqueued:
                     bio.append_jsonl(quarantine_path("V05", run_id), {"reason": "enqueue_not_available", "stage": "generate", "work_key": index_id, "payload": payload})
     else:
+        if fallback_mode == "off":
+            msg = (
+                f"[{stage_name}] ERROR no news_piece_brief.v1 found for digest_id={digest_id}; "
+                "legacy editorial fallback is disabled (LEGACY_EDITORIAL_FALLBACK=off)"
+            )
+            print(msg)
+            bio.append_jsonl(
+                quarantine_path("V05", run_id),
+                {"reason": "fallback_disabled_no_piece_briefs", "digest_id": digest_id, "fallback_mode": fallback_mode},
+            )
+            try:
+                db.finish_run(run_id, ok=0, fail=1)
+            except Exception:
+                pass
+            return 1
+
         warning = (
-            f"[{stage_name}] WARNING no news_piece_brief.v1 found for digest_id={digest_id}; "
-            "falling back to legacy cluster packaging path"
+            f"[{stage_name}] WARNING EMERGENCY FALLBACK ACTIVATED for digest_id={digest_id}; "
+            "no news_piece_brief.v1 found, using legacy cluster packaging path"
         )
         print(warning)
+        bio.append_jsonl(
+            quarantine_path("V05", run_id),
+            {
+                "reason": "legacy_fallback_emergency_activated",
+                "digest_id": digest_id,
+                "fallback_mode": fallback_mode,
+            },
+        )
         bio.append_jsonl(quarantine_path("V05", run_id), {"reason": "missing_piece_briefs_fallback_legacy", "digest_id": digest_id})
 
         for _, row in df_groups.iterrows():
