@@ -1,39 +1,53 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://media-monitor/contracts/publish_surface_v1.json",
-  "title": "publish_surface_v1",
-  "description": "Canonical publishing surface contract. This schema is the source of truth for adapters and UI projections.",
+  "title": "public_contract_v1",
+  "description": "Public publishing contract v1. Single source of truth for approved surface shapes and field-level required/optional/fallback behavior.",
   "type": "object",
   "additionalProperties": false,
+  "x_contract_governance": {
+    "approved_shapes_v1": [
+      "frontpage.v1",
+      "topic_page.v1",
+      "story_page.v1",
+      "editorial_handoff.v1"
+    ],
+    "new_shape_policy": "Forbidden until there is a real consumer in a production route.",
+    "pull_request_rule": "Any new field must include consumer route and usage evidence in the PR body."
+  },
   "properties": {
     "schema_name": {
-      "const": "publish_surface_v1"
+      "const": "public_contract_v1"
     },
     "frontpage_items": {
       "type": "array",
+      "description": "Collection of frontpage.v1 records.",
       "items": {
-        "$ref": "#/$defs/FrontpageItem"
-      },
-      "default": []
-    },
-    "stories": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/Story"
+        "$ref": "#/$defs/frontpage.v1"
       },
       "default": []
     },
     "topic_pages": {
       "type": "array",
+      "description": "Collection of topic_page.v1 records.",
       "items": {
-        "$ref": "#/$defs/TopicPage"
+        "$ref": "#/$defs/topic_page.v1"
+      },
+      "default": []
+    },
+    "stories": {
+      "type": "array",
+      "description": "Collection of story_page.v1 records.",
+      "items": {
+        "$ref": "#/$defs/story_page.v1"
       },
       "default": []
     },
     "editorial_handoff_items": {
       "type": "array",
+      "description": "Collection of editorial_handoff.v1 records.",
       "items": {
-        "$ref": "#/$defs/EditorialHandoffItem"
+        "$ref": "#/$defs/editorial_handoff.v1"
       },
       "default": []
     }
@@ -41,44 +55,44 @@
   "required": [
     "schema_name",
     "frontpage_items",
-    "stories",
     "topic_pages",
+    "stories",
     "editorial_handoff_items"
   ],
   "$defs": {
-    "FrontpageItem": {
+    "frontpage.v1": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Primary UI tile used in recency frontpage lists.",
+      "description": "frontpage.v1 — frontpage tile contract.",
       "properties": {
         "digest_at": {
           "type": "string",
-          "description": "Hour bucket. Required. Fallback: 'unknown'."
+          "description": "Required. Fallback: 'unknown'."
         },
         "title": {
           "type": "string",
-          "description": "Required display title. Fallback: '(untitled)'."
+          "description": "Required. Fallback: '(untitled)'."
         },
         "topic": {
           "type": "string",
-          "description": "Required taxonomy label. Fallback: 'unknown'."
+          "description": "Required. Fallback: 'unknown'."
         },
         "published_at": {
           "type": "string",
-          "description": "Required RFC3339 timestamp. Fallback: '1970-01-01T00:00:00Z'."
+          "description": "Required. Fallback: '1970-01-01T00:00:00Z'."
         },
         "link": {
           "type": "string",
           "minLength": 1,
-          "description": "Required canonical URL. No fallback; invalid when absent."
+          "description": "Required. No fallback: invalid when absent."
         },
         "source": {
           "type": "string",
-          "description": "Optional source label. Fallback: 'unknown'."
+          "description": "Optional. Fallback: 'unknown'."
         },
         "index_id": {
           "type": "string",
-          "description": "Optional internal id used by adapters for back-links. Fallback: ''."
+          "description": "Optional. Fallback: ''."
         }
       },
       "required": [
@@ -89,35 +103,76 @@
         "link"
       ]
     },
-    "Story": {
+    "topic_page.v1": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Canonical story identity projected from refs and consumed by adapters/UI details routes.",
+      "description": "topic_page.v1 — topic landing page contract.",
       "properties": {
-        "id": {
+        "digest_at": {
           "type": "string",
-          "description": "Required stable id. Fallback: index_id, then link hash at adapter layer."
-        },
-        "title": {
-          "type": "string",
-          "description": "Required human title. Fallback: '(untitled)'."
+          "description": "Required. Fallback: 'unknown'."
         },
         "topic": {
           "type": "string",
-          "description": "Required routing topic. Fallback: 'unknown'."
+          "description": "Required. Fallback: 'unknown'."
         },
-        "source": {
+        "window_type": {
           "type": "string",
-          "description": "Optional publisher/source. Fallback: 'unknown'."
+          "description": "Required. Fallback: 'unknown'."
         },
-        "published_at": {
+        "group_number": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Optional. Fallback: 0."
+        },
+        "article_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Optional. Fallback: 0."
+        },
+        "top_titles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Optional. Fallback: []."
+        }
+      },
+      "required": [
+        "digest_at",
+        "topic",
+        "window_type"
+      ]
+    },
+    "story_page.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "story_page.v1 — canonical story detail contract.",
+      "properties": {
+        "id": {
           "type": "string",
-          "description": "Optional timestamp. Fallback: '1970-01-01T00:00:00Z'."
+          "description": "Required. Fallback: index_id, then link hash at adapter layer."
+        },
+        "title": {
+          "type": "string",
+          "description": "Required. Fallback: '(untitled)'."
+        },
+        "topic": {
+          "type": "string",
+          "description": "Required. Fallback: 'unknown'."
         },
         "link": {
           "type": "string",
           "minLength": 1,
-          "description": "Required canonical URL. No fallback."
+          "description": "Required. No fallback."
+        },
+        "source": {
+          "type": "string",
+          "description": "Optional. Fallback: 'unknown'."
+        },
+        "published_at": {
+          "type": "string",
+          "description": "Optional. Fallback: '1970-01-01T00:00:00Z'."
         }
       },
       "required": [
@@ -127,51 +182,10 @@
         "link"
       ]
     },
-    "TopicPage": {
+    "editorial_handoff.v1": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Topic landing page metadata and ranking payload.",
-      "properties": {
-        "digest_at": {
-          "type": "string",
-          "description": "Required hour bucket. Fallback: 'unknown'."
-        },
-        "topic": {
-          "type": "string",
-          "description": "Required topic slug/label. Fallback: 'unknown'."
-        },
-        "window_type": {
-          "type": "string",
-          "description": "Required digest window classifier. Fallback: 'unknown'."
-        },
-        "group_number": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "Optional grouping index. Fallback: 0."
-        },
-        "article_count": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "Optional aggregate volume. Fallback: 0."
-        },
-        "top_titles": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Optional preview list. Fallback: []."
-        }
-      },
-      "required": [
-        "digest_at",
-        "topic",
-        "window_type"
-      ]
-    },
-    "EditorialHandoffItem": {
-      "type": "object",
-      "additionalProperties": false,
-      "description": "Editor-facing recommendation generated from human_handoff.action_candidates.",
+      "description": "editorial_handoff.v1 — editor-facing recommendation contract.",
       "properties": {
         "target_format": {
           "type": "string",
@@ -179,31 +193,31 @@
             "article",
             "yt_script"
           ],
-          "description": "Required delivery format. Fallback: 'article'."
+          "description": "Required. Fallback: 'article'."
         },
         "ready_state": {
           "type": "string",
-          "description": "Required readiness marker. Fallback: 'unknown'."
+          "description": "Required. Fallback: 'unknown'."
         },
         "title": {
           "type": "string",
-          "description": "Required display label. Fallback: topic, then '(untitled)'."
+          "description": "Required. Fallback: topic, then '(untitled)'."
         },
         "topic": {
           "type": "string",
-          "description": "Required editorial topic. Fallback: 'unknown'."
+          "description": "Required. Fallback: 'unknown'."
         },
         "priority": {
           "type": "string",
-          "description": "Optional prioritization hint. Fallback: 'normal'."
+          "description": "Optional. Fallback: 'normal'."
         },
         "source": {
           "type": "string",
-          "description": "Optional origin lane. Fallback: 'unknown'."
+          "description": "Optional. Fallback: 'unknown'."
         },
         "path": {
           "type": "string",
-          "description": "Optional file pointer. Fallback: ''."
+          "description": "Optional. Fallback: ''."
         }
       },
       "required": [

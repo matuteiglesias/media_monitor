@@ -2,38 +2,22 @@
 
 ## Contexto
 
-Este plan define la secuencia de PRs para implementar el newspaper skin sin forzar una API dedicada antes de tener señales operativas reales.
+`contracts/schemas/publish_surface_v1.json` es la única autoridad del contrato público v1.
 
-## Baseline milestone (obligatorio)
+- Las únicas shapes públicas aprobadas en v1 son:
+  - `frontpage.v1`
+  - `topic_page.v1`
+  - `story_page.v1`
+  - `editorial_handoff.v1`
+- Campos requeridos, opcionales y fallback deben mantenerse **solo** en ese archivo de contrato.
+- Si hay conflicto entre índices actuales y UI, manda el contrato; se corrige adapter/proyección.
 
-### PR-1 — Snapshot contract estable
-- Formalizar el schema de snapshot consumido por frontend.
-- Validar compatibilidad backward con `adapter` actual.
+## Governance rules
 
-### PR-2 — Adapter único frontend
-- Consolidar la lectura del snapshot detrás de un único adapter en frontend.
-- Eliminar accesos directos dispersos a archivos/raw payloads.
-
-### PR-3 — Render y estados de degradación
-- Completar loading/error/empty states sobre snapshot.
-- Asegurar que el render no dependa de disponibilidad de API runtime.
-
-## Conditional milestone
-
-> Se activa **solo** si hay gatillos concretos validados con evidencia.
-
-### PR-4 — API layer para newspaper skin (condicional)
-
-**Gatillos de activación (todos concretos y auditables):**
-1. Deploy bloqueado por dependencia de filesystem local.
-2. Necesidad de caching/TTL independiente del render web.
-3. Requerimiento de consumo multi-cliente (site + otro consumidor real).
-
-**Criterio explícito de no-activación:**
-- Si **ningún gatillo** se cumple, el frontend sigue sobre snapshots + adapter único.
-- En ese escenario, PR-4 se posterga y no se introduce API adicional.
-
-## Regla de decisión
+- **Prohibido introducir nuevas shapes** hasta que exista consumidor real en ruta productiva.
+- **Regla de PR:** cualquier campo nuevo debe documentar en el PR:
+  1. `consumer route` (ruta productiva consumidora), y
+  2. evidencia de uso real (ejecución, captura o artefacto verificable).
 
 - La decisión de activar/postergar PR-4 se toma por evidencia operativa, no por preferencia arquitectónica.
 - Cualquier activación debe registrarse en el decision log.
