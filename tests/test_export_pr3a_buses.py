@@ -55,7 +55,7 @@ def test_export_pr3a_generates_non_empty_buses_and_valid_contracts(tmp_path: Pat
                 "Source": "EL PAIS",
                 "Link": "https://elpais.com/economia/example",
                 "Published": "2026-03-13T15:00:00Z",
-                "window_type": "A",
+                "window_type": "4h_window",
                 "Topic": "Economia",
             }
         ],
@@ -87,6 +87,7 @@ def test_export_pr3a_generates_non_empty_buses_and_valid_contracts(tmp_path: Pat
     ref_rows = [json.loads(x) for x in ref_files[-1].read_text(encoding="utf-8").splitlines() if x.strip()]
     dg_rows = [json.loads(x) for x in dg_files[-1].read_text(encoding="utf-8").splitlines() if x.strip()]
     assert ref_rows and dg_rows
+    assert dg_rows[0]["window_type"] == "4h_window"
 
     ref_validator = Draft202012Validator(_schema("news_ref.v1.json"))
     dg_validator = Draft202012Validator(_schema("news_digest_group.v1.json"))
