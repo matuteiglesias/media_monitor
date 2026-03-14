@@ -1,0 +1,56 @@
+{
+  "schema_name": "news_piece_brief.v1",
+  "schema_status": "experimental_structured",
+  "brief_id": "brief_2026_03_14_001",
+  "seed_id": "seed_card_451",
+  "target_format": "article",
+  "audience": "Profesionales de tecnología y negocios en LATAM",
+  "editorial_goal": "Explicar por qué la alianza cambia la competencia regional de nube.",
+  "core_claim": "La alianza acelera adopción empresarial y presiona precios en el segmento medio.",
+  "sections": [
+    {
+      "section_id": "sec_1",
+      "heading": "Qué pasó",
+      "purpose": "Contextualizar el anuncio y actores.",
+      "key_points": [
+        "Fecha del anuncio",
+        "Empresas involucradas",
+        "Mercados afectados"
+      ]
+    },
+    {
+      "section_id": "sec_2",
+      "heading": "Por qué importa",
+      "purpose": "Conectar impacto para audiencia de negocio.",
+      "key_points": [
+        "Impacto en costos",
+        "Riesgos de implementación"
+      ]
+    }
+  ],
+  "must_include": [
+    "Comparación con el escenario de 2024",
+    "Una cita textual de ejecutivo"
+  ],
+  "must_avoid": [
+    "Especulación sin respaldo",
+    "Tono promocional"
+  ],
+  "source_refs": [
+    {
+      "ref_id": "ref_01",
+      "title": "Comunicado oficial de alianza",
+      "url": "https://example.com/official-announcement"
+    },
+    {
+      "ref_id": "ref_02",
+      "title": "Reporte de mercado trimestral",
+      "url": "https://example.com/market-report"
+    }
+  ],
+  "tone": "Analítico, claro y orientado a decisiones.",
+  "freshness_window": {
+    "from": "2026-03-01T00:00:00Z",
+    "to": "2026-03-14T23:59:59Z"
+  }
+}
