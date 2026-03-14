@@ -2,86 +2,138 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://media-monitor/contracts/news_piece_brief.v1.json",
   "title": "news_piece_brief.v1",
-  "description": "Editorial brief contract used to guide written and video drafting.",
+  "description": "Experimental structured editorial brief generated from PF seed ideas and digest mappings.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "schema_name": { "const": "news_piece_brief.v1" },
-    "schema_status": { "const": "experimental_structured" },
-    "brief_id": { "type": "string", "minLength": 1 },
-    "seed_id": { "type": "string", "minLength": 1 },
-    "target_format": {
-      "type": "string",
-      "enum": ["article", "youtube_script", "newsletter", "short_video"]
+    "schema_name": {
+      "const": "news_piece_brief.v1"
     },
-    "audience": { "type": "string", "minLength": 1 },
-    "editorial_goal": { "type": "string", "minLength": 1 },
-    "core_claim": { "type": "string", "minLength": 1 },
-    "sections": {
+    "schema_status": {
+      "const": "experimental_structured"
+    },
+    "brief_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "digest_id_hour": {
+      "type": "string",
+      "minLength": 1
+    },
+    "digest_group_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "digest_file": {
+      "type": "string",
+      "minLength": 1
+    },
+    "topic": {
+      "type": "string",
+      "minLength": 1
+    },
+    "working_title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "angle": {
+      "type": "string",
+      "minLength": 1
+    },
+    "key_facts": {
       "type": "array",
-      "minItems": 1,
       "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "section_id": { "type": "string", "minLength": 1 },
-          "heading": { "type": "string", "minLength": 1 },
-          "purpose": { "type": "string", "minLength": 1 },
-          "key_points": {
-            "type": "array",
-            "items": { "type": "string", "minLength": 1 }
-          }
-        },
-        "required": ["section_id", "heading", "purpose", "key_points"]
+        "type": "string",
+        "minLength": 1
       }
     },
-    "must_include": {
+    "potential_controversies": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 }
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     },
-    "must_avoid": {
+    "relevant_quotes": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 }
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "source_index_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
     },
     "source_refs": {
       "type": "array",
-      "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "ref_id": { "type": "string", "minLength": 1 },
-          "title": { "type": "string", "minLength": 1 },
-          "url": { "type": "string", "format": "uri" }
+          "index_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "article_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1
+          }
         },
-        "required": ["ref_id", "title", "url"]
-      }
-    },
-    "tone": { "type": "string", "minLength": 1 },
-    "freshness_window": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "from": { "type": "string", "format": "date-time" },
-        "to": { "type": "string", "format": "date-time" }
+        "required": [
+          "index_id",
+          "article_id",
+          "title",
+          "source",
+          "url"
+        ]
       },
-      "required": ["from", "to"]
+      "minItems": 1
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "idea_id": {
+          "type": "string"
+        },
+        "group_no": {
+          "type": "string"
+        }
+      }
     }
   },
   "required": [
     "schema_name",
     "schema_status",
     "brief_id",
-    "seed_id",
-    "target_format",
-    "audience",
-    "editorial_goal",
-    "core_claim",
-    "sections",
-    "must_include",
-    "must_avoid",
+    "digest_id_hour",
+    "digest_group_id",
+    "digest_file",
+    "topic",
+    "working_title",
+    "angle",
+    "key_facts",
+    "potential_controversies",
+    "relevant_quotes",
+    "source_index_ids",
     "source_refs",
-    "tone",
-    "freshness_window"
+    "meta"
   ]
 }
