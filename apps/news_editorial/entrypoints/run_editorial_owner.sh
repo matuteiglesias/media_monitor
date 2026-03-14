@@ -14,7 +14,7 @@ run_editorial_owner.sh
 
 Editorial owner wrapper (PR4b).
 - Keeps canonical runtime intact by delegating to existing make targets.
-- Orchestrates editorial layer only: s04 -> s05.
+- Orchestrates editorial layer only: s04 -> s06 -> s05.
 
 Env knobs:
   DIGEST_AT  Hour bucket (YYYYMMDDTHH). Default: current UTC hour.
@@ -45,5 +45,6 @@ run_cmd() {
 
 echo "[editorial-owner] digest_at=${DIGEST_AT} dry_run=${DRY_RUN} pf_mode=${PF_MODE}"
 run_cmd make s04 DIGEST_AT="$DIGEST_AT" DRY_RUN="$DRY_RUN" PF_MODE="$PF_MODE"
+run_cmd make s06 DIGEST_AT="$DIGEST_AT" DRY_RUN="$DRY_RUN"
 run_cmd make s05 DIGEST_AT="$DIGEST_AT" DRY_RUN="$DRY_RUN"
 echo "[editorial-owner] done"
