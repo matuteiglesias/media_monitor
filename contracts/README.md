@@ -7,6 +7,7 @@ Draft-but-concrete contracts for incremental migration.
 - `news_ref.v1`
 - `scrape_request.v1`
 - `scraped_article.v1`
+- `public_contract_v1` (`contracts/schemas/publish_surface_v1.json`) con solo `frontpage.v1`, `topic_page.v1`, `story_page.v1`, `editorial_handoff.v1`.
 
 ## Experimental structured
 
@@ -21,3 +22,9 @@ Draft-but-concrete contracts for incremental migration.
 ## Provenance rule
 
 Each contract is grounded in current repository seams/models and is validated by fixture-based contract tests in `contracts/tests/test_contracts.py`.
+
+
+## Public v1 governance
+
+- No se permiten nuevas shapes públicas hasta tener consumidor real en ruta productiva.
+- Cualquier campo nuevo requiere `consumer route` y evidencia de uso en el PR.
