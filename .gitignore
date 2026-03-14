@@ -23,3 +23,6 @@ data/
 .idea/
 .vscode/
 EOF
+
+apps/news_site/node_modules/
+apps/news_site/.next/
