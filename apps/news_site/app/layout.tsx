@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Media Monitor",
-  description: "Semi-automated editorial outlet"
+  description: "Semi-automated editorial outlet",
 };
 
 export default function RootLayout({
