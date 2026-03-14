@@ -217,6 +217,7 @@ case "$LANE" in
     run_cmd "s04" make s04 DIGEST_AT="$DIGEST_AT" DRY_RUN="$DRY_RUN"
     run_cmd "s06" make s06 DIGEST_AT="$DIGEST_AT" DRY_RUN="$DRY_RUN"
     run_cmd "s05" make s05 DIGEST_AT="$DIGEST_AT" DRY_RUN="$DRY_RUN"
+    run_cmd "build_editorial_access_indexes" make build-editorial-access-indexes DIGEST_AT="$DIGEST_AT"
     ;;
   enrich)
     run_cmd "scrape_enrich" "$PYTHON_CMD" scripts/06_scrape_enrich.py
