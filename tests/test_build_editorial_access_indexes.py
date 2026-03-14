@@ -47,6 +47,7 @@ def test_build_editorial_access_indexes_with_partial_data(tmp_path: Path):
                 "schema_name": "news_piece_brief.v1",
                 "digest_id_hour": digest,
                 "brief_id": "npb_1",
+                "format_candidates": ["yt_script", "article"],
             }
         ],
     )
@@ -92,7 +93,9 @@ def test_build_editorial_access_indexes_with_partial_data(tmp_path: Path):
     assert len(payload["human_handoff"]["latest_briefs"]) == 1
     assert len(payload["human_handoff"]["latest_article_drafts"]) == 1
     assert payload["human_handoff"]["latest_yt_script_drafts"] == []
+    assert payload["human_handoff"]["latest_briefs"][0]["target_format"] == "yt_script"
     assert len(payload["human_handoff"]["fallback_events"]) >= 1
+    assert payload["human_handoff"]["action_candidates"][0]["target_format"] in {"article", "yt_script"}
 
 
 def test_build_editorial_access_indexes_no_data(tmp_path: Path):
@@ -163,3 +166,5 @@ def test_build_editorial_access_indexes_separates_yt_drafts(tmp_path: Path):
     payload = json.loads((storage / "indexes" / "editorial_latest.json").read_text(encoding="utf-8"))
     assert len(payload["human_handoff"]["latest_article_drafts"]) == 1
     assert len(payload["human_handoff"]["latest_yt_script_drafts"]) == 1
+    assert payload["human_handoff"]["action_candidates"][0]["target_format"] == "yt_script"
+    assert payload["human_handoff"]["action_candidates"][0]["ready_state"] == "draft-ready"
