@@ -82,7 +82,7 @@ def _quarantine_metrics(quarantine_dir: Path, digest_id: str) -> tuple[int, int]
     for qf in sorted(quarantine_dir.glob(f"V*{digest_id}*.jsonl")):
         for row in _iter_jsonl(qf):
             reason = str(row.get("reason") or "")
-            if reason == "missing_piece_briefs_fallback_legacy":
+            if reason in {"missing_piece_briefs_fallback_legacy", "legacy_fallback_emergency_activated"}:
                 fallback_legacy_count += 1
             if reason == "schema_validation_error":
                 schema_failures += 1
@@ -97,6 +97,144 @@ def _status_for(metrics: dict[str, int]) -> str:
     if metrics["seed_ideas_emitted"] == 0:
         return "degraded"
     return "ok"
+
+
+def _pick_target_format(format_candidates: list[str]) -> str:
+    normalized = [str(v).strip() for v in format_candidates if str(v).strip()]
+    if "yt_script" in normalized or "both" in normalized:
+        return "yt_script"
+    return "article"
+
+
+def _latest_briefs(brief_files: list[Path], digest_id: str, limit: int = 10) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for bf in brief_files:
+        for row in _iter_jsonl(bf):
+            if str(row.get("schema_name") or "") != "news_piece_brief.v1":
+                continue
+            if str(row.get("digest_id_hour") or "") != digest_id:
+                continue
+            format_candidates = [str(v) for v in (row.get("format_candidates") or []) if str(v).strip()]
+            out.append(
+                {
+                    "brief_id": str(row.get("brief_id") or ""),
+                    "topic": str(row.get("topic") or ""),
+                    "working_title": str(row.get("working_title") or ""),
+                    "angle": str(row.get("angle") or ""),
+                    "source_index_ids": [str(v) for v in (row.get("source_index_ids") or []) if str(v).strip()],
+                    "format_candidates": format_candidates,
+                    "target_format": _pick_target_format(format_candidates),
+                }
+            )
+    return out[-limit:]
+
+
+def _latest_draft_records(drafts_dir: Path, limit: int = 10) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    article: list[dict[str, Any]] = []
+    yt: list[dict[str, Any]] = []
+    if not drafts_dir.exists():
+        return article, yt
+
+    files = sorted(drafts_dir.glob("*.jsonl"))
+    for df in files:
+        try:
+            rows = list(_iter_jsonl(df))
+        except Exception:
+            continue
+        if not rows:
+            continue
+        row = rows[-1]
+        schema_name = str(row.get("schema_name") or "")
+        record = {
+            "path": str(df),
+            "index_id": str(row.get("index_id") or ""),
+            "topic": str(row.get("topic") or ""),
+            "headline": str(row.get("headline") or ""),
+            "dek": str(row.get("dek") or ""),
+            "cluster_id": str(row.get("cluster_id") or ""),
+            "schema_name": schema_name,
+        }
+        if schema_name == "news_yt_script_draft.v1":
+            yt.append(record)
+        else:
+            article.append(record)
+
+    return article[-limit:], yt[-limit:]
+
+
+def _fallback_summary(quarantine_dir: Path, digest_id: str, limit: int = 20) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for qf in sorted(quarantine_dir.glob(f"V*{digest_id}*.jsonl")):
+        for row in _iter_jsonl(qf):
+            reason = str(row.get("reason") or "")
+            if "fallback" not in reason:
+                continue
+            out.append({"file": str(qf), "reason": reason, "digest_id": str(row.get("digest_id") or digest_id)})
+    return out[-limit:]
+
+
+def _human_status(metrics: dict[str, int]) -> str:
+    if metrics["schema_failures"] > 0:
+        return "needs-attention"
+    if metrics["fallback_legacy_count"] > 0:
+        return "fallback-emergency"
+    if metrics["briefs_emitted"] == 0 and metrics["seed_ideas_emitted"] > 0:
+        return "brief-gap"
+    if metrics["drafts_emitted"] == 0 and metrics["briefs_emitted"] > 0:
+        return "draft-gap"
+    if metrics["seed_ideas_emitted"] == 0:
+        return "no-seed-ideas"
+    return "ready"
+
+
+def _build_action_candidates(
+    latest_briefs: list[dict[str, Any]],
+    latest_article_drafts: list[dict[str, Any]],
+    latest_yt_script_drafts: list[dict[str, Any]],
+    limit: int = 10,
+) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
+
+    for draft in latest_yt_script_drafts:
+        candidates.append(
+            {
+                "priority": "high",
+                "target_format": "yt_script",
+                "ready_state": "draft-ready",
+                "title": draft.get("headline") or draft.get("topic") or "",
+                "topic": draft.get("topic") or "",
+                "source": "draft",
+                "path": draft.get("path") or "",
+            }
+        )
+
+    for draft in latest_article_drafts:
+        candidates.append(
+            {
+                "priority": "normal",
+                "target_format": "article",
+                "ready_state": "draft-ready",
+                "title": draft.get("headline") or draft.get("topic") or "",
+                "topic": draft.get("topic") or "",
+                "source": "draft",
+                "path": draft.get("path") or "",
+            }
+        )
+
+    for brief in latest_briefs:
+        candidates.append(
+            {
+                "priority": "high" if brief.get("target_format") == "yt_script" else "normal",
+                "target_format": brief.get("target_format") or "article",
+                "ready_state": "brief-ready",
+                "title": brief.get("working_title") or brief.get("topic") or "",
+                "topic": brief.get("topic") or "",
+                "source": "brief",
+                "path": "",
+            }
+        )
+
+    return candidates[:limit]
 
 
 def build_editorial_index(storage_dir: Path, data_dir: Path, digest_at: str | None = None) -> Path:
@@ -122,6 +260,14 @@ def build_editorial_index(storage_dir: Path, data_dir: Path, digest_at: str | No
                 "draft_files": [],
                 "quarantine_files": [],
             },
+            "human_handoff": {
+                "status": "no-data",
+                "latest_briefs": [],
+                "latest_article_drafts": [],
+                "latest_yt_script_drafts": [],
+                "fallback_events": [],
+                "action_candidates": [],
+            },
         }
         latest = idx_dir / "editorial_latest.json"
         _write_json(latest, payload)
@@ -144,6 +290,11 @@ def build_editorial_index(storage_dir: Path, data_dir: Path, digest_at: str | No
     metrics["fallback_legacy_count"] = fallback_count
     metrics["schema_failures"] = schema_fails
 
+    latest_briefs = _latest_briefs(brief_files, digest_id)
+    latest_article_drafts, latest_yt_script_drafts = _latest_draft_records(drafts_dir)
+    fallback_events = _fallback_summary(data_dir / "quarantine", digest_id)
+    action_candidates = _build_action_candidates(latest_briefs, latest_article_drafts, latest_yt_script_drafts)
+
     payload = {
         "digest_at": digest_id,
         "built_at": built_at,
@@ -154,6 +305,14 @@ def build_editorial_index(storage_dir: Path, data_dir: Path, digest_at: str | No
             "brief_files": [str(p) for p in brief_files[-10:]],
             "draft_files": [str(p) for p in sorted(drafts_dir.glob("*.jsonl"))[-10:]] if drafts_dir.exists() else [],
             "quarantine_files": [str(p) for p in quarantine_files[-10:]],
+        },
+        "human_handoff": {
+            "status": _human_status(metrics),
+            "latest_briefs": latest_briefs,
+            "latest_article_drafts": latest_article_drafts,
+            "latest_yt_script_drafts": latest_yt_script_drafts,
+            "fallback_events": fallback_events,
+            "action_candidates": action_candidates,
         },
     }
 
