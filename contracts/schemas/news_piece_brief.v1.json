@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/news_piece_brief.v1.json",
+  "title": "news_piece_brief.v1",
+  "description": "Editorial brief contract used to guide written and video drafting.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": { "const": "news_piece_brief.v1" },
+    "schema_status": { "const": "experimental_structured" },
+    "brief_id": { "type": "string", "minLength": 1 },
+    "seed_id": { "type": "string", "minLength": 1 },
+    "target_format": {
+      "type": "string",
+      "enum": ["article", "youtube_script", "newsletter", "short_video"]
+    },
+    "audience": { "type": "string", "minLength": 1 },
+    "editorial_goal": { "type": "string", "minLength": 1 },
+    "core_claim": { "type": "string", "minLength": 1 },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "section_id": { "type": "string", "minLength": 1 },
+          "heading": { "type": "string", "minLength": 1 },
+          "purpose": { "type": "string", "minLength": 1 },
+          "key_points": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        },
+        "required": ["section_id", "heading", "purpose", "key_points"]
+      }
+    },
+    "must_include": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "must_avoid": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "source_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ref_id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "url": { "type": "string", "format": "uri" }
+        },
+        "required": ["ref_id", "title", "url"]
+      }
+    },
+    "tone": { "type": "string", "minLength": 1 },
+    "freshness_window": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "from": { "type": "string", "format": "date-time" },
+        "to": { "type": "string", "format": "date-time" }
+      },
+      "required": ["from", "to"]
+    }
+  },
+  "required": [
+    "schema_name",
+    "schema_status",
+    "brief_id",
+    "seed_id",
+    "target_format",
+    "audience",
+    "editorial_goal",
+    "core_claim",
+    "sections",
+    "must_include",
+    "must_avoid",
+    "source_refs",
+    "tone",
+    "freshness_window"
+  ]
+}

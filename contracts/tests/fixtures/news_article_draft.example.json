@@ -1,0 +1,41 @@
+{
+  "schema_name": "news_article_draft.v1",
+  "schema_status": "experimental_structured",
+  "draft_id": "draft_article_2026_03_14_01",
+  "brief_id": "brief_2026_03_14_001",
+  "title": "Una alianza regional que redefine la carrera de nube empresarial",
+  "dek": "El acuerdo entre dos gigantes tecnológicos eleva la presión de precios y acelera proyectos en empresas medianas.",
+  "lede": "En menos de una semana, el anuncio pasó de promesa a hoja de ruta comercial en tres mercados clave de LATAM.",
+  "sections": [
+    {
+      "section_id": "sec_1",
+      "heading": "Qué se anunció",
+      "summary": "El acuerdo integra infraestructura, soporte y distribución para clientes corporativos."
+    },
+    {
+      "section_id": "sec_2",
+      "heading": "Qué cambia para las empresas",
+      "summary": "Las empresas medianas verán mejores condiciones de entrada, con riesgos de dependencia tecnológica."
+    }
+  ],
+  "body_markdown": "## Qué se anunció\n\nEl acuerdo presentado el martes...\n\n## Qué cambia para las empresas\n\nPara muchas compañías...",
+  "citations": [
+    {
+      "citation_id": "c1",
+      "claim_text": "El acuerdo cubre tres mercados durante su fase inicial.",
+      "source_ref_id": "ref_01",
+      "url": "https://example.com/official-announcement"
+    }
+  ],
+  "fact_check_flags": [
+    {
+      "flag": "Verificar cifra de crecimiento interanual",
+      "severity": "medium",
+      "note": "El comunicado menciona un rango, no un valor puntual."
+    }
+  ],
+  "revision_notes": [
+    "Reforzar contexto histórico de precios en 2024.",
+    "Añadir segundo punto de vista de analista externo."
+  ]
+}

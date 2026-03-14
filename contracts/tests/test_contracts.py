@@ -17,6 +17,9 @@ CASES = [
     ("news_topic_cluster.v1.json", "news_topic_cluster.example.json"),
     ("news_seed_idea.v1.json", "news_seed_idea.example.json"),
     ("news_seed_card.v1.json", "news_seed_card.example.json"),
+    ("news_piece_brief.v1.json", "news_piece_brief.example.json"),
+    ("news_article_draft.v1.json", "news_article_draft.example.json"),
+    ("news_yt_script_draft.v1.json", "news_yt_script_draft.example.json"),
 ]
 
 
