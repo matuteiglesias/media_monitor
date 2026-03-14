@@ -6,17 +6,71 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "schema_name": { "const": "news_seed_idea.v1" },
-    "schema_status": { "const": "experimental_structured" },
-    "digest_group_id": { "type": "string", "minLength": 1 },
-    "idea_id": { "type": "string", "minLength": 1 },
-    "topic": { "type": "string", "minLength": 1 },
-    "headline": { "type": "string", "minLength": 1 },
-    "dek": { "type": "string" },
-    "rationale": { "type": "string" },
+    "schema_name": {
+      "const": "news_seed_idea.v1"
+    },
+    "schema_status": {
+      "const": "experimental_structured"
+    },
+    "digest_group_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "idea_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "topic": {
+      "type": "string",
+      "minLength": 1
+    },
+    "headline": {
+      "type": "string",
+      "minLength": 1
+    },
+    "format_candidates": {
+      "type": "string",
+      "enum": [
+        "article",
+        "yt_script",
+        "both"
+      ],
+      "description": "Formato editorial candidato para desarrollo del seed idea."
+    },
+    "working_title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "angle": {
+      "type": "string",
+      "minLength": 1
+    },
+    "why_now": {
+      "type": "string",
+      "minLength": 1
+    },
+    "supporting_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "risk_notes": {
+      "type": "string"
+    },
+    "dek": {
+      "type": "string"
+    },
+    "rationale": {
+      "type": "string"
+    },
     "supporting_article_ids": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 }
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     }
   },
   "required": [
