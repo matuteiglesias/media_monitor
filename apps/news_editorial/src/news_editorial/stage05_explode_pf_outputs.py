@@ -88,6 +88,25 @@ def iter_jsonl_records(path: Path) -> Iterable[dict]:
                 yield {"__bad__": True, "error": str(e), "line_no": ln, "line": s[:400]}
 
 # -------- Draft construction --------
+def normalize_seed_idea(idea: dict) -> dict:
+    """Normalize PF seed idea payload to canonical v1 keys."""
+    normalized = dict(idea or {})
+    if "key_facts" not in normalized and "key_data_points" in normalized:
+        normalized["key_facts"] = normalized.get("key_data_points")
+    return normalized
+
+
+def extract_seed_ideas(row: dict) -> list[dict]:
+    """Read seed ideas from PF output using canonical key names."""
+    seed_ideas_obj = row.get("seed_ideas")
+    if not isinstance(seed_ideas_obj, dict):
+        return []
+    ideas = seed_ideas_obj.get("seed_ideas")
+    if not isinstance(ideas, list):
+        return []
+    return [normalize_seed_idea(idea) for idea in ideas if isinstance(idea, dict)]
+
+
 def build_citation(link: str, title: str, source: str) -> dict:
     # minimal citation contract; validator will enforce stricter if available
     return {"url": link, "title": title, "source": source}
@@ -334,9 +353,10 @@ def run() -> int:
                         # best-effort log; pipeline still proceeds
                         bio.append_jsonl(quarantine_path("V05", run_id), {"reason": "enqueue_not_available", "stage": "generate", "work_key": index_id, "payload": payload})
 
-        # You can also process seed_ideas here if you want to persist them:
-        # ideas = row.get("seed_ideas", {}).get("seed_ideas", []) if isinstance(row.get("seed_ideas"), dict) else []
-        # (Persist to a separate ideas/ path if helpful.)
+        # Canonical PF contract key: seed_ideas[*].key_facts
+        # (legacy alias key_data_points is normalized to key_facts in extract_seed_ideas).
+        ideas = extract_seed_ideas(row)
+        # (Persist ideas to a separate path if needed by downstream products.)
 
     # Join success threshold
     if total_refs > 0:
