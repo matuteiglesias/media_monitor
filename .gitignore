@@ -30,3 +30,10 @@ apps/news_site/.next/
 # news_site local artifacts
 apps/news_site/node_modules/
 apps/news_site/.next/
+
+# news_site deploy snapshots (tracked)
+!apps/news_site/public/
+!apps/news_site/public/data/
+!apps/news_site/public/data/news_recent_refs_latest.jsonl
+!apps/news_site/public/data/news_recent_groups_latest.jsonl
+!apps/news_site/public/data/editorial_latest.json
