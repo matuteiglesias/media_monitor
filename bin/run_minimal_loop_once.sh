@@ -13,6 +13,18 @@ ATTEMPT="${ATTEMPT:-1}"
 DRY_RUN="${DRY_RUN:-0}"
 RUN_RECORD_ALL_LANES="${RUN_RECORD_ALL_LANES:-0}"
 
+PYTHON_CMD="${PYTHON_CMD:-}"
+if [[ -z "$PYTHON_CMD" ]]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_CMD="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_CMD="python"
+  else
+    echo "Neither python3 nor python found on PATH" >&2
+    exit 127
+  fi
+fi
+
 usage() {
   cat <<USAGE
 Usage: $0 --lane {sensing|editorial|enrich}
@@ -167,7 +179,7 @@ run_cmd() {
   fi
 
   if [[ "$use_wrapper" == "1" && -x "scripts/run_with_run_record.py" ]]; then
-    python scripts/run_with_run_record.py \
+    "$PYTHON_CMD" scripts/run_with_run_record.py \
       --project-id "$PROJECT_ID" \
       --operator "$OPERATOR" \
       --lane "$LANE" \
@@ -195,7 +207,7 @@ case "$LANE" in
     run_cmd "s05" make s05 DIGEST_AT="$DIGEST_AT" DRY_RUN="$DRY_RUN"
     ;;
   enrich)
-    run_cmd "scrape_enrich" python scripts/06_scrape_enrich.py
+    run_cmd "scrape_enrich" "$PYTHON_CMD" scripts/06_scrape_enrich.py
     ;;
   *)
     echo "Unsupported lane: $LANE" >&2

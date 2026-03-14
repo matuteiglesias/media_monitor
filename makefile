@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 # Project python (stages 01/02/03/05)
-PYTHON := ./.venv/bin/python
+PYTHON ?= $(shell if [ -x ./.venv/bin/python ]; then echo ./.venv/bin/python; elif command -v python3 >/dev/null 2>&1; then echo python3; elif command -v python >/dev/null 2>&1; then echo python; else echo ./.venv/bin/python; fi)
 # PF python (PromptFlow CLI lives here; usually your conda "new_env")
 PF_PYTHON ?= python
 
