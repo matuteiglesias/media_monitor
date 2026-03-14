@@ -1,0 +1,16 @@
+{
+  "lane": "sensing",
+  "updated_at": "2026-03-14T01:03:03Z",
+  "last_run_id": "5ee5344e-2de6-464f-9f40-691547f189a1",
+  "last_started_at": "2026-03-14T01:03:03Z",
+  "last_ended_at": "2026-03-14T01:03:03Z",
+  "last_status": "failed",
+  "last_error_code": "exit_2",
+  "last_success_at": "2026-03-14T01:03:02Z",
+  "trigger_type": "timer",
+  "attempt": 1,
+  "recent_inputs_count": null,
+  "recent_outputs_count": null,
+  "record_path": "storage/observability/run_records.jsonl",
+  "health_state": "healthy"
+}

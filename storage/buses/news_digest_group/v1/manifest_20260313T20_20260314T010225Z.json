@@ -1,0 +1,34 @@
+{
+  "schema": "news_digest_group.v1",
+  "status": "exported",
+  "export_at": "20260314T010225Z",
+  "digest_at": "20260313T20",
+  "row_count": 1,
+  "source_file": "data/digest_map/20260313T20.csv",
+  "source_fields": [
+    "digest_group_id",
+    "digest_id_hour",
+    "window_type",
+    "topic",
+    "group_number",
+    "content"
+  ],
+  "contract_fields": [
+    "schema_name",
+    "schema_status",
+    "digest_group_id",
+    "digest_id_hour",
+    "window_type",
+    "topic",
+    "group_number",
+    "content"
+  ],
+  "transforms": [
+    "pass-through when digest_jsonls already structured",
+    "fallback build from digest_map grouped by window_type/topic"
+  ],
+  "fallback_behavior": "use digest_map/<DIGEST_AT>.csv when digest_jsonls is missing or legacy-only",
+  "no_op_behavior": "noop when both digest_jsonls and digest_map are unavailable/empty",
+  "quarantine_behavior": "fail-fast on schema validation errors",
+  "output_file": "storage/buses/news_digest_group/v1/news_digest_group_20260313T20_20260314T010225Z.jsonl"
+}
