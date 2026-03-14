@@ -6,26 +6,81 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "schema_name": { "const": "news_digest_group.v1" },
-    "schema_status": { "const": "experimental_structured" },
-    "digest_group_id": { "type": "string", "minLength": 1 },
-    "digest_id_hour": { "type": "string", "pattern": "^[0-9]{8}T[0-9]{2}$" },
-    "window_type": { "type": "string", "enum": ["A", "B", "C", "D", "E", "F"] },
-    "topic": { "type": "string", "minLength": 1 },
-    "group_number": { "type": "integer", "minimum": 1 },
+    "schema_name": {
+      "const": "news_digest_group.v1"
+    },
+    "schema_status": {
+      "const": "experimental_structured"
+    },
+    "digest_group_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "digest_id_hour": {
+      "type": "string",
+      "pattern": "^[0-9]{8}T[0-9]{2}$"
+    },
+    "window_type": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "1h_window",
+        "4h_window",
+        "8h_window",
+        "2day_window",
+        "3day_window",
+        "weekly_window",
+        "fortnight_window"
+      ],
+      "description": "Producer-native digest window category. Legacy A..F values remain accepted for backward compatibility."
+    },
+    "topic": {
+      "type": "string",
+      "minLength": 1
+    },
+    "group_number": {
+      "type": "integer",
+      "minimum": 1
+    },
     "content": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "article_id": { "type": "string", "minLength": 1 },
-          "title": { "type": "string", "minLength": 1 },
-          "source": { "type": "string", "minLength": 1 },
-          "link": { "type": "string", "format": "uri" },
-          "published": { "type": "string", "format": "date-time" }
+          "article_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "link": {
+            "type": "string",
+            "format": "uri"
+          },
+          "published": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["article_id", "title", "source", "link", "published"]
+        "required": [
+          "article_id",
+          "title",
+          "source",
+          "link",
+          "published"
+        ]
       }
     }
   },
