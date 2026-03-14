@@ -8,7 +8,7 @@
   "properties": {
     "schema_name": { "const": "news_ref.v1" },
     "schema_status": { "const": "stable" },
-    "index_id": { "type": "string", "pattern": "^[A-Z2-7]{10}$" },
+    "index_id": { "type": "string", "pattern": "^[A-Za-z0-9]{10}$" },
     "source": { "type": "string", "minLength": 1 },
     "link": { "type": "string", "format": "uri" },
     "first_seen": { "type": "string", "format": "date-time" },

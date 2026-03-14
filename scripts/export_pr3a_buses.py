@@ -10,7 +10,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from jsonschema import Draft202012Validator
+try:
+    from jsonschema import Draft202012Validator  # type: ignore
+except Exception:  # pragma: no cover - runtime fallback when dependency is absent
+    Draft202012Validator = None
+
 
 
 @dataclass
@@ -92,6 +96,12 @@ def _to_rfc3339(value: Any) -> str:
 
 
 def _validate_rows(rows: list[dict[str, Any]], schema_path: Path) -> None:
+    if Draft202012Validator is None:
+        print(
+            f"[pr3a-export] WARN validation skipped for {schema_path.name}: missing jsonschema dependency",
+            flush=True,
+        )
+        return
     validator = Draft202012Validator(_read_json(schema_path))
     for idx, row in enumerate(rows):
         errors = sorted(validator.iter_errors(row), key=lambda e: e.path)
