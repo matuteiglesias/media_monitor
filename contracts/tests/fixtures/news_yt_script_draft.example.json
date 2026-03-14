@@ -1,0 +1,47 @@
+{
+  "schema_name": "news_yt_script_draft.v1",
+  "schema_status": "experimental_structured",
+  "script_id": "yt_script_2026_03_14_01",
+  "brief_id": "brief_2026_03_14_001",
+  "title": "La alianza tech que puede bajar tus costos de nube",
+  "thumbnail_hook": "¿Se viene guerra de precios en la nube?",
+  "cold_open": "Hoy te explico en 90 segundos por qué este acuerdo puede cambiar cómo tu empresa compra tecnología.",
+  "segment_outline": [
+    {
+      "segment_id": "seg_1",
+      "heading": "El anuncio en una frase",
+      "beat": "Presentación rápida de actores y movimiento.",
+      "estimated_seconds": 20
+    },
+    {
+      "segment_id": "seg_2",
+      "heading": "Impacto real en empresas",
+      "beat": "Costos, velocidad de implementación y riesgos.",
+      "estimated_seconds": 45
+    }
+  ],
+  "full_script": "[COLD OPEN]\nHoy te explico...\n\n[SEGMENTO 1]\nPrimero, qué se anunció...",
+  "voice_notes": [
+    "Ritmo enérgico al inicio",
+    "Bajar velocidad en cifras clave"
+  ],
+  "visual_notes": [
+    {
+      "segment_id": "seg_1",
+      "direction": "Mostrar titulares y logos con zoom lento.",
+      "asset_refs": ["headline_capture_01", "brand_pack_2026"]
+    },
+    {
+      "segment_id": "seg_2",
+      "direction": "Insertar gráfico comparativo de costos.",
+      "asset_refs": ["cost_chart_q1", "latam_map_overlay"]
+    }
+  ],
+  "citations": [
+    {
+      "source_ref_id": "ref_01",
+      "url": "https://example.com/official-announcement",
+      "usage_note": "Dato de cobertura de mercados iniciales."
+    }
+  ]
+}
