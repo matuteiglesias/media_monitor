@@ -5,6 +5,15 @@
   "idea_id": "idea-001",
   "topic": "Economia",
   "headline": "Qué implica la desaceleración de la inflación",
+  "format_candidates": "both",
+  "working_title": "Inflación en pausa: lo que cambia para hogares y pymes",
+  "angle": "Traducir señales macroeconómicas en decisiones cotidianas de consumo y crédito.",
+  "why_now": "Los últimos datos del IPC confirman una desaceleración que reordena expectativas de tasas.",
+  "supporting_refs": [
+    "https://www.bcra.gob.ar/Estadisticas",
+    "https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-5-31"
+  ],
+  "risk_notes": "Evitar sobreprometer baja de precios; incluir diferencias por rubro y región.",
   "dek": "Análisis de efectos sobre consumo y crédito.",
   "rationale": "Se detecta convergencia temática en artículos líderes.",
   "supporting_article_ids": ["42", "73"]

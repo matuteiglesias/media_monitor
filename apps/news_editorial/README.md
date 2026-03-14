@@ -19,7 +19,7 @@ This PR is additive: it clarifies ownership and operator entrypoints while prese
 
 ### Buses intended to be written by editorial adapters
 - `news_topic_cluster.v1`
-- `news_seed_idea.v1`
+- `news_seed_idea.v1` (expandido de forma backward-compatible con campos editoriales: `format_candidates`, `working_title`, `angle`, `why_now`, `supporting_refs`, `risk_notes`)
 - `news_seed_card.v1`
 
 (These remain planned adapter outputs; this PR does not change contract shapes nor replace runtime.)
@@ -48,6 +48,18 @@ apps/news_editorial/entrypoints/run_editorial_owner.sh
 Wrapper delegates to canonical runtime targets:
 1. `make s04`
 2. `make s05`
+
+
+## Contrato editorial actualizado (`news_seed_idea.v1`)
+- Se mantiene **la misma versión `v1`** para preservar compatibilidad con productores/consumidores actuales.
+- Los nuevos campos editoriales de decisión se agregan como opcionales en el esquema:
+  - `format_candidates`: `article` | `yt_script` | `both`
+  - `working_title`
+  - `angle`
+  - `why_now`
+  - `supporting_refs`
+  - `risk_notes`
+- Recomendación operativa: para nuevos flujos editoriales, poblar estos campos como mínimo para habilitar decisión de formato y priorización.
 
 ## External dependency boundary (explicit)
 - PromptFlow runtime/env/connectivity is an external dependency boundary for this module.
