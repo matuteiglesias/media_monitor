@@ -1,0 +1,49 @@
+* [33m58d6081[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Align digest group contract with producer-native window types
+*   [33mf07ef7d[m Merge pull request #8 from matuteiglesias/codex/create-summary-for-media_monitor-repo-yxozhj
+[32m|[m[33m\[m  
+[32m|[m *   [33md540545[m[33m ([m[1;31morigin/codex/create-summary-for-media_monitor-repo-yxozhj[m[33m)[m Merge branch 'main' into codex/create-summary-for-media_monitor-repo-yxozhj
+[32m|[m [34m|[m[32m\[m  
+[32m|[m [34m|[m[32m/[m  
+[32m|[m[32m/[m[34m|[m   
+* [34m|[m   [33mf8e8f5e[m Merge pull request #7 from matuteiglesias/codex/create-summary-for-media_monitor-repo-p0cvg9
+[36m|[m[1;31m\[m [34m\[m  
+[36m|[m * [34m|[m [33ma0e8500[m[33m ([m[1;31morigin/codex/create-summary-for-media_monitor-repo-p0cvg9[m[33m)[m fix: unblock pr3a export for producer ids and missing jsonschema
+* [1;31m|[m [34m|[m   [33m9a034ac[m Merge pull request #6 from matuteiglesias/codex/create-summary-for-media_monitor-repo
+[1;31m|[m[1;33m\[m [1;31m\[m [34m\[m  
+[1;31m|[m [1;33m|[m[1;31m/[m [34m/[m  
+[1;31m|[m[1;31m/[m[1;33m|[m [34m|[m   
+[1;31m|[m * [34m|[m [33m9bf8b5e[m[33m ([m[1;31morigin/codex/create-summary-for-media_monitor-repo[m[33m)[m ops: add sensing heartbeat runner for continuous autonomous runs
+[1;31m|[m[1;31m/[m [34m/[m  
+[1;31m|[m * [33m2f5908a[m ops: use python3 fallback for unattended sensing/export lane
+[1;31m|[m[1;31m/[m  
+*   [33m16f963d[m Merge pull request #5 from matuteiglesias/codex/create-diagnostic-summary-for-repo-state
+[1;34m|[m[1;35m\[m  
+[1;34m|[m * [33mca0bdd0[m[33m ([m[1;31morigin/codex/create-diagnostic-summary-for-repo-state[m[33m)[m refactor: migrate enrich implementation into apps/news_enrich
+[1;34m|[m[1;34m/[m  
+*   [33m391dd62[m[33m ([m[1;33mtag: checkpoint/main-post-close-loop-20260313[m[33m)[m Merge pull request #4 from matuteiglesias/integration/close-loop-20260313
+[1;36m|[m[31m\[m  
+[1;36m|[m *   [33m87a9b14[m[33m ([m[1;33mtag: checkpoint/close-loop-partial-20260313[m[33m)[m Merge remote-tracking branch 'origin/codex/create-monorepo-skeleton-and-contracts-mshf5o' into integration/close-loop-20260313
+[1;36m|[m [32m|[m[33m\[m  
+[1;36m|[m [32m|[m * [33me319220[m PR1c: validate runtime stages with provisioned env and capture evidence
+[1;36m|[m [32m|[m * [33mef105d3[m Implement PR1b runtime preflight, portability, and evidence capture
+[1;36m|[m * [33m|[m [33m420462e[m Merge remote-tracking branch 'origin/recovery/pr1-runtime-truth' into integration/close-loop-20260313
+[1;36m|[m[1;36m/[m[35m|[m [33m|[m 
+[1;36m|[m * [33m|[m   [33m66fddf0[m Merge pull request #2 from matuteiglesias/codex/create-monorepo-skeleton-and-contracts
+[1;36m|[m [33m|[m[1;31m\[m [33m\[m  
+[1;36m|[m [33m|[m [1;31m|[m[33m/[m  
+[1;36m|[m [33m|[m[33m/[m[1;31m|[m   
+[1;36m|[m [33m|[m * [33mbf69660[m Add PR1b runtime validation and recovery design runbook
+[1;36m|[m [33m|[m[33m/[m  
+[1;36m|[m * [33m574e14c[m snapshot: local working state before runtime recovery (PR1 preparation)
+[1;36m|[m[1;36m/[m  
+*   [33m46d2993[m Merge pull request #1 from matuteiglesias/main-scrubbed
+[1;32m|[m[1;33m\[m  
+[1;32m|[m * [33m91ee60b[m[33m ([m[1;31morigin/main-scrubbed[m[33m)[m Re-add sanitized llm_wrapper.py (use API_KEY from env)
+[1;32m|[m *   [33m47019f7[m Merge branch 'main' of github.com:matuteiglesias/media_monitor
+[1;32m|[m [1;34m|[m[1;35m\[m  
+[1;32m|[m [1;34m|[m * [33me066e14[m Create README.md
+[1;32m|[m * [1;35m|[m [33m343c28a[m Restructure: isolate legacy/, add backend contracts skeleton, SQL schema, Meili bootstrap; drop old digests.py; add .gitignore
+[1;32m|[m [1;35m|[m[1;35m/[m  
+* [1;35m/[m [33m8f9785f[m Create README.md
+[1;35m|[m[1;35m/[m  
+* [33m3d1d4d6[m Initial commit: media monitor setup with digests and notebooks

@@ -1,0 +1,19 @@
+{
+  "run_id": "5ee5344e-2de6-464f-9f40-691547f189a1",
+  "project_id": "media_monitor",
+  "lane": "sensing",
+  "stage": "build_news_access_indexes",
+  "trigger_type": "timer",
+  "attempt": 1,
+  "command": [
+    "make",
+    "build-news-access-indexes"
+  ],
+  "cwd": "/home/matias/repos/media_monitor",
+  "hostname": "matias-ThinkPad-T470-W10DG",
+  "git_commit": "cb0ce9b",
+  "status": "failed",
+  "started_at": "2026-03-14T01:03:03Z",
+  "ended_at": "2026-03-14T01:03:03Z",
+  "log_path": "storage/observability/logs/5ee5344e-2de6-464f-9f40-691547f189a1.log"
+}

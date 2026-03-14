@@ -1,0 +1,9 @@
+{
+  "schema": "news_digest_group.v1",
+  "status": "skipped_duplicate",
+  "export_at": "20260314T010321Z",
+  "digest_at": "20260313T20",
+  "row_count": 1,
+  "source_file": "data/digest_map/20260313T20.csv",
+  "duplicate_of": "storage/buses/news_digest_group/v1/news_digest_group_20260313T20_20260314T010225Z.jsonl"
+}

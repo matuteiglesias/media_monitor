@@ -1,0 +1,40 @@
+{
+  "schema": "news_ref.v1",
+  "status": "exported",
+  "export_at": "20260314T010225Z",
+  "digest_at": "20260313T20",
+  "row_count": 23777,
+  "source_file": "data/master_index.csv",
+  "source_fields": [
+    "index_id",
+    "source",
+    "link",
+    "first_seen",
+    "last_seen",
+    "topics",
+    "meta"
+  ],
+  "contract_fields": [
+    "schema_name",
+    "schema_status",
+    "index_id",
+    "source",
+    "link",
+    "first_seen",
+    "last_seen",
+    "topics",
+    "meta",
+    "digest_file",
+    "article_id",
+    "join_key"
+  ],
+  "transforms": [
+    "master_ref/master_index => canonical fields",
+    "digest_map by index_id => digest_file/article_id fallback",
+    "topics/meta parse from csv serialized values"
+  ],
+  "fallback_behavior": "use master_index when master_ref is missing/empty",
+  "no_op_behavior": "noop when neither master_ref nor master_index has rows",
+  "quarantine_behavior": "fail-fast on schema validation errors",
+  "output_file": "storage/buses/news_ref/v1/news_ref_20260314T010225Z.jsonl"
+}
