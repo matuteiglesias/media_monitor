@@ -43,7 +43,8 @@ apps/news_editorial/entrypoints/run_editorial_owner.sh
 
 Wrapper behavior:
 1. Executes `make s04 DIGEST_AT=<...> DRY_RUN=<...> PF_MODE=<...>`
-2. Executes `make s05 DIGEST_AT=<...> DRY_RUN=<...>`
+2. Executes `make s06 DIGEST_AT=<...> DRY_RUN=<...>`
+3. Executes `make s05 DIGEST_AT=<...> DRY_RUN=<...>`
 
 ### Examples
 
@@ -60,7 +61,8 @@ DIGEST_AT=20260313T15 PF_MODE=new apps/news_editorial/entrypoints/run_editorial_
 
 ## Fallback and no-op behavior
 - `make s04` already performs no-op when suitable PF input is missing.
-- `make s05` continues with existing legacy behavior over available PF outputs.
+- `make s06` may emit zero briefs when PF outputs or seed_ideas are missing/invalid.
+- `make s05` consumes briefs when available and falls back to legacy cluster packaging when briefs are absent.
 - This wrapper does not alter stage semantics; it only centralizes editorial ownership at module level.
 
 
@@ -81,7 +83,7 @@ DIGEST_AT=20260313T15 PF_MODE=new apps/news_editorial/entrypoints/run_editorial_
 
 ## Constraints respected
 - No replacement of `bin/run_hour.sh`.
-- No replacement of `make s04`/`make s05`.
+- No replacement of `make s04`/`make s06`/`make s05`.
 - No refactor of PromptFlow internals.
 - No changes to schema definitions.
 - No file moves/deletes in legacy.
