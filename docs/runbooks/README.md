@@ -12,6 +12,7 @@ Guía rápida para distinguir qué documento usar según objetivo.
 - `pr5-pruning-diagnostic-and-phased-plan.md` — pruning guiado por runtime con guardrails.
 - `pr5-observability-indexes-prep.md` — preparación de índices de observabilidad compacta.
 - `pr6-wrapper-surface-inventory.md` — inventario de wrappers/helpers y shortlist canónica de comandos operativos.
+- `pr7-editorial-handoff-5day-sprint-plan.md` — plan de sprint de 5 días para hacer dominante el handoff editorial humano (YT-priority).
 
 ## Ownership and migration records
 

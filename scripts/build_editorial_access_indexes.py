@@ -99,6 +99,11 @@ def _status_for(metrics: dict[str, int]) -> str:
     return "ok"
 
 
+def _pick_target_format(format_candidates: list[str]) -> str:
+    normalized = [str(v).strip() for v in format_candidates if str(v).strip()]
+    if "yt_script" in normalized or "both" in normalized:
+        return "yt_script"
+    return "article"
 
 
 def _latest_briefs(brief_files: list[Path], digest_id: str, limit: int = 10) -> list[dict[str, Any]]:
@@ -109,6 +114,7 @@ def _latest_briefs(brief_files: list[Path], digest_id: str, limit: int = 10) -> 
                 continue
             if str(row.get("digest_id_hour") or "") != digest_id:
                 continue
+            format_candidates = [str(v) for v in (row.get("format_candidates") or []) if str(v).strip()]
             out.append(
                 {
                     "brief_id": str(row.get("brief_id") or ""),
@@ -116,6 +122,8 @@ def _latest_briefs(brief_files: list[Path], digest_id: str, limit: int = 10) -> 
                     "working_title": str(row.get("working_title") or ""),
                     "angle": str(row.get("angle") or ""),
                     "source_index_ids": [str(v) for v in (row.get("source_index_ids") or []) if str(v).strip()],
+                    "format_candidates": format_candidates,
+                    "target_format": _pick_target_format(format_candidates),
                 }
             )
     return out[-limit:]
@@ -178,6 +186,57 @@ def _human_status(metrics: dict[str, int]) -> str:
         return "no-seed-ideas"
     return "ready"
 
+
+def _build_action_candidates(
+    latest_briefs: list[dict[str, Any]],
+    latest_article_drafts: list[dict[str, Any]],
+    latest_yt_script_drafts: list[dict[str, Any]],
+    limit: int = 10,
+) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
+
+    for draft in latest_yt_script_drafts:
+        candidates.append(
+            {
+                "priority": "high",
+                "target_format": "yt_script",
+                "ready_state": "draft-ready",
+                "title": draft.get("headline") or draft.get("topic") or "",
+                "topic": draft.get("topic") or "",
+                "source": "draft",
+                "path": draft.get("path") or "",
+            }
+        )
+
+    for draft in latest_article_drafts:
+        candidates.append(
+            {
+                "priority": "normal",
+                "target_format": "article",
+                "ready_state": "draft-ready",
+                "title": draft.get("headline") or draft.get("topic") or "",
+                "topic": draft.get("topic") or "",
+                "source": "draft",
+                "path": draft.get("path") or "",
+            }
+        )
+
+    for brief in latest_briefs:
+        candidates.append(
+            {
+                "priority": "high" if brief.get("target_format") == "yt_script" else "normal",
+                "target_format": brief.get("target_format") or "article",
+                "ready_state": "brief-ready",
+                "title": brief.get("working_title") or brief.get("topic") or "",
+                "topic": brief.get("topic") or "",
+                "source": "brief",
+                "path": "",
+            }
+        )
+
+    return candidates[:limit]
+
+
 def build_editorial_index(storage_dir: Path, data_dir: Path, digest_at: str | None = None) -> Path:
     digest_id = _resolve_digest_id(data_dir, digest_at)
     built_at = _utc_now_compact()
@@ -207,6 +266,7 @@ def build_editorial_index(storage_dir: Path, data_dir: Path, digest_at: str | No
                 "latest_article_drafts": [],
                 "latest_yt_script_drafts": [],
                 "fallback_events": [],
+                "action_candidates": [],
             },
         }
         latest = idx_dir / "editorial_latest.json"
@@ -233,6 +293,7 @@ def build_editorial_index(storage_dir: Path, data_dir: Path, digest_at: str | No
     latest_briefs = _latest_briefs(brief_files, digest_id)
     latest_article_drafts, latest_yt_script_drafts = _latest_draft_records(drafts_dir)
     fallback_events = _fallback_summary(data_dir / "quarantine", digest_id)
+    action_candidates = _build_action_candidates(latest_briefs, latest_article_drafts, latest_yt_script_drafts)
 
     payload = {
         "digest_at": digest_id,
@@ -251,6 +312,7 @@ def build_editorial_index(storage_dir: Path, data_dir: Path, digest_at: str | No
             "latest_article_drafts": latest_article_drafts,
             "latest_yt_script_drafts": latest_yt_script_drafts,
             "fallback_events": fallback_events,
+            "action_candidates": action_candidates,
         },
     }
 
