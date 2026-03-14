@@ -6,7 +6,10 @@
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
-    "lint": "next lint"
+    "lint": "next lint",
+    "refresh-data": "node scripts/refresh_public_data.mjs",
+    "build:deployable": "npm run refresh-data && npm run build",
+    "test:refresh-data": "node --test scripts/refresh_public_data.test.mjs"
   },
   "dependencies": {
     "next": "14.2.25",
