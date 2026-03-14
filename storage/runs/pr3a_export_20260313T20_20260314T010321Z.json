@@ -1,0 +1,26 @@
+{
+  "job": "export_pr3a_buses",
+  "digest_at": "20260313T20",
+  "export_at": "20260314T010321Z",
+  "status": "skipped_duplicate",
+  "results": [
+    {
+      "name": "news_ref.v1",
+      "status": "skipped_duplicate",
+      "count": 23777,
+      "source": "data/master_index.csv",
+      "output_path": "storage/buses/news_ref/v1/news_ref_20260314T010225Z.jsonl",
+      "manifest_path": "storage/buses/news_ref/v1/manifest_20260314T010321Z.json",
+      "reason": "content identical to latest successful export for digest_at"
+    },
+    {
+      "name": "news_digest_group.v1",
+      "status": "skipped_duplicate",
+      "count": 1,
+      "source": "data/digest_map/20260313T20.csv",
+      "output_path": "storage/buses/news_digest_group/v1/news_digest_group_20260313T20_20260314T010225Z.jsonl",
+      "manifest_path": "storage/buses/news_digest_group/v1/manifest_20260313T20_20260314T010321Z.json",
+      "reason": "content identical to latest successful export for digest_at"
+    }
+  ]
+}
