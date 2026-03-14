@@ -82,6 +82,22 @@ Hardening aplicado:
 - Snapshot generado por `scripts/publish_last_mile_snapshot.py` con shape mínima y sanitizada para evitar exponer campos no necesarios.
 - `vercel.json` aplica headers de seguridad (`CSP`, `X-Frame-Options`, `nosniff`) y `no-store` para JSON de estado.
 
+
+### news_site deploy-safe snapshots
+
+`apps/news_site` no lee `storage/indexes` en runtime; consume snapshots públicos en `apps/news_site/public/data`.
+
+Refrescar snapshots para la portada:
+
+```bash
+mkdir -p apps/news_site/public/data
+cp storage/indexes/news_recent_refs_latest.jsonl apps/news_site/public/data/news_recent_refs_latest.jsonl
+cp storage/indexes/news_recent_groups_latest.jsonl apps/news_site/public/data/news_recent_groups_latest.jsonl
+cp storage/indexes/editorial_latest.json apps/news_site/public/data/editorial_latest.json
+```
+
+Si los artefactos aún no existen en `storage/indexes`, `news_site` renderiza fallback vacío sin romper build/deploy.
+
 ---
 
 ## 🚀 Quickstart
