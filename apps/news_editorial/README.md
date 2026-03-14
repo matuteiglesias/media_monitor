@@ -28,6 +28,7 @@ This PR is additive: it clarifies ownership and operator entrypoints while prese
 ## Implementation location (PR4d)
 Editorial primary implementation now lives under:
 - `apps/news_editorial/src/news_editorial/stage04_promptflow_run.py`
+- `apps/news_editorial/src/news_editorial/stage06_build_piece_briefs.py`
 - `apps/news_editorial/src/news_editorial/stage05_explode_pf_outputs.py`
 - `apps/news_editorial/src/news_editorial/{ids,io,db,slugs}.py`
 
@@ -47,7 +48,8 @@ apps/news_editorial/entrypoints/run_editorial_owner.sh
 
 Wrapper delegates to canonical runtime targets:
 1. `make s04`
-2. `make s05`
+2. `make s06`
+3. `make s05`
 
 
 ## Contrato editorial actualizado (`news_seed_idea.v1`)
