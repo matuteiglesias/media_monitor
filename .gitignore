@@ -26,3 +26,7 @@ EOF
 
 apps/news_site/node_modules/
 apps/news_site/.next/
+
+# news_site local artifacts
+apps/news_site/node_modules/
+apps/news_site/.next/
