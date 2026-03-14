@@ -24,7 +24,7 @@ define _env_prefix
 DIGEST_AT=$(DIGEST_AT) DRY_RUN=$(DRY_RUN) LIMIT=$(LIMIT) SAMPLE=$(SAMPLE) NULL_SINK=$(NULL_SINK)
 endef
 
-.PHONY: help hour env preflight-runtime s01 s02 s03 s04 s05 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null export-pr3a build-news-access-indexes heartbeat-start heartbeat-stop heartbeat-status
+.PHONY: help hour env preflight-runtime s01 s02 s03 s04 s05 s06 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null export-pr3a build-news-access-indexes heartbeat-start heartbeat-stop heartbeat-status
 
 help:      ## Show help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' Makefile | sed 's/:.*## / — /' | sort
@@ -139,6 +139,9 @@ pf-article: ## Force PF over per-article pfin file
 s05:       ## Stage 05 — explode PF outputs → drafts + enqueue generate
 	@$(_env_prefix) $(PYTHON) -m legacy.stage05_explode_pf_outputs
 
+s06:       ## Stage 06 — build news_piece_brief.v1 seam from PF seed_ideas
+	@$(_env_prefix) $(PYTHON) -m legacy.stage06_build_piece_briefs
+
 export-pr3a: ## PR3a real exports: legacy outputs -> storage buses/indexes
 	@$(PYTHON) scripts/export_pr3a_buses.py --digest-at $(DIGEST_AT)
 
@@ -156,19 +159,20 @@ pf:        ## Run PromptFlow once for the hour (direct CLI)
 explode:   ## Join+validate drafts for the hour
 	@$(MAKE) s05
 
-all:       ## 01 → 02 → 03 → 04 → 05 (respecting DRY_RUN/NULL_SINK)
-	@$(MAKE) s01 && $(MAKE) s02 && $(MAKE) s03 && $(MAKE) s04 && $(MAKE) s05
+all:       ## 01 → 02 → 03 → 04 → 06 → 05 (respecting DRY_RUN/NULL_SINK)
+	@$(MAKE) s01 && $(MAKE) s02 && $(MAKE) s03 && $(MAKE) s04 && $(MAKE) s06 && $(MAKE) s05
 
 # ------------ Run any stage by number ------------
 stage-any: ## Run any stage by number: make stage-any STAGE=03
-	@if [ -z "$(STAGE)" ]; then echo "STAGE is required (01..05)"; exit 2; fi; \
+	@if [ -z "$(STAGE)" ]; then echo "STAGE is required (01..06)"; exit 2; fi; \
 	case "$(STAGE)" in \
 	  01) MOD=legacy.stage01_digests ;; \
 	  02) MOD=legacy.stage02_master_index_update ;; \
 	  03) MOD=legacy.stage03_headlines_digests ;; \
 	  04) echo "Use: make s04 (PF CLI)"; exit 2 ;; \
 	  05) MOD=legacy.stage05_explode_pf_outputs ;; \
-	  *)  echo "Unknown STAGE=$(STAGE) (expected 01..05)"; exit 2 ;; \
+	  06) MOD=legacy.stage06_build_piece_briefs ;; \
+	  *)  echo "Unknown STAGE=$(STAGE) (expected 01..06)"; exit 2 ;; \
 	esac; \
 	echo ">> Running $$MOD with DIGEST_AT=$(DIGEST_AT)"; \
 	$(_env_prefix) $(PYTHON) -m $$MOD
