@@ -14,6 +14,9 @@ Draft-but-concrete contracts for incremental migration.
 - `news_topic_cluster.v1`
 - `news_seed_idea.v1`
 - `news_seed_card.v1`
+- `news_piece_brief.v1`
+- `news_article_draft.v1`
+- `news_yt_script_draft.v1`
 
 ## Provenance rule
 
