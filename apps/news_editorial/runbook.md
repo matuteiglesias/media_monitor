@@ -20,7 +20,7 @@ PR4b establishes module ownership and a stable operator entrypoint while keeping
 
 ### Seams/exports targeted (future adapters)
 - `news_topic_cluster.v1`
-- `news_seed_idea.v1`
+- `news_seed_idea.v1` (expandido de forma backward-compatible con campos editoriales: `format_candidates`, `working_title`, `angle`, `why_now`, `supporting_refs`, `risk_notes`)
 - `news_seed_card.v1`
 
 
@@ -62,6 +62,18 @@ DIGEST_AT=20260313T15 PF_MODE=new apps/news_editorial/entrypoints/run_editorial_
 - `make s04` already performs no-op when suitable PF input is missing.
 - `make s05` continues with existing legacy behavior over available PF outputs.
 - This wrapper does not alter stage semantics; it only centralizes editorial ownership at module level.
+
+
+## Contrato editorial actualizado (`news_seed_idea.v1`)
+- Se mantiene **la misma versión `v1`** para preservar compatibilidad con productores/consumidores actuales.
+- Los nuevos campos editoriales de decisión se agregan como opcionales en el esquema:
+  - `format_candidates`: `article` | `yt_script` | `both`
+  - `working_title`
+  - `angle`
+  - `why_now`
+  - `supporting_refs`
+  - `risk_notes`
+- Recomendación operativa: para nuevos flujos editoriales, poblar estos campos como mínimo para habilitar decisión de formato y priorización.
 
 ## External dependency boundary
 - PromptFlow runtime (`PF_PYTHON`/conda env and run dir resolution) remains external dependency.
