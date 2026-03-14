@@ -2,63 +2,22 @@
 
 ## Contract authority
 
-`contracts/schemas/publish_surface_v1.json` es la autoridad del contrato de publicación.
+`contracts/schemas/publish_surface_v1.json` es la única autoridad del contrato público v1.
 
-- Adapters deben mapear datos internos a este schema y **no** introducir campos obligatorios fuera del contrato.
-- UI debe consumir este shape canónico y tratar sus valores fallback como comportamiento esperado, no como errores de parsing.
-- Si hay conflicto entre shape actual de índices y la UI, manda este schema; primero se corrige adapter/proyección.
+- Las únicas shapes públicas aprobadas en v1 son:
+  - `frontpage.v1`
+  - `topic_page.v1`
+  - `story_page.v1`
+  - `editorial_handoff.v1`
+- Campos requeridos, opcionales y fallback deben mantenerse **solo** en ese archivo de contrato.
+- Si hay conflicto entre índices actuales y UI, manda el contrato; se corrige adapter/proyección.
 
-## Canonical objects
+## Governance rules
 
-### `FrontpageItem`
-
-- **Obligatorios:** `digest_at`, `title`, `topic`, `published_at`, `link`.
-- **Opcionales:** `source`, `index_id`.
-- **Fallback behavior:**
-  - `digest_at` -> `"unknown"`
-  - `title` -> `"(untitled)"`
-  - `topic` -> `"unknown"`
-  - `published_at` -> `"1970-01-01T00:00:00Z"`
-  - `source` -> `"unknown"`
-  - `index_id` -> `""`
-  - `link` no tiene fallback (si falta, falla validación).
-
-### `Story`
-
-- **Obligatorios:** `id`, `title`, `topic`, `link`.
-- **Opcionales:** `source`, `published_at`.
-- **Fallback behavior:**
-  - `id` -> usar `index_id`; si falta, resolver en adapter con hash de `link`.
-  - `title` -> `"(untitled)"`
-  - `topic` -> `"unknown"`
-  - `source` -> `"unknown"`
-  - `published_at` -> `"1970-01-01T00:00:00Z"`
-  - `link` no tiene fallback.
-
-### `TopicPage`
-
-- **Obligatorios:** `digest_at`, `topic`, `window_type`.
-- **Opcionales:** `group_number`, `article_count`, `top_titles`.
-- **Fallback behavior:**
-  - `digest_at` -> `"unknown"`
-  - `topic` -> `"unknown"`
-  - `window_type` -> `"unknown"`
-  - `group_number` -> `0`
-  - `article_count` -> `0`
-  - `top_titles` -> `[]`
-
-### `EditorialHandoffItem`
-
-- **Obligatorios:** `target_format`, `ready_state`, `title`, `topic`.
-- **Opcionales:** `priority`, `source`, `path`.
-- **Fallback behavior:**
-  - `target_format` -> `"article"`
-  - `ready_state` -> `"unknown"`
-  - `title` -> `topic` o `"(untitled)"`
-  - `topic` -> `"unknown"`
-  - `priority` -> `"normal"`
-  - `source` -> `"unknown"`
-  - `path` -> `""`
+- **Prohibido introducir nuevas shapes** hasta que exista consumidor real en ruta productiva.
+- **Regla de PR:** cualquier campo nuevo debe documentar en el PR:
+  1. `consumer route` (ruta productiva consumidora), y
+  2. evidencia de uso real (ejecución, captura o artefacto verificable).
 
 ## Validation gate
 
