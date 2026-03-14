@@ -78,25 +78,33 @@ vercel --prod
 ```
 
 Hardening aplicado:
-- La UI consume primero `web/data/editorial_latest.json` (snapshot público) y cae a `storage/indexes/editorial_latest.json` solo para desarrollo local.
+- La UI consume `web/data/editorial_latest.json` (snapshot público hardened para publicación estática).
 - Snapshot generado por `scripts/publish_last_mile_snapshot.py` con shape mínima y sanitizada para evitar exponer campos no necesarios.
 - `vercel.json` aplica headers de seguridad (`CSP`, `X-Frame-Options`, `nosniff`) y `no-store` para JSON de estado.
 
 
-### news_site deploy-safe snapshots
+### news_site deploy (golden path)
 
-`apps/news_site` no lee `storage/indexes` en runtime; consume snapshots públicos en `apps/news_site/public/data`.
-
-Refrescar snapshots para la portada:
+Source of truth (news_site): **runtime truth = `storage/indexes` → deploy truth = refreshed snapshot in `apps/news_site/public/data`**.
 
 ```bash
-mkdir -p apps/news_site/public/data
-cp storage/indexes/news_recent_refs_latest.jsonl apps/news_site/public/data/news_recent_refs_latest.jsonl
-cp storage/indexes/news_recent_groups_latest.jsonl apps/news_site/public/data/news_recent_groups_latest.jsonl
-cp storage/indexes/editorial_latest.json apps/news_site/public/data/editorial_latest.json
+# 1) generar/actualizar índices runtime
+make build-news-access-indexes DIGEST_AT=$(date -u +%Y%m%dT%H)
+make build-editorial-access-indexes DIGEST_AT=$(date -u +%Y%m%dT%H)
+
+# 2) refrescar snapshot público (copia + validación)
+npm --prefix apps/news_site run refresh-data
+
+# 3) build deployable (incluye refresh-data)
+npm --prefix apps/news_site run build:deployable
+
+# 4) deploy
+vercel --prod
 ```
 
-Si los artefactos aún no existen en `storage/indexes`, `news_site` renderiza fallback vacío sin romper build/deploy.
+Notas del refresh:
+- Falla con error si faltan `news_recent_refs_latest.jsonl` o `news_recent_groups_latest.jsonl`, si están vacíos o si no parsean como JSONL.
+- Si falta `storage/indexes/editorial_latest.json`, escribe un fallback determinístico en `apps/news_site/public/data/editorial_latest.json`.
 
 ---
 
