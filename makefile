@@ -24,7 +24,7 @@ define _env_prefix
 DIGEST_AT=$(DIGEST_AT) DRY_RUN=$(DRY_RUN) LIMIT=$(LIMIT) SAMPLE=$(SAMPLE) NULL_SINK=$(NULL_SINK)
 endef
 
-.PHONY: help hour env preflight-runtime s01 s02 s03 s04 s05 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null export-pr3a heartbeat-start heartbeat-stop heartbeat-status
+.PHONY: help hour env preflight-runtime s01 s02 s03 s04 s05 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null export-pr3a build-news-access-indexes heartbeat-start heartbeat-stop heartbeat-status
 
 help:      ## Show help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' Makefile | sed 's/:.*## / — /' | sort
@@ -141,6 +141,9 @@ s05:       ## Stage 05 — explode PF outputs → drafts + enqueue generate
 
 export-pr3a: ## PR3a real exports: legacy outputs -> storage buses/indexes
 	@$(PYTHON) scripts/export_pr3a_buses.py --digest-at $(DIGEST_AT)
+
+build-news-access-indexes: ## Build compact readable latest-news access indexes from exported seams
+	@$(PYTHON) scripts/build_news_access_indexes.py
 
 # ------------ Pipelines ------------
 prep:      ## 01+02 on fixed hour (safe defaults DRY_RUN=1)

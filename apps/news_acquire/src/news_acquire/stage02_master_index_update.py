@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import List, Tuple, Dict
 
 import pandas as pd
+from pandas.errors import EmptyDataError
 
 from . import ids, db
 from . import io as bio
@@ -85,7 +86,10 @@ def load_hour_slice_files(digest_id: str) -> List[Path]:
 
 def load_master_ref_csv() -> pd.DataFrame:
     if MASTER_REF_CSV.exists():
-        df = pd.read_csv(MASTER_REF_CSV)
+        try:
+            df = pd.read_csv(MASTER_REF_CSV)
+        except EmptyDataError:
+            return pd.DataFrame(columns=["index_id", "source", "link", "first_seen", "last_seen", "topics", "meta"])
         for col in ("first_seen", "last_seen"):
             if col in df.columns:
                 df[col] = pd.to_datetime(df[col], errors="coerce", utc=True)
