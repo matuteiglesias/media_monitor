@@ -1,0 +1,21 @@
+{
+  "run_id": "9561e7b7-efed-4336-89cd-75d31dd60704",
+  "project_id": "media_monitor",
+  "lane": "sensing",
+  "stage": "s01",
+  "trigger_type": "timer",
+  "attempt": 1,
+  "command": [
+    "make",
+    "s01",
+    "DIGEST_AT=20260314T01",
+    "DRY_RUN=0"
+  ],
+  "cwd": "/home/matias/repos/media_monitor",
+  "hostname": "matias-ThinkPad-T470-W10DG",
+  "git_commit": "cb0ce9b",
+  "status": "success",
+  "started_at": "2026-03-14T01:02:53Z",
+  "ended_at": "2026-03-14T01:02:59Z",
+  "log_path": "storage/observability/logs/9561e7b7-efed-4336-89cd-75d31dd60704.log"
+}
