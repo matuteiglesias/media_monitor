@@ -73,7 +73,7 @@ write_lane_status() {
   local ended_at
   ended_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-  python - "$status_file" "$summary_file" "$LANE" "$STARTED_AT" "$ended_at" "$TRIGGER_TYPE" "$ATTEMPT" "$exit_code" <<'PY'
+  "$PYTHON_CMD" - "$status_file" "$summary_file" "$LANE" "$STARTED_AT" "$ended_at" "$TRIGGER_TYPE" "$ATTEMPT" "$exit_code" <<'PY'
 import json, sys
 from datetime import datetime, timezone
 from pathlib import Path

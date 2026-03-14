@@ -47,32 +47,85 @@ def _to_rfc3339(value: Any) -> str:
     return s
 
 
-def _resolve_export_outputs(storage_dir: Path) -> tuple[str, str, str]:
+def _safe_exists_jsonl(path_str: str) -> bool:
+    if not path_str:
+        return False
+    p = Path(path_str)
+    return p.exists() and p.is_file() and p.stat().st_size > 0
+
+
+def _latest_payload(storage_dir: Path) -> dict[str, Any]:
     latest = storage_dir / "indexes" / "pr3a_exports_latest.json"
     if not latest.exists():
-        raise FileNotFoundError(f"missing export index: {latest}")
+        return {}
+    try:
+        return _read_json(latest)
+    except Exception:
+        return {}
 
-    payload = _read_json(latest)
-    digest_at = str(payload.get("digest_at") or "").strip()
-    results = payload.get("results") or []
-    if not digest_at:
-        raise ValueError("pr3a_exports_latest.json missing digest_at")
 
-    outputs: dict[str, str] = {}
-    for result in results:
-        name = str(result.get("name") or "").strip()
-        status = str(result.get("status") or "").strip()
+def _resolve_from_indexes(storage_dir: Path, export_name: str) -> tuple[str | None, str | None]:
+    idx_dir = storage_dir / "indexes"
+    run_files = sorted(idx_dir.glob("pr3a_exports_*.json"), reverse=True)
+    for idx in run_files:
+        try:
+            payload = _read_json(idx)
+        except Exception:
+            continue
+        digest_at = str(payload.get("digest_at") or "").strip() or None
+        for result in payload.get("results") or []:
+            if str(result.get("name") or "") != export_name:
+                continue
+            status = str(result.get("status") or "")
+            if status not in {"exported", "skipped_duplicate"}:
+                continue
+            out = str(result.get("output_path") or "").strip()
+            if _safe_exists_jsonl(out):
+                return digest_at, out
+    return None, None
+
+
+def _resolve_from_manifests(storage_dir: Path, export_name: str) -> tuple[str | None, str | None]:
+    if export_name == "news_ref.v1":
+        manifest_glob = "buses/news_ref/v1/manifest_*.json"
+    elif export_name == "news_digest_group.v1":
+        manifest_glob = "buses/news_digest_group/v1/manifest_*.json"
+    else:
+        return None, None
+
+    for manifest in sorted(storage_dir.glob(manifest_glob), reverse=True):
+        try:
+            payload = _read_json(manifest)
+        except Exception:
+            continue
+        status = str(payload.get("status") or "")
         if status not in {"exported", "skipped_duplicate"}:
             continue
-        out = str(result.get("output_path") or "").strip()
-        if out:
-            outputs[name] = out
+        out = str(payload.get("output_file") or payload.get("duplicate_of") or "").strip()
+        if _safe_exists_jsonl(out):
+            return str(payload.get("digest_at") or "").strip() or None, out
+    return None, None
 
-    ref_out = outputs.get("news_ref.v1")
-    group_out = outputs.get("news_digest_group.v1")
-    if not ref_out or not group_out:
-        raise ValueError("missing output_path for news_ref.v1 or news_digest_group.v1 in pr3a_exports_latest.json")
-    return digest_at, ref_out, group_out
+
+def _resolve_output(storage_dir: Path, export_name: str) -> tuple[str | None, str | None]:
+    latest = _latest_payload(storage_dir)
+    digest_at_latest = str(latest.get("digest_at") or "").strip() or None
+    for result in latest.get("results") or []:
+        if str(result.get("name") or "") != export_name:
+            continue
+        out = str(result.get("output_path") or "").strip()
+        if _safe_exists_jsonl(out):
+            return digest_at_latest, out
+
+    digest_at, out = _resolve_from_indexes(storage_dir, export_name)
+    if out:
+        return digest_at or digest_at_latest, out
+
+    digest_at, out = _resolve_from_manifests(storage_dir, export_name)
+    if out:
+        return digest_at or digest_at_latest, out
+
+    return digest_at_latest, None
 
 
 def _title_from_meta(meta: Any) -> str:
@@ -135,37 +188,86 @@ def _build_group_index(group_rows: list[dict[str, Any]]) -> tuple[dict[str, dict
 
 
 def build_access_indexes(storage_dir: Path) -> tuple[Path, Path, int, int]:
-    digest_at, ref_output, group_output = _resolve_export_outputs(storage_dir)
-    ref_rows = list(_iter_jsonl(Path(ref_output)))
-    group_rows = list(_iter_jsonl(Path(group_output)))
+    digest_ref, ref_output = _resolve_output(storage_dir, "news_ref.v1")
+    digest_group, group_output = _resolve_output(storage_dir, "news_digest_group.v1")
 
-    by_link, groups = _build_group_index(group_rows)
+    ref_rows = list(_iter_jsonl(Path(ref_output))) if ref_output else []
+    group_rows = list(_iter_jsonl(Path(group_output))) if group_output else []
 
-    refs: list[dict[str, Any]] = []
+    # Prefer semantic article content from digest groups.
+    # Use refs only to enrich index_id by link when available.
+    index_id_by_link: dict[str, str] = {}
+    refs_fallback: list[dict[str, Any]] = []
+
     for row in ref_rows:
         link = str(row.get("link") or "").strip()
         if not link:
             continue
-        group_match = by_link.get(link, {})
+        index_id = str(row.get("index_id") or "").strip()
+        if index_id and link not in index_id_by_link:
+            index_id_by_link[link] = index_id
         topics = row.get("topics") if isinstance(row.get("topics"), list) else []
-        topic = str(group_match.get("topic") or (topics[0] if topics else "")).strip()
-        title = str(group_match.get("title") or _title_from_meta(row.get("meta")) or "(untitled)").strip()
-
-        refs.append(
+        refs_fallback.append(
             {
-                "digest_at": str(group_match.get("digest_at") or digest_at),
-                "index_id": str(row.get("index_id") or "").strip(),
-                "title": title,
-                "source": str(row.get("source") or group_match.get("source") or "unknown").strip(),
-                "published_at": _to_rfc3339(group_match.get("published_at") or row.get("first_seen")),
-                "topic": topic or "unknown",
+                "digest_at": str(digest_ref or digest_group or "unknown"),
+                "index_id": index_id,
+                "title": str(_title_from_meta(row.get("meta")) or "(untitled)").strip(),
+                "source": str(row.get("source") or "unknown").strip(),
+                "published_at": _to_rfc3339(row.get("first_seen")),
+                "topic": str((topics[0] if topics else "unknown") or "unknown").strip(),
                 "link": link,
             }
         )
 
-    refs = [r for r in refs if r["index_id"]]
-    refs.sort(key=lambda r: (r["published_at"], r["index_id"]), reverse=True)
+    groups: list[dict[str, Any]] = []
+    refs_from_groups: list[dict[str, Any]] = []
+    for row in group_rows:
+        digest_at = str(row.get("digest_id_hour") or digest_group or digest_ref or "unknown").strip() or "unknown"
+        window_type = str(row.get("window_type") or "").strip() or "unknown"
+        topic = str(row.get("topic") or "").strip() or "unknown"
+        group_number = int(row.get("group_number") or 0)
 
+        content = row.get("content") if isinstance(row.get("content"), list) else []
+        titles: list[str] = []
+        for article in content:
+            if not isinstance(article, dict):
+                continue
+            title = str(article.get("title") or "").strip() or "(untitled)"
+            source = str(article.get("source") or "").strip() or "unknown"
+            link = str(article.get("link") or "").strip()
+            published = _to_rfc3339(article.get("published"))
+            if title:
+                titles.append(title)
+            if not link:
+                continue
+            refs_from_groups.append(
+                {
+                    "digest_at": digest_at,
+                    "index_id": index_id_by_link.get(link, ""),
+                    "title": title,
+                    "source": source,
+                    "published_at": published,
+                    "topic": topic,
+                    "link": link,
+                }
+            )
+
+        groups.append(
+            {
+                "digest_at": digest_at,
+                "window_type": window_type,
+                "topic": topic,
+                "group_number": group_number,
+                "article_count": len(content),
+                "top_titles": titles[:3],
+            }
+        )
+
+    refs = refs_from_groups if refs_from_groups else refs_fallback
+    refs.sort(key=lambda r: (r.get("published_at") or "", r.get("link") or ""), reverse=True)
+    groups.sort(key=lambda g: (g["digest_at"], g["window_type"], g["topic"], g["group_number"]))
+
+    digest_at = digest_group or digest_ref or "unknown"
     built_at = _utc_now_compact()
     idx_dir = storage_dir / "indexes"
     latest_refs = idx_dir / "news_recent_refs_latest.jsonl"
