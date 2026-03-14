@@ -136,6 +136,16 @@ payload = {
     "record_path": prev.get("record_path", "storage/observability/run_records.jsonl"),
     "health_state": health_state,
 }
+for key in (
+    "last_successful_export_at",
+    "last_exported_digest_at",
+    "news_ref_count",
+    "news_digest_group_count",
+    "export_status",
+    "failure_reason",
+):
+    if key in prev:
+        payload[key] = prev.get(key)
 status_file.parent.mkdir(parents=True, exist_ok=True)
 status_file.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
