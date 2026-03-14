@@ -1,77 +1,82 @@
-
 # 🗞️ Media Monitor
 
-**`media_monitor`** es un sistema liviano de backend para el monitoreo automatizado de medios. Se ejecuta periódicamente en tu máquina, consulta feeds RSS de temas económicos y políticos argentinos, y guarda *digests* de noticias en formato CSV, organizados por ventanas temporales.
+`media_monitor` es un backend editorial semiautónomo orientado a una ruta operativa simple:
 
-Este backend está pensado como **la base para una máquina editorial**: desde aquí se generan inputs estructurados que luego pueden alimentar flujos de análisis, generación de ideas, borradores de artículos, visualizaciones, y contenido enriquecido por IA.
+**news in → brief → draft → human last mile**.
 
----
-
-## 🚧 Estado actual
-
-* Recolecta artículos desde múltiples RSS temáticos de Google News.
-* Ejecuta fetch cada 4 horas (cronjob), y guarda los artículos en `data/rss_slices/` como CSVs.
-* Cada corrida aplica *time slicing* (ej. últimas 4h, últimas 2d, semana previa, etc.) según reglas preestablecidas.
-* Las ventanas están diseñadas para capturar distintos ritmos del ciclo noticioso.
+Hoy el foco no es agregar capas, sino mantener viva la ruta útil y reducir ambigüedad operacional.
 
 ---
 
-## 📁 Estructura del proyecto
+## ✅ Ruta canónica (operativa)
 
-```
-media_monitor/
-├── digests.py                # Script principal: fetch RSS y aplicar slices temporales
-├── dev.ipynb / test.ipynb    # Notebooks de prueba y desarrollo
-├── data/
-│   └── rss_slices/           # Carpeta donde se guardan los CSV por ventana temporal
-├── .gitignore
-└── README.md
-```
+La ejecución recomendada es por lanes independientes vía `bin/run_minimal_loop_once.sh`:
 
----
+- **sensing** (obligatoria, cada 60m)
+  - `make s01`
+  - `make s02`
+  - `make s03`
+  - `make export-pr3a`
+  - `make build-news-access-indexes`
+- **editorial** (recomendada, cada 6h)
+  - `make s04`
+  - `make s06`
+  - `make s05`
+  - `make build-editorial-access-indexes`
+- **enrich** (opcional, queue/on-demand)
+  - `python scripts/06_scrape_enrich.py`
 
-## 🕰️ Cron job sugerido
-
-Ejecuta el script cada 4 horas (ejemplo con Anaconda):
-
-```
-0 */4 * * * cd /home/matias/repos/media_monitor && /home/matias/anaconda3/bin/python digests.py
-```
-
-Esto garantiza que el sistema:
-
-* Se mantenga activo de forma autónoma
-* Vaya acumulando fragmentos informativos a lo largo del tiempo
-
----
-
-## ✨ Futuras extensiones (planeadas)
-
-* Análisis de menciones por entidad o personaje
-* Generación automática de resúmenes y visualizaciones
-* Inyección en CMS con plantillas de contenido
-* Ilustración automática con imágenes generadas por IA
-* Integración con sistemas de clasificación y etiquetado
-
----
-
-## 🔧 Requisitos
-
-* Python 3.9+
-* Librerías: `feedparser`, `pandas`, `csv`, `datetime`
-
-Instalación sugerida:
+Entrypoint único por lane:
 
 ```bash
-pip install -r requirements.txt
+bin/run_minimal_loop_once.sh --lane sensing
+bin/run_minimal_loop_once.sh --lane editorial
+bin/run_minimal_loop_once.sh --lane enrich
 ```
 
 ---
 
-## 📬 Contacto
+## 🚀 Quickstart
 
-Para sugerencias o mejoras, contactá a [Matías Iglesias](https://github.com/matuteiglesias).
+1. Verificar runtime:
+
+```bash
+make preflight-runtime
+```
+
+2. Ejecutar una corrida de sensing (dry run):
+
+```bash
+make s01 DRY_RUN=1
+make s02 DRY_RUN=1
+make s03 DRY_RUN=1
+```
+
+3. Levantar heartbeat de sensing:
+
+```bash
+make heartbeat-start INTERVAL_SEC=3600
+make heartbeat-status
+```
 
 ---
 
-¿Querés que también te genere un `requirements.txt` básico y un badge para GitHub Actions si pensás desplegarlo en un servidor más adelante?
+## 🧭 Estructura (high-level)
+
+- `bin/` → entrypoints de operación.
+- `makefile` → wiring de stages.
+- `apps/news_acquire|news_editorial|news_enrich` → ownership por dominio.
+- `legacy/` y algunos `scripts/` → compat wrappers aún activos.
+- `contracts/schemas/` → contratos interoperables.
+- `storage/buses/` y `storage/indexes/` → superficies exportables.
+- `docs/runbooks/` → runbooks de operación, migración y pruning.
+
+---
+
+## 📌 Notas de consolidación
+
+- Evitar nuevas capas/orquestadores sin consumidor real.
+- Priorizar claridad de entrypoints sobre expansión de superficies.
+- Tratar artefactos intermedios (`data/pf_out`, `data/drafts`, `data/quarantine`) como internos, no contratos públicos.
+
+Para más detalle operativo: ver `docs/runbooks/pr5-minimal-autonomous-loop.md`.

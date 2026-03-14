@@ -49,7 +49,7 @@ Actions:
 Expected outputs:
 
 - PF outputs + piece brief materialization + draft generation attempts
-- Compact editorial observability index at `storage/indexes/editorial_latest.json`
+- Compact editorial observability index at `storage/indexes/editorial_latest.json` (includes `human_handoff` with latest briefs/drafts/yt/fallback + `action_candidates` priorizados)
 
 Failure isolation:
 
