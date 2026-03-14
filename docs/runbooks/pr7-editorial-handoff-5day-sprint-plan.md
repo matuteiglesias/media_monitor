@@ -15,6 +15,21 @@ Hacer que el archivo principal de operación humana sea `storage/indexes/editori
 - Nuevos contratos sin consumidor real.
 - Reorquestación mayor del runtime.
 
+
+## DoD mínimo (gating de cierre)
+- `home` viva.
+- `story` viva.
+- handoff panel simple vivo (`storage/indexes/editorial_latest.json`).
+- README canónico corto (golden path) actualizado.
+
+### Criterio de rechazo
+- Si el flujo básico requiere consultar múltiples runbooks/scripts para entenderse, el sprint no se considera cerrado.
+
+### Evidencia runtime obligatoria por PR
+- Captura(s) de la superficie afectada (si aplica cambio visual/operativo).
+- Lista de comandos ejecutados y su salida resumida.
+- Validación explícita de no duplicación de mapping entre frontend/API/scripts (`N/A` justificado cuando una capa no existe).
+
 ## Entregables por día
 
 ### Día 1 — Baseline operacional

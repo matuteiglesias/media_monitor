@@ -16,8 +16,9 @@
 
 - **Prohibido introducir nuevas shapes** hasta que exista consumidor real en ruta productiva.
 - **Regla de PR:** cualquier campo nuevo debe documentar en el PR:
-  1. `consumer route` (ruta productiva consumidora), y
-  2. evidencia de uso real (ejecución, captura o artefacto verificable).
+  1. `consumer route` (ruta productiva consumidora),
+  2. evidencia runtime de uso real (comandos ejecutados + captura o artefacto verificable), y
+  3. validación de no duplicación de mapping entre frontend/API/scripts (o `N/A` justificado si una capa no existe).
 
 - La decisión de activar/postergar PR-4 se toma por evidencia operativa, no por preferencia arquitectónica.
 - Cualquier activación debe registrarse en el decision log.

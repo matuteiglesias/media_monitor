@@ -1,0 +1,18 @@
+{
+  "digest_at": "20260314T01",
+  "status": "degraded",
+  "human_handoff": {
+    "latest_yt_script_drafts": [],
+    "latest_article_drafts": [],
+    "action_candidates": [],
+    "status": "no-seed-ideas"
+  },
+  "metrics": {
+    "drafts_emitted": 0,
+    "briefs_emitted": 0,
+    "seed_ideas_emitted": 0,
+    "schema_failures": 0,
+    "fallback_legacy_count": 0
+  },
+  "built_at": "20260314T210029Z"
+}
