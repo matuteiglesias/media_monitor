@@ -113,6 +113,22 @@ def _to_int_or_none(value: object) -> int | None:
         return None
 
 
+
+
+def _read_json_file(path: Path) -> dict | None:
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def load_pr3a_compact_summary(telemetry_root: Path) -> dict | None:
+    storage_root = telemetry_root.parent
+    compact_path = storage_root / "indexes" / "pr3a_export_compact_latest.json"
+    return _read_json_file(compact_path)
+
 def write_summary(runs_path: Path, status_dir: Path, summary_path: Path, now_dt: datetime) -> None:
     cutoff = now_dt - timedelta(hours=24)
     per_lane: dict[str, dict[str, object]] = {}
@@ -301,6 +317,19 @@ def main(argv: Sequence[str]) -> int:
         "record_path": str(runs_path),
         "health_state": health_state,
     }
+
+    if args.stage == "export_pr3a":
+        compact = load_pr3a_compact_summary(telemetry_root)
+        if compact:
+            for key in (
+                "last_successful_export_at",
+                "last_exported_digest_at",
+                "news_ref_count",
+                "news_digest_group_count",
+                "export_status",
+                "failure_reason",
+            ):
+                status_payload[key] = compact.get(key)
     write_json(status_path, status_payload)
 
     write_summary(runs_path, status_dir, summary_path, now_dt)
