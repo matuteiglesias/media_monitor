@@ -1,6 +1,6 @@
 # PR9 — Newspaper skin implementation PRs
 
-## Contract authority
+## Contexto
 
 `contracts/schemas/publish_surface_v1.json` es la única autoridad del contrato público v1.
 
@@ -19,12 +19,11 @@
   1. `consumer route` (ruta productiva consumidora), y
   2. evidencia de uso real (ejecución, captura o artefacto verificable).
 
-## Validation gate
+- La decisión de activar/postergar PR-4 se toma por evidencia operativa, no por preferencia arquitectónica.
+- Cualquier activación debe registrarse en el decision log.
 
-El check operativo es `make validate-publish-surface`, que corre `scripts/validate_publish_surface.py` sobre:
+## Decision log
 
-- `storage/indexes/news_recent_refs_latest.jsonl`
-- `storage/indexes/news_recent_groups_latest.jsonl`
-- `storage/indexes/editorial_latest.json`
-
-El comando debe fallar (exit code != 0) cuando falten archivos o el shape no cumpla contrato.
+| Fecha | Gatillo | Evidencia | Decisión |
+|---|---|---|---|
+| YYYY-MM-DD | (1) filesystem / (2) caching-TTL / (3) multi-cliente | Link a incidente, métrica o ticket | Activar API / Postergar API |
