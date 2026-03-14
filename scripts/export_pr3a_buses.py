@@ -65,6 +65,75 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def _load_previous_export_output(storage_dir: Path, digest_at: str, export_name: str) -> str | None:
+    idx_dir = storage_dir / "indexes"
+    latest = idx_dir / "pr3a_exports_latest.json"
+    candidates: list[Path] = []
+    if latest.exists():
+        candidates.append(latest)
+    candidates.extend(sorted(idx_dir.glob(f"pr3a_exports_{digest_at}_*.json"), reverse=True))
+
+    seen: set[Path] = set()
+    for candidate in candidates:
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        try:
+            payload = _read_json(candidate)
+        except Exception:
+            continue
+        if str(payload.get("digest_at") or "") != digest_at:
+            continue
+        for result in payload.get("results") or []:
+            if str(result.get("name") or "") != export_name:
+                continue
+            if str(result.get("status") or "") not in {"exported", "skipped_duplicate"}:
+                continue
+            output = str(result.get("output_path") or "").strip()
+            if output and Path(output).exists():
+                return output
+
+    manifest_glob: str
+    if export_name == "news_ref.v1":
+        manifest_glob = "buses/news_ref/v1/manifest_*.json"
+    elif export_name == "news_digest_group.v1":
+        manifest_glob = "buses/news_digest_group/v1/manifest_*.json"
+    else:
+        return None
+
+    for manifest in sorted(storage_dir.glob(manifest_glob), reverse=True):
+        try:
+            payload = _read_json(manifest)
+        except Exception:
+            continue
+        if str(payload.get("digest_at") or "") != digest_at:
+            continue
+        if str(payload.get("status") or "exported") not in {"exported", "skipped_duplicate"}:
+            continue
+        output = str(payload.get("output_file") or payload.get("duplicate_of") or "").strip()
+        if output and Path(output).exists():
+            return output
+    return None
+
+
+def _rows_match_previous_output(rows: list[dict[str, Any]], previous_output: str | None) -> bool:
+    if not previous_output:
+        return False
+    prev_path = Path(previous_output)
+    if not prev_path.exists() or prev_path.stat().st_size == 0:
+        return False
+    prev_rows = list(_iter_jsonl(prev_path))
+    return prev_rows == rows
+
+
+def _run_status(results: list[ExportResult]) -> str:
+    if any(r.status == "exported" for r in results):
+        return "exported"
+    if any(r.status == "skipped_duplicate" for r in results):
+        return "skipped_duplicate"
+    return "noop"
+
+
 def _read_csv(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8", newline="") as f:
         return list(csv.DictReader(f))
@@ -144,7 +213,7 @@ def _latest_digest_map_by_index(data_dir: Path) -> dict[str, dict[str, str]]:
     return out
 
 
-def export_news_ref(data_dir: Path, storage_dir: Path, contracts_dir: Path, export_at: str) -> ExportResult:
+def export_news_ref(data_dir: Path, storage_dir: Path, contracts_dir: Path, digest_at: str, export_at: str) -> ExportResult:
     source_path, source_rows = _select_ref_source(data_dir)
     if not source_rows:
         return ExportResult("news_ref.v1", "noop", 0, None, None, None, "missing master_ref/master_index input")
@@ -191,12 +260,38 @@ def export_news_ref(data_dir: Path, storage_dir: Path, contracts_dir: Path, expo
     out_dir = storage_dir / "buses" / "news_ref" / "v1"
     out_file = out_dir / f"news_ref_{export_at}.jsonl"
     manifest = out_dir / f"manifest_{export_at}.json"
+    previous_output = _load_previous_export_output(storage_dir, digest_at, "news_ref.v1")
+    if _rows_match_previous_output(out_rows, previous_output):
+        _write_json(
+            manifest,
+            {
+                "schema": "news_ref.v1",
+                "status": "skipped_duplicate",
+                "export_at": export_at,
+                "digest_at": digest_at,
+                "row_count": len(out_rows),
+                "source_file": source_path,
+                "duplicate_of": previous_output,
+            },
+        )
+        return ExportResult(
+            "news_ref.v1",
+            "skipped_duplicate",
+            len(out_rows),
+            source_path,
+            previous_output,
+            str(manifest),
+            "content identical to latest successful export for digest_at",
+        )
+
     _write_jsonl(out_file, out_rows)
     _write_json(
         manifest,
         {
             "schema": "news_ref.v1",
+            "status": "exported",
             "export_at": export_at,
+            "digest_at": digest_at,
             "row_count": len(out_rows),
             "source_file": source_path,
             "source_fields": ["index_id", "source", "link", "first_seen", "last_seen", "topics", "meta"],
@@ -320,11 +415,36 @@ def export_news_digest_group(
     out_dir = storage_dir / "buses" / "news_digest_group" / "v1"
     out_file = out_dir / f"news_digest_group_{digest_at}_{export_at}.jsonl"
     manifest = out_dir / f"manifest_{digest_at}_{export_at}.json"
+    previous_output = _load_previous_export_output(storage_dir, digest_at, "news_digest_group.v1")
+    if _rows_match_previous_output(out_rows, previous_output):
+        _write_json(
+            manifest,
+            {
+                "schema": "news_digest_group.v1",
+                "status": "skipped_duplicate",
+                "export_at": export_at,
+                "digest_at": digest_at,
+                "row_count": len(out_rows),
+                "source_file": source,
+                "duplicate_of": previous_output,
+            },
+        )
+        return ExportResult(
+            "news_digest_group.v1",
+            "skipped_duplicate",
+            len(out_rows),
+            source,
+            previous_output,
+            str(manifest),
+            "content identical to latest successful export for digest_at",
+        )
+
     _write_jsonl(out_file, out_rows)
     _write_json(
         manifest,
         {
             "schema": "news_digest_group.v1",
+            "status": "exported",
             "export_at": export_at,
             "digest_at": digest_at,
             "row_count": len(out_rows),
@@ -350,6 +470,7 @@ def write_indexes(storage_dir: Path, digest_at: str, export_at: str, results: li
     payload = {
         "digest_at": digest_at,
         "export_at": export_at,
+        "status": _run_status(results),
         "results": [r.__dict__ for r in results],
     }
     latest = idx_dir / "pr3a_exports_latest.json"
@@ -369,7 +490,7 @@ def write_run_record(storage_dir: Path, digest_at: str, export_at: str, results:
             "job": "export_pr3a_buses",
             "digest_at": digest_at,
             "export_at": export_at,
-            "status": "exported" if any(r.status == "exported" for r in results) else "noop",
+            "status": _run_status(results),
             "results": [r.__dict__ for r in results],
         },
     )
