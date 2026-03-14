@@ -95,6 +95,71 @@ def test_export_pr3a_generates_non_empty_buses_and_valid_contracts(tmp_path: Pat
     assert not list(dg_validator.iter_errors(dg_rows[0]))
 
 
+def test_export_pr3a_accepts_8_char_index_id_and_validates_schema(tmp_path: Path):
+    data = tmp_path / "data"
+    storage = tmp_path / "storage"
+
+    _write_csv(
+        data / "master_ref.csv",
+        [
+            {
+                "index_id": "15ef8990",
+                "source": "EL PAIS",
+                "link": "https://elpais.com/economia/example-8",
+                "first_seen": "2026-03-13T16:00:00Z",
+                "last_seen": "2026-03-13T16:00:00Z",
+                "topics": '["Economia"]',
+                "meta": '{"ingest": "rss"}',
+            }
+        ],
+    )
+
+    _write_csv(
+        data / "digest_map" / "20260313T16.csv",
+        [
+            {
+                "digest_file": "digest_A_20260313T16.csv",
+                "article_id": "43",
+                "index_id": "15ef8990",
+                "Title": "Mercado se estabiliza",
+                "Source": "EL PAIS",
+                "Link": "https://elpais.com/economia/example-8",
+                "Published": "2026-03-13T16:00:00Z",
+                "window_type": "4h_window",
+                "Topic": "Economia",
+            }
+        ],
+    )
+
+    out = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--digest-at",
+            "20260313T16",
+            "--data-dir",
+            str(data),
+            "--storage-dir",
+            str(storage),
+            "--contracts-dir",
+            str(ROOT / "contracts"),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "status=exported" in out.stdout
+
+    ref_files = sorted((storage / "buses" / "news_ref" / "v1").glob("news_ref_*.jsonl"))
+    assert ref_files
+    ref_rows = [json.loads(x) for x in ref_files[-1].read_text(encoding="utf-8").splitlines() if x.strip()]
+    assert ref_rows
+    assert ref_rows[0]["index_id"] == "15ef8990"
+
+    ref_validator = Draft202012Validator(_schema("news_ref.v1.json"))
+    assert not list(ref_validator.iter_errors(ref_rows[0]))
+
+
 def test_export_pr3a_noop_when_missing_input(tmp_path: Path):
     storage = tmp_path / "storage"
     out = subprocess.run(
