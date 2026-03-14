@@ -34,6 +34,54 @@ bin/run_minimal_loop_once.sh --lane editorial
 bin/run_minimal_loop_once.sh --lane enrich
 ```
 
+### DoD mínimo del sprint (cierre operacional)
+
+Un sprint se considera **cerrado** solo si se cumple este mínimo:
+
+- `home` viva (ruta principal visible y utilizable sin arqueología documental).
+- `story` viva (al menos una historia recorre la ruta completa y queda accionable).
+- handoff panel simple vivo (`storage/indexes/editorial_latest.json` como superficie de decisión).
+- README canónico corto actualizado (este archivo como golden path).
+
+Criterio de rechazo explícito:
+
+- Si para entender el flujo básico hacen falta múltiples runbooks/scripts en paralelo, el sprint **no** se cierra.
+
+Evidencia obligatoria por PR:
+
+- Comandos ejecutados (copiables) y resultado observable.
+- Capturas de la superficie afectada cuando el cambio sea visual/operativo.
+- Validación de no duplicación de mapping entre frontend/API/scripts (o `N/A` justificado si una capa no existe en el repo).
+
+---
+
+## 📰 Last mile (página simple de publicación)
+
+Generar snapshot público hardened para la web:
+
+```bash
+make build-editorial-access-indexes DIGEST_AT=$(date -u +%Y%m%dT%H)
+make publish-last-mile-snapshot
+```
+
+Abrir vista local:
+
+```bash
+python -m http.server 8000
+# abrir http://localhost:8000/web/
+```
+
+Deploy en Vercel (online):
+
+```bash
+vercel --prod
+```
+
+Hardening aplicado:
+- La UI consume primero `web/data/editorial_latest.json` (snapshot público) y cae a `storage/indexes/editorial_latest.json` solo para desarrollo local.
+- Snapshot generado por `scripts/publish_last_mile_snapshot.py` con shape mínima y sanitizada para evitar exponer campos no necesarios.
+- `vercel.json` aplica headers de seguridad (`CSP`, `X-Frame-Options`, `nosniff`) y `no-store` para JSON de estado.
+
 ---
 
 ## 🚀 Quickstart
@@ -64,7 +112,7 @@ make heartbeat-status
 ## 🧭 Estructura (high-level)
 
 - `bin/` → entrypoints de operación.
-- `makefile` → wiring de stages.
+- `Makefile` → wiring de stages.
 - `apps/news_acquire|news_editorial|news_enrich` → ownership por dominio.
 - `legacy/` y algunos `scripts/` → compat wrappers aún activos.
 - `contracts/schemas/` → contratos interoperables.
