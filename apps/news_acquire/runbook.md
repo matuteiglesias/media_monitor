@@ -3,7 +3,7 @@
 ## Purpose
 `apps/news_acquire` is now the explicit **owner module** for acquisition runtime boundaries.
 
-PR4a establishes ownership and entrypoints while preserving the existing legacy runtime path.
+PR4a establishes ownership and entrypoints while preserving backward-compatible legacy wrappers.
 
 ## Scope owned by news_acquire
 
@@ -24,10 +24,10 @@ PR4a establishes ownership and entrypoints while preserving the existing legacy 
 - `storage/indexes/pr3a_exports_<DIGEST_AT>_<EXPORT_AT>.json`
 
 ### Seams consumed
-- Legacy stage outputs from:
-  - `make s01` -> `legacy.stage01_digests`
-  - `make s02` -> `legacy.stage02_master_index_update`
-  - `make s03` -> `legacy.stage03_headlines_digests`
+- Owner stage outputs from:
+  - `make s01` -> `apps.news_acquire.src.news_acquire.stage01_digests`
+  - `make s02` -> `apps.news_acquire.src.news_acquire.stage02_master_index_update`
+  - `make s03` -> `apps.news_acquire.src.news_acquire.stage03_headlines_digests`
 - Contract schemas:
   - `contracts/schemas/news_ref.v1.json`
   - `contracts/schemas/news_digest_group.v1.json`
@@ -51,7 +51,7 @@ Use:
 apps/news_acquire/entrypoints/run_acquire_owner.sh
 ```
 
-This wrapper is additive and delegates to existing make targets:
+This wrapper delegates to canonical make targets:
 
 1. `make s01`
 2. `make s02`

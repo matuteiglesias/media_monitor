@@ -39,7 +39,7 @@ env:       ## Print effective env knobs
 preflight-runtime: ## Validate runtime prerequisites without changing pipeline state
 	@set -euo pipefail; \
 	 echo "[preflight] repo=$(PWD)"; \
-	 if [ ! -x "$(PYTHON)" ]; then echo "[preflight] ERROR missing project python: $(PYTHON)"; exit 2; fi; \
+	 if ! command -v "$(PYTHON)" >/dev/null 2>&1 && [ ! -x "$(PYTHON)" ]; then echo "[preflight] ERROR missing project python: $(PYTHON)"; exit 2; fi; \
 	 echo "[preflight] project python: $$($(PYTHON) --version 2>&1)"; \
 	 if "$(PYTHON)" -c "import pandas, feedparser" >/dev/null 2>&1; then \
 	   echo "[preflight] stage01 deps import: OK (pandas, feedparser)"; \
@@ -76,13 +76,13 @@ clean-null: ## Remove null-sink temp outputs
 
 # ------------ Stage targets (canonical) ------------
 s01:       ## Stage 01 — digests pull & slice (no heavy work)
-	@$(_env_prefix) $(PYTHON) -m legacy.stage01_digests
+	@$(_env_prefix) $(PYTHON) -m apps.news_acquire.src.news_acquire.stage01_digests
 
 s02:       ## Stage 02 — master index update + digest_map
-	@$(_env_prefix) $(PYTHON) -m legacy.stage02_master_index_update
+	@$(_env_prefix) $(PYTHON) -m apps.news_acquire.src.news_acquire.stage02_master_index_update
 
 s03:       ## Stage 03 — headlines digests (build grouped JSONL + MD)
-	@$(_env_prefix) $(PYTHON) -m legacy.stage03_headlines_digests
+	@$(_env_prefix) $(PYTHON) -m apps.news_acquire.src.news_acquire.stage03_headlines_digests
 
 
 # Trim PF_MODE once (prevents "legacy           " issues)
@@ -137,10 +137,10 @@ pf-article: ## Force PF over per-article pfin file
 
 
 s05:       ## Stage 05 — explode PF outputs → drafts + enqueue generate
-	@$(_env_prefix) $(PYTHON) -m legacy.stage05_explode_pf_outputs
+	@$(_env_prefix) $(PYTHON) -m apps.news_editorial.src.news_editorial.stage05_explode_pf_outputs
 
 s06:       ## Stage 06 — build news_piece_brief.v1 seam from PF seed_ideas
-	@$(_env_prefix) $(PYTHON) -m legacy.stage06_build_piece_briefs
+	@$(_env_prefix) $(PYTHON) -m apps.news_editorial.src.news_editorial.stage06_build_piece_briefs
 
 export-pr3a: ## PR3a real exports: legacy outputs -> storage buses/indexes
 	@$(PYTHON) scripts/export_pr3a_buses.py --digest-at $(DIGEST_AT)
@@ -153,8 +153,8 @@ build-editorial-access-indexes: ## Build compact editorial status index (seed/br
 
 # ------------ Pipelines ------------
 prep:      ## 01+02 on fixed hour (safe defaults DRY_RUN=1)
-	@DIGEST_AT=$(DIGEST_AT) DRY_RUN=1 $(PYTHON) -m legacy.stage01_digests && \
-	 DIGEST_AT=$(DIGEST_AT) DRY_RUN=1 $(PYTHON) -m legacy.stage02_master_index_update
+	@DIGEST_AT=$(DIGEST_AT) DRY_RUN=1 $(PYTHON) -m apps.news_acquire.src.news_acquire.stage01_digests && \
+	 DIGEST_AT=$(DIGEST_AT) DRY_RUN=1 $(PYTHON) -m apps.news_acquire.src.news_acquire.stage02_master_index_update
 
 pf:        ## Run PromptFlow once for the hour (direct CLI)
 	@$(MAKE) s04
@@ -169,12 +169,12 @@ all:       ## 01 → 02 → 03 → 04 → 06 → 05 (respecting DRY_RUN/NULL_SIN
 stage-any: ## Run any stage by number: make stage-any STAGE=03
 	@if [ -z "$(STAGE)" ]; then echo "STAGE is required (01..06)"; exit 2; fi; \
 	case "$(STAGE)" in \
-	  01) MOD=legacy.stage01_digests ;; \
-	  02) MOD=legacy.stage02_master_index_update ;; \
-	  03) MOD=legacy.stage03_headlines_digests ;; \
+	  01) MOD=apps.news_acquire.src.news_acquire.stage01_digests ;; \
+	  02) MOD=apps.news_acquire.src.news_acquire.stage02_master_index_update ;; \
+	  03) MOD=apps.news_acquire.src.news_acquire.stage03_headlines_digests ;; \
 	  04) echo "Use: make s04 (PF CLI)"; exit 2 ;; \
-	  05) MOD=legacy.stage05_explode_pf_outputs ;; \
-	  06) MOD=legacy.stage06_build_piece_briefs ;; \
+	  05) MOD=apps.news_editorial.src.news_editorial.stage05_explode_pf_outputs ;; \
+	  06) MOD=apps.news_editorial.src.news_editorial.stage06_build_piece_briefs ;; \
 	  *)  echo "Unknown STAGE=$(STAGE) (expected 01..06)"; exit 2 ;; \
 	esac; \
 	echo ">> Running $$MOD with DIGEST_AT=$(DIGEST_AT)"; \
