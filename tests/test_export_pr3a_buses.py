@@ -33,7 +33,7 @@ def test_export_pr3a_generates_non_empty_buses_and_valid_contracts(tmp_path: Pat
         data / "master_ref.csv",
         [
             {
-                "index_id": "ABCDEFGHJK",
+                "index_id": "15ef8990d6",
                 "source": "EL PAIS",
                 "link": "https://elpais.com/economia/example",
                 "first_seen": "2026-03-13T15:00:00Z",
@@ -50,7 +50,7 @@ def test_export_pr3a_generates_non_empty_buses_and_valid_contracts(tmp_path: Pat
             {
                 "digest_file": "digest_A_20260313T15.csv",
                 "article_id": "42",
-                "index_id": "ABCDEFGHJK",
+                "index_id": "15ef8990d6",
                 "Title": "Inflación baja",
                 "Source": "EL PAIS",
                 "Link": "https://elpais.com/economia/example",
