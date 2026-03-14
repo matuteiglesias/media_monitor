@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/publish_surface_v1.json",
+  "title": "public_contract_v1",
+  "description": "Public publishing contract v1. Single source of truth for approved surface shapes and field-level required/optional/fallback behavior.",
+  "type": "object",
+  "additionalProperties": false,
+  "x_contract_governance": {
+    "approved_shapes_v1": [
+      "frontpage.v1",
+      "topic_page.v1",
+      "story_page.v1",
+      "editorial_handoff.v1"
+    ],
+    "new_shape_policy": "Forbidden until there is a real consumer in a production route.",
+    "pull_request_rule": "Any new field must include consumer route and usage evidence in the PR body."
+  },
+  "properties": {
+    "schema_name": {
+      "const": "public_contract_v1"
+    },
+    "frontpage_items": {
+      "type": "array",
+      "description": "Collection of frontpage.v1 records.",
+      "items": {
+        "$ref": "#/$defs/frontpage.v1"
+      },
+      "default": []
+    },
+    "topic_pages": {
+      "type": "array",
+      "description": "Collection of topic_page.v1 records.",
+      "items": {
+        "$ref": "#/$defs/topic_page.v1"
+      },
+      "default": []
+    },
+    "stories": {
+      "type": "array",
+      "description": "Collection of story_page.v1 records.",
+      "items": {
+        "$ref": "#/$defs/story_page.v1"
+      },
+      "default": []
+    },
+    "editorial_handoff_items": {
+      "type": "array",
+      "description": "Collection of editorial_handoff.v1 records.",
+      "items": {
+        "$ref": "#/$defs/editorial_handoff.v1"
+      },
+      "default": []
+    }
+  },
+  "required": [
+    "schema_name",
+    "frontpage_items",
+    "topic_pages",
+    "stories",
+    "editorial_handoff_items"
+  ],
+  "$defs": {
+    "frontpage.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "frontpage.v1 — frontpage tile contract.",
+      "properties": {
+        "digest_at": {
+          "type": "string",
+          "description": "Required. Fallback: 'unknown'."
+        },
+        "title": {
+          "type": "string",
+          "description": "Required. Fallback: '(untitled)'."
+        },
+        "topic": {
+          "type": "string",
+          "description": "Required. Fallback: 'unknown'."
+        },
+        "published_at": {
+          "type": "string",
+          "description": "Required. Fallback: '1970-01-01T00:00:00Z'."
+        },
+        "link": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required. No fallback: invalid when absent."
+        },
+        "source": {
+          "type": "string",
+          "description": "Optional. Fallback: 'unknown'."
+        },
+        "index_id": {
+          "type": "string",
+          "description": "Optional. Fallback: ''."
+        }
+      },
+      "required": [
+        "digest_at",
+        "title",
+        "topic",
+        "published_at",
+        "link"
+      ]
+    },
+    "topic_page.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "topic_page.v1 — topic landing page contract.",
+      "properties": {
+        "digest_at": {
+          "type": "string",
+          "description": "Required. Fallback: 'unknown'."
+        },
+        "topic": {
+          "type": "string",
+          "description": "Required. Fallback: 'unknown'."
+        },
+        "window_type": {
+          "type": "string",
+          "description": "Required. Fallback: 'unknown'."
+        },
+        "group_number": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Optional. Fallback: 0."
+        },
+        "article_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Optional. Fallback: 0."
+        },
+        "top_titles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Optional. Fallback: []."
+        }
+      },
+      "required": [
+        "digest_at",
+        "topic",
+        "window_type"
+      ]
+    },
+    "story_page.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "story_page.v1 — canonical story detail contract.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Required. Fallback: index_id, then link hash at adapter layer."
+        },
+        "title": {
+          "type": "string",
+          "description": "Required. Fallback: '(untitled)'."
+        },
+        "topic": {
+          "type": "string",
+          "description": "Required. Fallback: 'unknown'."
+        },
+        "link": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required. No fallback."
+        },
+        "source": {
+          "type": "string",
+          "description": "Optional. Fallback: 'unknown'."
+        },
+        "published_at": {
+          "type": "string",
+          "description": "Optional. Fallback: '1970-01-01T00:00:00Z'."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "topic",
+        "link"
+      ]
+    },
+    "editorial_handoff.v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "editorial_handoff.v1 — editor-facing recommendation contract.",
+      "properties": {
+        "target_format": {
+          "type": "string",
+          "enum": [
+            "article",
+            "yt_script"
+          ],
+          "description": "Required. Fallback: 'article'."
+        },
+        "ready_state": {
+          "type": "string",
+          "description": "Required. Fallback: 'unknown'."
+        },
+        "title": {
+          "type": "string",
+          "description": "Required. Fallback: topic, then '(untitled)'."
+        },
+        "topic": {
+          "type": "string",
+          "description": "Required. Fallback: 'unknown'."
+        },
+        "priority": {
+          "type": "string",
+          "description": "Optional. Fallback: 'normal'."
+        },
+        "source": {
+          "type": "string",
+          "description": "Optional. Fallback: 'unknown'."
+        },
+        "path": {
+          "type": "string",
+          "description": "Optional. Fallback: ''."
+        }
+      },
+      "required": [
+        "target_format",
+        "ready_state",
+        "title",
+        "topic"
+      ]
+    }
+  }
+}
