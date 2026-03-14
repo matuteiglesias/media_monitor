@@ -19,7 +19,7 @@ Hard constraints:
 | `apps/news_acquire/src/news_acquire` | owner source-of-truth | Acquire implementation moved under owner module. | Must keep. |
 | `apps/news_editorial/src/news_editorial` | owner source-of-truth | Editorial implementation moved under owner module. | Must keep. |
 | `apps/news_enrich/src/news_enrich` | owner source-of-truth | Enrich implementation moved under owner module. | Must keep. |
-| `legacy/*.py` stage modules | compatibility wrapper | Canonical Make targets still call these modules. | Keep; annotate wrapper intent. |
+| `legacy/*.py` stage modules | compatibility wrapper | Backward-compatible module entrypoints for old calls; canonical Make now calls owner modules directly. | Keep; avoid runtime dependency on wrappers. |
 | `backend/` | transitional/internal modules | Useful for migration history and internal reuse. | Keep; avoid promoting as public seam. |
 | `scripts/export_pr3a_buses.py` | runtime-support utility | Material export seam to buses/indexes. | Keep and harden. |
 | `scripts/04_promptflow_run.py`, `scripts/05_explode_pf_outputs.py`, `scripts/06_scrape_enrich.py` | compatibility/ops wrappers | Useful as aditive entrypoints; overlap with staged path. | Keep with explicit ownership labels. |
@@ -62,7 +62,7 @@ Smoke checks:
 ### Phase 3 — postpone
 
 - PromptFlow runtime/connection rewiring (`open_ai_connection`, keyring backend assumptions).
-- Removing legacy wrappers still referenced by Make/runtime path.
+- Removing legacy wrappers still referenced by external scripts/cron paths.
 - Structural collapse of `backend/` until runtime ownership usage is fully verified.
 - Any migration that changes canonical orchestration order.
 
