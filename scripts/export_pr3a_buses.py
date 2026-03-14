@@ -32,6 +32,14 @@ def _utc_now_compact() -> str:
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
+def _compact_to_rfc3339(value: str) -> str:
+    try:
+        dt = datetime.strptime(value, "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
+        return dt.isoformat().replace("+00:00", "Z")
+    except ValueError:
+        return _to_rfc3339(value)
+
+
 def _read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -368,6 +376,67 @@ def write_run_record(storage_dir: Path, digest_at: str, export_at: str, results:
     return run_path
 
 
+
+
+def _build_compact_summary(
+    previous: dict[str, Any],
+    digest_at: str,
+    export_at: str,
+    results: list[ExportResult],
+    export_status: str,
+    failure_reason: str | None,
+) -> dict[str, Any]:
+    news_ref = next((r for r in results if r.name == "news_ref.v1"), None)
+    news_digest = next((r for r in results if r.name == "news_digest_group.v1"), None)
+
+    summary = {
+        "last_successful_export_at": previous.get("last_successful_export_at"),
+        "last_exported_digest_at": previous.get("last_exported_digest_at"),
+        "news_ref_count": int(previous.get("news_ref_count") or 0),
+        "news_digest_group_count": int(previous.get("news_digest_group_count") or 0),
+        "export_status": export_status,
+        "failure_reason": failure_reason,
+    }
+
+    if export_status == "success":
+        summary.update(
+            {
+                "last_successful_export_at": _compact_to_rfc3339(export_at),
+                "last_exported_digest_at": digest_at,
+                "news_ref_count": news_ref.count if news_ref else 0,
+                "news_digest_group_count": news_digest.count if news_digest else 0,
+                "failure_reason": None,
+            }
+        )
+    return summary
+
+
+def write_compact_summary(
+    storage_dir: Path,
+    digest_at: str,
+    export_at: str,
+    results: list[ExportResult],
+    export_status: str,
+    failure_reason: str | None,
+) -> Path:
+    idx_dir = storage_dir / "indexes"
+    idx_dir.mkdir(parents=True, exist_ok=True)
+    latest = idx_dir / "pr3a_export_compact_latest.json"
+
+    previous: dict[str, Any] = {}
+    if latest.exists():
+        try:
+            previous = _read_json(latest)
+        except Exception:
+            previous = {}
+
+    payload = _build_compact_summary(previous, digest_at, export_at, results, export_status, failure_reason)
+    _write_json(latest, payload)
+
+    run_file = idx_dir / f"pr3a_export_compact_{digest_at}_{export_at}.json"
+    _write_json(run_file, payload)
+    return latest
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="PR3a real exports from legacy outputs to storage buses/indexes")
     p.add_argument("--digest-at", required=True, help="Hour bucket YYYYMMDDTHH")
@@ -385,20 +454,38 @@ def main() -> int:
     storage_dir = Path(args.storage_dir)
     contracts_dir = Path(args.contracts_dir)
 
-    results = [
-        export_news_ref(data_dir, storage_dir, contracts_dir, export_at),
-        export_news_digest_group(data_dir, storage_dir, contracts_dir, digest_at, export_at),
-    ]
+    try:
+        results = [
+            export_news_ref(data_dir, storage_dir, contracts_dir, export_at),
+            export_news_digest_group(data_dir, storage_dir, contracts_dir, digest_at, export_at),
+        ]
 
-    run_record = write_run_record(storage_dir, digest_at, export_at, results)
-    index_record = write_indexes(storage_dir, digest_at, export_at, results)
+        run_record = write_run_record(storage_dir, digest_at, export_at, results)
+        index_record = write_indexes(storage_dir, digest_at, export_at, results)
+        compact_summary = write_compact_summary(
+            storage_dir, digest_at, export_at, results, export_status="success", failure_reason=None
+        )
 
-    print(f"[pr3a-export] digest_at={digest_at} export_at={export_at}")
-    for r in results:
-        print(f"[pr3a-export] {r.name} status={r.status} count={r.count} source={r.source} output={r.output_path}")
-    print(f"[pr3a-export] run_record={run_record}")
-    print(f"[pr3a-export] index_record={index_record}")
-    return 0
+        print(f"[pr3a-export] digest_at={digest_at} export_at={export_at}")
+        for r in results:
+            print(f"[pr3a-export] {r.name} status={r.status} count={r.count} source={r.source} output={r.output_path}")
+        print(f"[pr3a-export] run_record={run_record}")
+        print(f"[pr3a-export] index_record={index_record}")
+        print(f"[pr3a-export] compact_summary={compact_summary}")
+        return 0
+    except Exception as exc:
+        reason = f"{exc.__class__.__name__}: {exc}"
+        compact_summary = write_compact_summary(
+            storage_dir,
+            digest_at,
+            export_at,
+            results=[],
+            export_status="failed",
+            failure_reason=reason,
+        )
+        print(f"[pr3a-export] ERROR export failed: {reason}", flush=True)
+        print(f"[pr3a-export] compact_summary={compact_summary}", flush=True)
+        return 1
 
 
 if __name__ == "__main__":
