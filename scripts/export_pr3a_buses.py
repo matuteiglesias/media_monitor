@@ -577,7 +577,7 @@ def main() -> int:
 
     try:
         results = [
-            export_news_ref(data_dir, storage_dir, contracts_dir, export_at),
+            export_news_ref(data_dir, storage_dir, contracts_dir, digest_at, export_at),
             export_news_digest_group(data_dir, storage_dir, contracts_dir, digest_at, export_at),
         ]
 
