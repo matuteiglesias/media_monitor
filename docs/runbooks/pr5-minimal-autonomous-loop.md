@@ -44,10 +44,12 @@ Actions:
 1. `make s04`
 2. `make s06`
 3. `make s05`
+4. `make build-editorial-access-indexes`
 
 Expected outputs:
 
 - PF outputs + piece brief materialization + draft generation attempts
+- Compact editorial observability index at `storage/indexes/editorial_latest.json`
 
 Failure isolation:
 
