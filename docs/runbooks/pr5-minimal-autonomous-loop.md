@@ -42,11 +42,12 @@ Entrypoint:
 Actions:
 
 1. `make s04`
-2. `make s05`
+2. `make s06`
+3. `make s05`
 
 Expected outputs:
 
-- PF outputs + draft generation attempts
+- PF outputs + piece brief materialization + draft generation attempts
 
 Failure isolation:
 
