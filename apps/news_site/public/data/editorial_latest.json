@@ -1,6 +1,6 @@
 {
-  "status": "missing_public_snapshot",
-  "message": "Run snapshot refresh to populate public data.",
+  "status": "missing_editorial_index",
+  "message": "storage/indexes/editorial_latest.json was missing during refresh_public_data",
   "generated_at": null,
   "digest_at": null,
   "items": []
