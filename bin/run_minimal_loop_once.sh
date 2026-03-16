@@ -211,7 +211,7 @@ case "$LANE" in
     run_cmd "s02" make s02 DIGEST_AT="$DIGEST_AT" DRY_RUN="$DRY_RUN"
     run_cmd "s03" make s03 DIGEST_AT="$DIGEST_AT" DRY_RUN="$DRY_RUN"
     run_cmd "export_pr3a" make export-pr3a DIGEST_AT="$DIGEST_AT"
-    run_cmd "build_news_access_indexes" make build-news-access-indexes
+    run_cmd "build_news_access_indexes" make build-news-access-indexes DIGEST_AT="$DIGEST_AT"
     ;;
   editorial)
     run_cmd "s04" make s04 DIGEST_AT="$DIGEST_AT" DRY_RUN="$DRY_RUN"
