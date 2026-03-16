@@ -1,7 +1,28 @@
 {
-  "status": "missing_editorial_index",
-  "message": "storage/indexes/editorial_latest.json was missing during refresh_public_data",
-  "generated_at": null,
-  "digest_at": null,
-  "items": []
+  "digest_at": "20260316T16",
+  "built_at": "20260316T165135Z",
+  "status": "degraded",
+  "metrics": {
+    "seed_ideas_emitted": 0,
+    "briefs_emitted": 0,
+    "drafts_emitted": 0,
+    "fallback_legacy_count": 0,
+    "schema_failures": 0
+  },
+  "pointers": {
+    "pf_outputs": [],
+    "brief_files": [],
+    "draft_files": [],
+    "quarantine_files": [
+      "data/quarantine/V02_02_master_index_update:20260316T16.jsonl"
+    ]
+  },
+  "human_handoff": {
+    "status": "no-seed-ideas",
+    "latest_briefs": [],
+    "latest_article_drafts": [],
+    "latest_yt_script_drafts": [],
+    "fallback_events": [],
+    "action_candidates": []
+  }
 }
