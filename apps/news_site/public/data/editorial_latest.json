@@ -1,6 +1,6 @@
 {
-  "digest_at": "20260408T21",
-  "built_at": "20260408T210543Z",
+  "digest_at": "20260408T23",
+  "built_at": "20260408T230546Z",
   "status": "degraded",
   "metrics": {
     "seed_ideas_emitted": 0,
@@ -13,9 +13,7 @@
     "pf_outputs": [],
     "brief_files": [],
     "draft_files": [],
-    "quarantine_files": [
-      "data/quarantine/V02_02_master_index_update:20260408T21.jsonl"
-    ]
+    "quarantine_files": []
   },
   "human_handoff": {
     "status": "no-seed-ideas",
