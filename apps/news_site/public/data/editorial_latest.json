@@ -1,6 +1,6 @@
 {
-  "digest_at": "20260427T15",
-  "built_at": "20260427T150717Z",
+  "digest_at": "20260427T17",
+  "built_at": "20260427T170717Z",
   "status": "degraded",
   "metrics": {
     "seed_ideas_emitted": 0,
