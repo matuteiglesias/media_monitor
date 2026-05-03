@@ -1,6 +1,6 @@
 {
-  "digest_at": "20260502T23",
-  "built_at": "20260502T235004Z",
+  "digest_at": "20260503T01",
+  "built_at": "20260503T015049Z",
   "status": "degraded",
   "metrics": {
     "seed_ideas_emitted": 0,
@@ -14,7 +14,7 @@
     "brief_files": [],
     "draft_files": [],
     "quarantine_files": [
-      "data/quarantine/V02_02_master_index_update:20260502T23.jsonl"
+      "data/quarantine/V02_02_master_index_update:20260503T01.jsonl"
     ]
   },
   "human_handoff": {
