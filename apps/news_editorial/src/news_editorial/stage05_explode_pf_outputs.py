@@ -1,5 +1,6 @@
-# legacy/05_explode_pf_outputs.py
-# Explode PF clusters or briefs -> ArticleDraftV1, validate, and enqueue "generate".
+# draft_builder: promote drafts to Level 1 buses, then mirror/enqueue.
+# Prefer news_piece_brief.v1 as the editorial input contract; use legacy
+# PromptFlow cluster packaging only as configured emergency fallback.
 from __future__ import annotations
 
 import os
@@ -13,6 +14,13 @@ import pandas as pd
 
 from . import ids, db, slugs
 from . import io as bio
+from .draft_bus_writer import (
+    DraftBusValidationError,
+    article_draft_from_stage05,
+    write_article_draft,
+    write_yt_script_draft,
+    yt_script_draft_from_stage05,
+)
 
 try:
     # Optional strict validation if your models are wired
@@ -28,6 +36,8 @@ DIGEST_MAP_DIR = DATA_DIR / "digest_map"
 DRAFTS_BASE = DATA_DIR / "drafts"
 QUAR_DIR = DATA_DIR / "quarantine"
 BRIEFS_DIR = STORAGE_DIR / "buses" / "news_piece_brief" / "v1"
+ARTICLE_DRAFT_BUS_DIR = STORAGE_DIR / "buses" / "news_article_draft" / "v1"
+YT_SCRIPT_DRAFT_BUS_DIR = STORAGE_DIR / "buses" / "news_yt_script_draft" / "v1"
 
 
 # -------- Env helpers --------
@@ -49,7 +59,7 @@ def _env_float(name: str, default: float | None = None) -> float | None:
 
 
 def ensure_dirs():
-    for p in (PF_OUT_DIR, DIGEST_MAP_DIR, DRAFTS_BASE, QUAR_DIR, BRIEFS_DIR):
+    for p in (PF_OUT_DIR, DIGEST_MAP_DIR, DRAFTS_BASE, QUAR_DIR, BRIEFS_DIR, ARTICLE_DRAFT_BUS_DIR, YT_SCRIPT_DRAFT_BUS_DIR):
         p.mkdir(parents=True, exist_ok=True)
 
 
@@ -241,6 +251,50 @@ def _validate_and_package_draft(draft_obj: dict, run_id: str, source_reason: str
     return draft_obj, None
 
 
+def _target_formats_from_brief(brief: dict | None) -> list[str]:
+    if not brief:
+        return ["article"]
+    raw = brief.get("format_candidates")
+    values: list[str]
+    if isinstance(raw, list):
+        values = [str(v).strip() for v in raw if str(v).strip()]
+    else:
+        values = [str(raw).strip()] if str(raw or "").strip() else []
+    if "both" in values:
+        return ["article", "yt_script"]
+    if "yt_script" in values and "article" in values:
+        return ["article", "yt_script"]
+    if "yt_script" in values:
+        return ["yt_script"]
+    return ["article"]
+
+
+def _write_draft_buses(draft_record: dict, target_formats: list[str], run_id: str, bus_root: Path | None = None) -> tuple[list[Path], str | None]:
+    article_dir = (bus_root / "buses" / "news_article_draft" / "v1") if bus_root else ARTICLE_DRAFT_BUS_DIR
+    yt_dir = (bus_root / "buses" / "news_yt_script_draft" / "v1") if bus_root else YT_SCRIPT_DRAFT_BUS_DIR
+    written: list[Path] = []
+    try:
+        if "article" in target_formats:
+            article_record = article_draft_from_stage05(draft_record)
+            written.append(write_article_draft(article_record, bus_dir=article_dir))
+        if "yt_script" in target_formats:
+            yt_record = yt_script_draft_from_stage05(draft_record)
+            written.append(write_yt_script_draft(yt_record, bus_dir=yt_dir))
+    except (DraftBusValidationError, OSError) as e:
+        bio.append_jsonl(
+            quarantine_path("V05", run_id),
+            {
+                "reason": "draft_bus_write_failed",
+                "error": str(e),
+                "target_formats": target_formats,
+                "index_id": draft_record.get("index_id"),
+                "brief_id": (draft_record.get("meta") or {}).get("brief_id") if isinstance(draft_record.get("meta"), dict) else None,
+            },
+        )
+        return written, "draft_bus_write_failed"
+    return written, None
+
+
 # -------- Core --------
 def run() -> int:
     ensure_dirs()
@@ -248,6 +302,7 @@ def run() -> int:
     digest_at_env = os.getenv("DIGEST_AT")
     dry_run = _env_bool("DRY_RUN", False)
     null_sink = _env_bool("NULL_SINK", False)
+    write_draft_mirror = _env_bool("WRITE_DRAFT_MIRROR", True)
     run_id = os.getenv("RUN_ID")
     limit = _env_float("LIMIT", None)
     sample = _env_float("SAMPLE", None)
@@ -331,7 +386,9 @@ def run() -> int:
         df_groups = df_groups.head(int(limit))
 
     drafts_dir = (DATA_DIR / "_tmp" / "null" / "drafts" / digest_id) if null_sink else (DRAFTS_BASE / digest_id)
-    drafts_dir.mkdir(parents=True, exist_ok=True)
+    if write_draft_mirror:
+        drafts_dir.mkdir(parents=True, exist_ok=True)
+    bus_root = (DATA_DIR / "_tmp" / "null" / "storage") if null_sink else None
 
     total_refs = 0
     joined_refs = 0
@@ -356,13 +413,19 @@ def run() -> int:
                 continue
 
             index_id = str(draft_record.get("index_id") or "").strip()
+            bus_paths, bus_err = _write_draft_buses(draft_record, _target_formats_from_brief(brief), run_id, bus_root)
+            if bus_err:
+                bad_drafts += 1
+                continue
+
             out_path = drafts_dir / f"{index_id}.jsonl"
-            atomic_write_one_jsonl(out_path, draft_record)
+            if write_draft_mirror:
+                atomic_write_one_jsonl(out_path, draft_record)
             ok_drafts += 1
             joined_refs += 1
 
             if not dry_run:
-                payload = {"digest_id_hour": draft_record.get("digest_id_hour"), "index_id": index_id, "draft_path": str(out_path)}
+                payload = {"digest_id_hour": draft_record.get("digest_id_hour"), "index_id": index_id, "draft_path": str(out_path if write_draft_mirror else bus_paths[0])}
                 enqueued = False
                 for fn in ("push_work", "push_job", "enqueue_work", "enqueue_job"):
                     try:
@@ -448,13 +511,19 @@ def run() -> int:
                         bad_drafts += 1
                         continue
 
+                    bus_paths, bus_err = _write_draft_buses(draft_record, ["article"], run_id, bus_root)
+                    if bus_err:
+                        bad_drafts += 1
+                        continue
+
                     out_path = drafts_dir / f"{index_id}.jsonl"
-                    atomic_write_one_jsonl(out_path, draft_record)
+                    if write_draft_mirror:
+                        atomic_write_one_jsonl(out_path, draft_record)
                     ok_drafts += 1
                     joined_refs += 1
 
                     if not dry_run:
-                        payload = {"digest_id_hour": digest_ts, "index_id": index_id, "draft_path": str(out_path)}
+                        payload = {"digest_id_hour": digest_ts, "index_id": index_id, "draft_path": str(out_path if write_draft_mirror else bus_paths[0])}
                         enqueued = False
                         for fn in ("push_work", "push_job", "enqueue_work", "enqueue_job"):
                             try:
@@ -484,7 +553,12 @@ def run() -> int:
     except Exception:
         pass
 
-    print(f"[{stage_name}] digest_id={digest_id} drafts_ok={ok_drafts} bad={bad_drafts} joined={joined_refs}/{total_refs} -> {drafts_dir}")
+    mirror_msg = str(drafts_dir) if write_draft_mirror else "mirror_disabled"
+    print(
+        f"[{stage_name}] digest_id={digest_id} drafts_ok={ok_drafts} bad={bad_drafts} "
+        f"joined={joined_refs}/{total_refs} -> article_bus={ARTICLE_DRAFT_BUS_DIR} "
+        f"yt_bus={YT_SCRIPT_DRAFT_BUS_DIR} mirror={mirror_msg}"
+    )
     return 0
 
 
