@@ -11,17 +11,17 @@ usage(){
   cat <<USAGE
 run_enrich_owner.sh
 
-Enrich owner wrapper (PR4e) for compatibility-safe invocation.
+Enrich owner wrapper for compatibility-safe invocation.
 
 Env knobs:
   MODE=worker|batch|requeue|replay (default: worker)
   ARGS="..." additional args passed to selected command
 
 Modes:
-  worker -> python scripts/worker_scrape.py
-  batch  -> python scripts/06_scrape_enrich.py
-  requeue-> python scripts/requeue_failed.py
-  replay -> python scripts/replay.job.py
+  worker -> python -m apps.news_enrich.src.news_enrich.worker_scrape
+  batch  -> python -m apps.news_enrich.src.news_enrich.scrape_enrich
+  requeue-> python -m apps.news_enrich.src.news_enrich.requeue_failed
+  replay -> python -m apps.news_enrich.src.news_enrich.replay_job
 
 Flags:
   --dry-run  print command only
@@ -33,10 +33,10 @@ if [[ "${1:-}" == "--dry-run" ]]; then PRINT_ONLY=1; fi
 
 ARGS="${ARGS:-}"
 case "$MODE" in
-  worker) CMD=(python scripts/worker_scrape.py) ;;
-  batch)  CMD=(python scripts/06_scrape_enrich.py) ;;
-  requeue) CMD=(python scripts/requeue_failed.py) ;;
-  replay) CMD=(python scripts/replay.job.py) ;;
+  worker) CMD=(python -m apps.news_enrich.src.news_enrich.worker_scrape) ;;
+  batch)  CMD=(python -m apps.news_enrich.src.news_enrich.scrape_enrich) ;;
+  requeue) CMD=(python -m apps.news_enrich.src.news_enrich.requeue_failed) ;;
+  replay) CMD=(python -m apps.news_enrich.src.news_enrich.replay_job) ;;
   *) echo "unknown MODE=$MODE"; exit 2 ;;
 esac
 
