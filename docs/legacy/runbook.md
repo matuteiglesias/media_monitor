@@ -85,5 +85,10 @@ python backend/01_digests.py && python backend/02_master_index_update.py ...
 * When stable, schedule via cron or systemd (`bin/run_hour.sh` every hour).
 * Future enhancement: centralize configs + DB integration for multi-source aggregation.
 
+<!-- 
 
+systemctl --user status media-monitor-site-refresh.timer --no-pager
+journalctl --user -u media-monitor-site-refresh.service -n 30 --no-pager
+git log --oneline -n 5 -- apps/news_site/public/data
 
+ -->

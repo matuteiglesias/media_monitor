@@ -1,5 +1,5 @@
 # legacy/04_promptflow_run.py
-# Execute Promptflow for the fixed hour. Input: data/pf_in/pfin_<DIGEST_AT>.jsonl
+# Execute Promptflow for the fixed hour. Input: data/digest_jsonls/pfin_<DIGEST_AT>.jsonl
 # Output: data/pf_out/pfout_<DIGEST_AT>.jsonl (overwrite idempotent)
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from . import io as bio
 
 # ---------- Paths / Config ----------
 DATA_DIR = Path(os.getenv("DATA_DIR", "data"))
-PF_IN_DIR = DATA_DIR / "pf_in"
+PF_IN_DIR = DATA_DIR / "digest_jsonls"
 PF_OUT_DIR = DATA_DIR / "pf_out"
 QUAR_DIR = DATA_DIR / "quarantine"
 
