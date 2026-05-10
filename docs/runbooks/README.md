@@ -1,33 +1,57 @@
 # Runbooks index
 
-Guía rápida para distinguir qué documento usar según objetivo.
+## Read first
+
+1. `../current_state.md`
+2. `../architecture/artifact_ladder.md`
+3. `pr5-minimal-autonomous-loop.md`
+4. `pr6-wrapper-surface-inventory.md`
+5. `pr9-newspaper-skin-implementation-prs.md`
 
 ## Active operations
 
-- `pr5-minimal-autonomous-loop.md` — ruta operativa alive-first por lanes.
-- `pr5-minimal-pr-plan.md` — plan mínimo de ejecución PR5.
+| Runbook | Status | Use for |
+|---|---|---|
+| `pr5-minimal-autonomous-loop.md` | active | lane-based operation |
+| `pr6-wrapper-surface-inventory.md` | active | allowed commands and wrapper classification |
+| `pr9-newspaper-skin-implementation-prs.md` | active | public site implementation |
+| `newspaper_skin_guide.md` | active guide | constraints for site/Codex work |
 
-## Consolidation and pruning
+## Active consolidation
 
-- `pr9-newspaper-skin-implementation-prs.md` — PRs concretos para construir la capa pública tipo news outlet (site + ops + read API).
-- `pr5-pruning-diagnostic-and-phased-plan.md` — pruning guiado por runtime con guardrails.
-- `pr5-observability-indexes-prep.md` — preparación de índices de observabilidad compacta.
-- `pr6-wrapper-surface-inventory.md` — inventario de wrappers/helpers y shortlist canónica de comandos operativos.
-- `pr7-editorial-handoff-5day-sprint-plan.md` — plan de sprint de 5 días para hacer dominante el handoff editorial humano (YT-priority).
-- `pr8-wrap-up-and-next-prs.md` — cierre de milestone + secuencia sugerida de próximos PRs con stop rules.
+| Runbook | Status | Use for |
+|---|---|---|
+| `pr5-observability-indexes-prep.md` | active design | observability boundary |
+| `pr5-pruning-diagnostic-and-phased-plan.md` | active design | pruning with guardrails |
+| `pr7-editorial-handoff-5day-sprint-plan.md` | active/near-term | editorial handoff dominance |
+| `pr8-wrap-up-and-next-prs.md` | planning | next PR sequence |
 
-## Ownership and migration records
+## Migration records
 
-- `pr4a-news-acquire-ownership.md`
-- `pr4b-news-editorial-ownership.md`
-- `pr4c-news-acquire-code-migration.md`
-- `pr4d-news-editorial-migration.md`
-- `pr4e-news-enrich-migration.md`
+| Runbook | Status | Use for |
+|---|---|---|
+| `pr4a-*` | historical/current ownership record | acquire ownership |
+| `pr4b-*` | historical/current ownership record | editorial ownership |
+| `pr4c-*` | migration record | acquire code migration |
+| `pr4d-*` | migration record | editorial code migration |
+| `pr4e-*` | migration record | enrich code migration |
 
 ## Historical runtime evidence
 
-- `runtime-evidence-20260101T10.md`
-- `runtime-evidence-20260313T15.md`
-- `pr1b-runtime-validation-recovery-plan.md`
+| Runbook | Status | Use for |
+|---|---|---|
+| `pr1b-runtime-validation-recovery-plan.md` | superseded recovery baseline | old golden path and preflight logic |
+| `runtime-evidence-20260101T10.md` | historical evidence | relocation/env failure |
+| `runtime-evidence-20260313T15.md` | historical evidence | stage execution and PF connection failure |
 
-> Criterio práctico: si necesitás correr el sistema hoy, empezá por `pr5-minimal-autonomous-loop.md`.
+
+
+
+If a runbook mentions `legacy`, `data/*`, or `bin/run_hour.sh`, interpret it through the artifact ladder:
+
+- `data/*` is Level 0 runtime workspace.
+- `legacy/*` is compatibility unless the current command contract says otherwise.
+- new integrations should consume `storage/buses/*` or `storage/indexes/*`.
+- public surfaces should consume hardened snapshots or compact indexes, not raw runtime files.
+
+

@@ -7,6 +7,8 @@ cd "$REPO_ROOT"
 DIGEST_AT="${DIGEST_AT:-$(date -u +%Y%m%dT%H)}"
 DRY_RUN="${DRY_RUN:-0}"
 PF_MODE="${PF_MODE:-legacy}"
+RUN_EXPORTS="${RUN_EXPORTS:-1}"
+
 
 usage() {
   cat <<USAGE
@@ -20,6 +22,7 @@ Env knobs:
   DIGEST_AT  Hour bucket (YYYYMMDDTHH). Default: current UTC hour.
   DRY_RUN    Passed to make. Default: 0.
   PF_MODE    Passed to make s04 (legacy/new/auto). Default: legacy.
+  RUN_EXPORTS  1 to run exports after s05, 0 to skip. Default: 1.
 
 Flags:
   --dry-run  Print commands without executing.
@@ -47,4 +50,11 @@ echo "[editorial-owner] digest_at=${DIGEST_AT} dry_run=${DRY_RUN} pf_mode=${PF_M
 run_cmd make s04 DIGEST_AT="$DIGEST_AT" DRY_RUN="$DRY_RUN" PF_MODE="$PF_MODE"
 run_cmd make s06 DIGEST_AT="$DIGEST_AT" DRY_RUN="$DRY_RUN"
 run_cmd make s05 DIGEST_AT="$DIGEST_AT" DRY_RUN="$DRY_RUN"
+
+if [[ "$RUN_EXPORTS" == "1" ]]; then
+  run_cmd make build-editorial-access-indexes DIGEST_AT="$DIGEST_AT"
+else
+  echo "[editorial-owner] RUN_EXPORTS=0 -> skipping build-editorial-access-indexes"
+fi
+
 echo "[editorial-owner] done"
