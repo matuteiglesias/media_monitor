@@ -136,7 +136,7 @@ pf-article: ## Force PF over per-article pfin file
 
 
 
-s05:       ## Stage 05 — explode PF outputs → drafts + enqueue generate
+s05:       ## Stage 05 — build draft buses, optional mirrors + enqueue generate
 	@$(_env_prefix) $(PYTHON) -m apps.news_editorial.src.news_editorial.stage05_explode_pf_outputs
 
 s06:       ## Stage 06 — build news_piece_brief.v1 seam from PF seed_ideas

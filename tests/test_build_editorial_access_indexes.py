@@ -88,6 +88,8 @@ def test_build_editorial_access_indexes_with_partial_data(tmp_path: Path):
     assert payload["metrics"]["drafts_emitted"] == 1
     assert payload["metrics"]["fallback_legacy_count"] == 1
     assert payload["metrics"]["schema_failures"] == 1
+    assert payload["contract_inputs"] == {"piece_brief_bus": True, "article_draft_bus": False, "yt_script_draft_bus": False}
+    assert payload["fallback_inputs"] == {"pf_out": False, "data_drafts": True, "quarantine": True}
     assert payload["status"] == "degraded"
     assert payload["human_handoff"]["status"] == "needs-attention"
     assert len(payload["human_handoff"]["latest_briefs"]) == 1
@@ -122,6 +124,8 @@ def test_build_editorial_access_indexes_no_data(tmp_path: Path):
     assert payload["status"] == "no-data"
     assert payload["metrics"]["seed_ideas_emitted"] == 0
     assert payload["human_handoff"]["status"] == "no-data"
+    assert payload["contract_inputs"] == {"piece_brief_bus": False, "article_draft_bus": False, "yt_script_draft_bus": False}
+    assert payload["fallback_inputs"] == {"pf_out": False, "data_drafts": False, "quarantine": False}
     assert payload["human_handoff"]["latest_briefs"] == []
 
 
@@ -168,3 +172,90 @@ def test_build_editorial_access_indexes_separates_yt_drafts(tmp_path: Path):
     assert len(payload["human_handoff"]["latest_yt_script_drafts"]) == 1
     assert payload["human_handoff"]["action_candidates"][0]["target_format"] == "yt_script"
     assert payload["human_handoff"]["action_candidates"][0]["ready_state"] == "draft-ready"
+
+
+def test_build_editorial_access_indexes_prefers_draft_buses_without_pf_or_data_drafts(tmp_path: Path):
+    data = tmp_path / "data"
+    storage = tmp_path / "storage"
+    digest = "20260316T02"
+
+    _write_jsonl(
+        storage / "buses" / "news_piece_brief" / "v1" / "npb_bus.jsonl",
+        [
+            {
+                "schema_name": "news_piece_brief.v1",
+                "digest_id_hour": digest,
+                "brief_id": "npb_bus",
+                "topic": "Economia",
+                "working_title": "Brief bus title",
+                "format_candidates": ["both"],
+            }
+        ],
+    )
+    _write_jsonl(
+        storage / "buses" / "news_article_draft" / "v1" / "article_npb_bus.jsonl",
+        [
+            {
+                "schema_name": "news_article_draft.v1",
+                "schema_status": "experimental_structured",
+                "draft_id": "article_npb_bus",
+                "brief_id": "npb_bus",
+                "title": "Article draft title",
+                "dek": "Article dek",
+                "lede": "Article lede",
+                "sections": [{"section_id": "sec_1", "heading": "Heading", "summary": "Summary"}],
+                "body_markdown": "# Article draft title",
+                "citations": [],
+                "fact_check_flags": [],
+                "revision_notes": [],
+            }
+        ],
+    )
+    _write_jsonl(
+        storage / "buses" / "news_yt_script_draft" / "v1" / "yt_npb_bus.jsonl",
+        [
+            {
+                "schema_name": "news_yt_script_draft.v1",
+                "schema_status": "experimental_structured",
+                "script_id": "yt_npb_bus",
+                "brief_id": "npb_bus",
+                "title": "YT draft title",
+                "thumbnail_hook": "Hook",
+                "cold_open": "Cold open",
+                "segment_outline": [{"segment_id": "seg_1", "heading": "Heading", "beat": "Beat", "estimated_seconds": 30}],
+                "full_script": "Full script",
+                "voice_notes": [],
+                "visual_notes": [],
+                "citations": [],
+            }
+        ],
+    )
+
+    subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--storage-dir",
+            str(storage),
+            "--data-dir",
+            str(data),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    payload = json.loads((storage / "indexes" / "editorial_latest.json").read_text(encoding="utf-8"))
+    assert payload["digest_at"] == digest
+    assert payload["status"] == "ok"
+    assert payload["human_handoff"]["status"] == "ready"
+    assert payload["metrics"]["seed_ideas_emitted"] == 0
+    assert payload["metrics"]["briefs_emitted"] == 1
+    assert payload["metrics"]["drafts_emitted"] == 2
+    assert payload["contract_inputs"] == {"piece_brief_bus": True, "article_draft_bus": True, "yt_script_draft_bus": True}
+    assert payload["fallback_inputs"] == {"pf_out": False, "data_drafts": False, "quarantine": False}
+    assert payload["pointers"]["pf_outputs"] == []
+    assert payload["pointers"]["draft_files"] == []
+    assert len(payload["human_handoff"]["latest_article_drafts"]) == 1
+    assert len(payload["human_handoff"]["latest_yt_script_drafts"]) == 1
+    assert payload["human_handoff"]["action_candidates"][0]["target_format"] == "yt_script"

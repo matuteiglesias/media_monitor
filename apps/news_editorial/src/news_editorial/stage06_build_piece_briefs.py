@@ -1,3 +1,8 @@
+"""piece_brief_builder for the editorial lane.
+
+Reads Level 0 PromptFlow runtime output from data/pf_out and promotes
+validated editorial ideas into the Level 1 news_piece_brief.v1 bus.
+"""
 from __future__ import annotations
 
 import hashlib

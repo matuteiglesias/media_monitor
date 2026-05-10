@@ -68,3 +68,101 @@ def test_stage06_brief_id_is_stable_by_digest_group_and_idea() -> None:
 
     assert one == two
     assert one.startswith("npb_")
+
+
+def test_draft_bus_writer_promotes_stage05_draft_to_schema_valid_buses(tmp_path) -> None:
+    from apps.news_editorial.src.news_editorial.draft_bus_writer import (
+        article_draft_from_stage05,
+        validate_article_draft,
+        validate_yt_script_draft,
+        write_article_draft,
+        write_yt_script_draft,
+        yt_script_draft_from_stage05,
+    )
+
+    stage05_draft = {
+        "digest_id_hour": "20260101T01",
+        "index_id": "IDX001",
+        "topic": "Economía",
+        "headline": "Titular desde brief",
+        "dek": "Ángulo desde brief",
+        "citations": [{"url": "https://example.com/a", "title": "Fuente", "source": "Example"}],
+        "cluster_id": "npb_123",
+        "meta": {"brief_id": "npb_123"},
+    }
+
+    article = article_draft_from_stage05(stage05_draft)
+    yt_script = yt_script_draft_from_stage05(stage05_draft)
+
+    validate_article_draft(article)
+    validate_yt_script_draft(yt_script)
+    article_path = write_article_draft(article, bus_dir=tmp_path / "news_article_draft" / "v1")
+    yt_path = write_yt_script_draft(yt_script, bus_dir=tmp_path / "news_yt_script_draft" / "v1")
+
+    assert article_path.exists()
+    assert yt_path.exists()
+    assert article_path.read_text(encoding="utf-8").count("\n") == 1
+    assert yt_path.read_text(encoding="utf-8").count("\n") == 1
+
+
+def test_stage05_writes_draft_buses_before_optional_mirror(tmp_path, monkeypatch) -> None:
+    import importlib
+    import json
+
+    data_dir = tmp_path / "data"
+    storage_dir = tmp_path / "storage"
+    digest_id = "20260314T17"
+
+    monkeypatch.setenv("DATA_DIR", str(data_dir))
+    monkeypatch.setenv("STORAGE_DIR", str(storage_dir))
+    monkeypatch.setenv("DIGEST_AT", digest_id)
+    monkeypatch.setenv("DRY_RUN", "1")
+    monkeypatch.setenv("WRITE_DRAFT_MIRROR", "0")
+
+    digest_map = data_dir / "digest_map" / f"{digest_id}.csv"
+    digest_map.parent.mkdir(parents=True, exist_ok=True)
+    digest_map.write_text(
+        "digest_file,article_id,index_id,Title,Source,Link,Published,Topic\n"
+        "A_20260314T1700,1,IDX001,Título mapeado,Fuente,https://example.com/a,2026-03-14T17:10:00Z,Economía\n",
+        encoding="utf-8",
+    )
+    pf_out = data_dir / "pf_out" / f"pfout_{digest_id}.jsonl"
+    pf_out.parent.mkdir(parents=True, exist_ok=True)
+    pf_out.write_text(
+        json.dumps({"digest_group_id": f"{digest_id}::A::Economia::01", "seed_ideas": {"seed_ideas": []}}) + "\n",
+        encoding="utf-8",
+    )
+    brief_bus = storage_dir / "buses" / "news_piece_brief" / "v1" / "npb_123.jsonl"
+    brief_bus.parent.mkdir(parents=True, exist_ok=True)
+    brief_bus.write_text(
+        json.dumps(
+            {
+                "schema_name": "news_piece_brief.v1",
+                "brief_id": "npb_123",
+                "digest_id_hour": digest_id,
+                "digest_file": "A_20260314T1700",
+                "topic": "Economía",
+                "working_title": "Titular desde brief",
+                "angle": "Ángulo desde brief",
+                "source_index_ids": ["IDX001"],
+                "format_candidates": ["both"],
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    mod = importlib.reload(stage05)
+    monkeypatch.setattr(mod.db, "start_run", lambda *a, **k: None)
+    monkeypatch.setattr(mod.db, "finish_run", lambda *a, **k: None)
+
+    assert mod.run() == 0
+
+    article_files = list((storage_dir / "buses" / "news_article_draft" / "v1").glob("*.jsonl"))
+    yt_files = list((storage_dir / "buses" / "news_yt_script_draft" / "v1").glob("*.jsonl"))
+    assert len(article_files) == 1
+    assert len(yt_files) == 1
+    assert not (data_dir / "drafts" / digest_id).exists()
+    assert json.loads(article_files[0].read_text(encoding="utf-8"))["schema_name"] == "news_article_draft.v1"
+    assert json.loads(yt_files[0].read_text(encoding="utf-8"))["schema_name"] == "news_yt_script_draft.v1"

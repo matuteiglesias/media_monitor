@@ -14,15 +14,15 @@ usage() {
   cat <<USAGE
 run_editorial_owner.sh
 
-Editorial owner wrapper (PR4b).
+Editorial owner wrapper.
 - Keeps canonical runtime intact by delegating to existing make targets.
-- Orchestrates editorial layer only: s04 -> s06 -> s05.
+- Orchestrates editorial lane: s04 -> s06 -> s05 -> build-editorial-access-indexes.
 
 Env knobs:
   DIGEST_AT  Hour bucket (YYYYMMDDTHH). Default: current UTC hour.
   DRY_RUN    Passed to make. Default: 0.
   PF_MODE    Passed to make s04 (legacy/new/auto). Default: legacy.
-  RUN_EXPORTS  1 to run exports after s05, 0 to skip. Default: 1.
+  RUN_EXPORTS  1 to build the editorial handoff index after s05, 0 to skip. Default: 1.
 
 Flags:
   --dry-run  Print commands without executing.
@@ -46,7 +46,7 @@ run_cmd() {
   "$@"
 }
 
-echo "[editorial-owner] digest_at=${DIGEST_AT} dry_run=${DRY_RUN} pf_mode=${PF_MODE}"
+echo "[editorial-owner] digest_at=${DIGEST_AT} dry_run=${DRY_RUN} pf_mode=${PF_MODE} run_exports=${RUN_EXPORTS}"
 run_cmd make s04 DIGEST_AT="$DIGEST_AT" DRY_RUN="$DRY_RUN" PF_MODE="$PF_MODE"
 run_cmd make s06 DIGEST_AT="$DIGEST_AT" DRY_RUN="$DRY_RUN"
 run_cmd make s05 DIGEST_AT="$DIGEST_AT" DRY_RUN="$DRY_RUN"
