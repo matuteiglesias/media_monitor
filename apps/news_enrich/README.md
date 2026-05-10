@@ -1,39 +1,90 @@
-# news_enrich (PR4e owner module)
+# news_enrich
 
-`apps/news_enrich` is the explicit owner module for scrape/enrich runtime implementation.
+`apps/news_enrich` owns article-text enrichment for known news references.
 
-This PR migrates enrich source-of-truth into `apps/news_enrich/src/news_enrich` while preserving compatibility entrypoints.
+## Doctrine
 
-## Ownership declaration
+`news_enrich` is responsible for fetching, normalizing, and recording full article text for known article references. It consumes article references and enrich requests, then emits structured scraped-article records and status evidence for downstream systems.
 
-### Owned implementation (source of truth)
-- `apps/news_enrich/src/news_enrich/scrape_enrich.py`
-- `apps/news_enrich/src/news_enrich/worker_scrape.py`
-- `apps/news_enrich/src/news_enrich/requeue_failed.py`
-- `apps/news_enrich/src/news_enrich/replay_job.py`
-- `apps/news_enrich/src/news_enrich/scrape_contents_legacy.py`
-- `apps/news_enrich/src/news_enrich/{db,io}.py`
+The module does **not** own acquisition, topic grouping, editorial generation, publication, or site rendering.
 
-### Compatibility entrypoints kept
-- `scripts/06_scrape_enrich.py`
-- `scripts/worker_scrape.py`
-- `scripts/requeue_failed.py`
-- `scripts/replay.job.py`
-- `legacy/06_scrape_contents.py`
+## Current PR-E4 boundary
 
-All compatibility files are thin wrappers delegating to app-owned implementation.
+PR-E4 keeps the validated bus seam and adds a compact enrich status index without redesigning the queue:
 
-## Entrypoint
-Use owner wrapper:
-
-```bash
-apps/news_enrich/entrypoints/run_enrich_owner.sh
+```text
+input: EnrichRequest(index_id + url + optional source metadata)
+runtime: fetch URL with requests, normalize text/plain, record fetch evidence
+output: schema-valid scraped_article.v1 record appended to storage/buses/scraped_article/v1, with data/scrape as an optional Level-0 mirror
 ```
 
-Supports modes: `worker`, `batch`, `requeue`, `replay`.
+The public service boundary is:
 
-## Non-goals in PR4e
-- No queue semantics redesign.
-- No PromptFlow changes.
-- No contract/schema changes.
-- No orchestration rewiring in `bin/run_hour.sh`.
+- `apps/news_enrich/src/news_enrich/requests.py` — `EnrichRequest`
+- `apps/news_enrich/src/news_enrich/records.py` — `ScrapedArticle`
+- `apps/news_enrich/src/news_enrich/service.py` — `enrich_one(request)`
+- `apps/news_enrich/src/news_enrich/bus_writer.py` — schema validation + `scraped_article.v1` bus append
+- `apps/news_enrich/src/news_enrich/cli.py` — `enrich-one` command
+
+The canonical manual command is:
+
+```bash
+python -m news_enrich.cli enrich-one --index-id X --url URL
+```
+
+By default, the command appends exactly one schema-valid bus record to:
+
+```text
+storage/buses/scraped_article/v1/scraped_article_YYYY-MM-DD.jsonl
+```
+
+It also preserves the previous Level-0 runtime output as a mirror at:
+
+```text
+data/scrape/YYYY-MM-DD.enriched.jsonl
+```
+
+Use `--bus-output <path>` for smoke tests or targeted bus paths, `--scrape-output <path>` for a targeted mirror, or `--no-scrape-mirror` to disable the mirror.
+
+## Runtime modes
+
+`news_enrich` can run as:
+
+- manual/on-demand CLI (`python -m news_enrich.cli enrich-one ...`)
+- batch queue consumer (`apps/news_enrich/src/news_enrich/scrape_enrich.py`)
+- PostgreSQL worker (`apps/news_enrich/src/news_enrich/worker_scrape.py`)
+- recovery helpers (`requeue_failed.py`, `replay_job.py`)
+
+PR-E3 makes the PostgreSQL worker delegate to the same `enrich_one` service and write schema-validated `scraped_article.v1` bus records while preserving existing retry/backoff semantics. Recovery commands remain unchanged.
+
+## Existing compatibility entrypoints
+
+Compatibility wrappers remain available and delegate to app-owned implementation:
+
+- `scripts/compat_wrappers/06_scrape_enrich.py`
+- `scripts/compat_wrappers/worker_scrape.py`
+- `scripts/compat_wrappers/requeue_failed.py`
+- `scripts/compat_wrappers/replay.job.py`
+- `legacy/code/06_scrape_contents.py`
+
+## Future target shape
+
+The current PR promotes enrich output into the Level 1 contract bus:
+
+```text
+storage/buses/scraped_article/v1/*.jsonl
+```
+
+The current PR also builds the Level 2 enrich access/status index:
+
+```text
+storage/indexes/enrich_latest.json
+```
+
+Build it with:
+
+```bash
+make build-enrich-access-indexes
+```
+
+Downstream consumers should prefer `enrich_latest.json` for health/status and the `scraped_article.v1` bus for full records. Treat `data/scrape/*.enriched.jsonl` as an optional Level-0 mirror rather than a public artifact.
