@@ -1,6 +1,6 @@
-# legacy/04_promptflow_run.py
-# Execute Promptflow for the fixed hour. Input: data/digest_jsonls/pfin_<DIGEST_AT>.jsonl
-# Output: data/pf_out/pfout_<DIGEST_AT>.jsonl (overwrite idempotent)
+# promptflow_runner: execute PromptFlow for one digest hour.
+# Input: data/digest_jsonls/<DIGEST_AT>.jsonl (Level 0 runtime input).
+# Output: data/pf_out/pfout_<DIGEST_AT>.jsonl (Level 0 runtime evidence, overwrite idempotent).
 from __future__ import annotations
 
 import os
@@ -117,8 +117,9 @@ def run() -> int:
     except Exception:
         pass
 
-    # Input path
-    # pfin_path = PF_IN_DIR / f"pfin_{digest_id}.jsonl"
+    # Current runtime input path. Older PF article-mode runs used data/pf_in,
+    # but the editorial lane now treats data/digest_jsonls as the Level 0
+    # digest input seam for promptflow_runner.
     pfin_path = DATA_DIR / "digest_jsonls" / f"{digest_id}.jsonl"
     if not pfin_path.exists():
         try:
