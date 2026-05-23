@@ -191,3 +191,23 @@ Expected ED3 behavior:
 - No refactor of PromptFlow internals.
 - No schema definition changes.
 - No file moves/deletes in legacy.
+
+## Editorial handoff packet
+
+Command:
+
+```bash
+make materialize-editorial-handoff
+```
+
+Output:
+
+- `artifacts/editorial_handoff/latest/README.md`
+- `artifacts/editorial_handoff/latest/publication_candidates.md`
+- `artifacts/editorial_handoff/latest/fallback_status.md`
+- `artifacts/editorial_handoff/latest/editorial_latest.copy.json`
+- `artifacts/editorial_handoff/latest/provenance.json`
+
+Purpose:
+
+- Materialize a small human-readable handoff packet from `storage/indexes/editorial_latest.json` for editorial triage and agent handoff without reading Level 0 runtime output folders directly.
