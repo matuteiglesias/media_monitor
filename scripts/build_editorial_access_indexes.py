@@ -102,6 +102,49 @@ def _status_for(metrics: dict[str, int]) -> str:
     return "ok"
 
 
+def _clean_topic(value: Any) -> str:
+    return str(value or "").strip()
+
+
+def _normalize_topic(*candidates: Any, digest_group_topic: str | None = None) -> str:
+    for value in candidates:
+        topic = _clean_topic(value)
+        if topic:
+            return topic
+    topic = _clean_topic(digest_group_topic)
+    if topic:
+        return topic
+    return "All Topics"
+
+
+def _topic_from_digest_group_id(digest_group_id: Any) -> str:
+    parts = str(digest_group_id or "").split("::")
+    if len(parts) >= 3:
+        return parts[2].replace("_", " ").strip()
+    return ""
+
+
+def _digest_group_topics(group_files: list[Path], digest_id: str) -> dict[str, str]:
+    topics: dict[str, str] = {}
+    for gf in group_files:
+        if gf.suffix != ".jsonl":
+            continue
+        try:
+            rows = _iter_jsonl(gf)
+        except Exception:
+            continue
+        for row in rows:
+            if str(row.get("schema_name") or "") != "news_digest_group.v1":
+                continue
+            if str(row.get("digest_id_hour") or "") != digest_id:
+                continue
+            digest_group_id = str(row.get("digest_group_id") or "").strip()
+            topic = _clean_topic(row.get("topic"))
+            if digest_group_id and topic:
+                topics[digest_group_id] = topic
+    return topics
+
+
 def _pick_target_format(format_candidates: list[str]) -> str:
     normalized = [str(v).strip() for v in format_candidates if str(v).strip()]
     if "yt_script" in normalized or "both" in normalized:
@@ -109,7 +152,12 @@ def _pick_target_format(format_candidates: list[str]) -> str:
     return "article"
 
 
-def _latest_briefs(brief_files: list[Path], digest_id: str, limit: int = 10) -> list[dict[str, Any]]:
+def _latest_briefs(
+    brief_files: list[Path],
+    digest_id: str,
+    digest_group_topics: dict[str, str] | None = None,
+    limit: int = 10,
+) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for bf in brief_files:
         for row in _iter_jsonl(bf):
@@ -118,10 +166,13 @@ def _latest_briefs(brief_files: list[Path], digest_id: str, limit: int = 10) -> 
             if str(row.get("digest_id_hour") or "") != digest_id:
                 continue
             format_candidates = [str(v) for v in (row.get("format_candidates") or []) if str(v).strip()]
+            digest_group_id = str(row.get("digest_group_id") or "").strip()
+            digest_group_topic = (digest_group_topics or {}).get(digest_group_id) or _topic_from_digest_group_id(digest_group_id)
             out.append(
                 {
                     "brief_id": str(row.get("brief_id") or ""),
-                    "topic": str(row.get("topic") or ""),
+                    "digest_group_id": digest_group_id,
+                    "topic": _normalize_topic(row.get("topic"), digest_group_topic=digest_group_topic),
                     "working_title": str(row.get("working_title") or ""),
                     "angle": str(row.get("angle") or ""),
                     "source_index_ids": [str(v) for v in (row.get("source_index_ids") or []) if str(v).strip()],
@@ -151,8 +202,8 @@ def _latest_draft_records(drafts_dir: Path, limit: int = 10) -> tuple[list[dict[
         record = {
             "path": str(df),
             "index_id": str(row.get("index_id") or ""),
-            "topic": str(row.get("topic") or ""),
-            "headline": str(row.get("headline") or ""),
+            "topic": _normalize_topic(row.get("topic"), row.get("subject"), row.get("category")),
+            "headline": str(row.get("headline") or row.get("title") or ""),
             "dek": str(row.get("dek") or ""),
             "cluster_id": str(row.get("cluster_id") or ""),
             "schema_name": schema_name,
@@ -165,13 +216,19 @@ def _latest_draft_records(drafts_dir: Path, limit: int = 10) -> tuple[list[dict[
     return article[-limit:], yt[-limit:]
 
 
-def _draft_record_from_article_bus(path: Path, row: dict[str, Any]) -> dict[str, Any]:
+def _draft_record_from_article_bus(path: Path, row: dict[str, Any], brief_topics: dict[str, str]) -> dict[str, Any]:
+    brief_id = str(row.get("brief_id") or "").strip()
     return {
         "path": str(path),
         "index_id": str(row.get("draft_id") or ""),
         "draft_id": str(row.get("draft_id") or ""),
-        "brief_id": str(row.get("brief_id") or ""),
-        "topic": "",
+        "brief_id": brief_id,
+        "topic": _normalize_topic(
+            row.get("topic"),
+            row.get("subject"),
+            row.get("category"),
+            digest_group_topic=brief_topics.get(brief_id),
+        ),
         "headline": str(row.get("title") or ""),
         "dek": str(row.get("dek") or ""),
         "cluster_id": str(row.get("brief_id") or ""),
@@ -179,13 +236,19 @@ def _draft_record_from_article_bus(path: Path, row: dict[str, Any]) -> dict[str,
     }
 
 
-def _draft_record_from_yt_bus(path: Path, row: dict[str, Any]) -> dict[str, Any]:
+def _draft_record_from_yt_bus(path: Path, row: dict[str, Any], brief_topics: dict[str, str]) -> dict[str, Any]:
+    brief_id = str(row.get("brief_id") or "").strip()
     return {
         "path": str(path),
         "index_id": str(row.get("script_id") or ""),
         "script_id": str(row.get("script_id") or ""),
-        "brief_id": str(row.get("brief_id") or ""),
-        "topic": "",
+        "brief_id": brief_id,
+        "topic": _normalize_topic(
+            row.get("topic"),
+            row.get("subject"),
+            row.get("category"),
+            digest_group_topic=brief_topics.get(brief_id),
+        ),
         "headline": str(row.get("title") or ""),
         "dek": str(row.get("cold_open") or row.get("thumbnail_hook") or ""),
         "cluster_id": str(row.get("brief_id") or ""),
@@ -197,6 +260,7 @@ def _latest_draft_bus_records(
     article_files: list[Path],
     yt_files: list[Path],
     digest_brief_ids: set[str],
+    brief_topics: dict[str, str],
     limit: int = 10,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     article: list[dict[str, Any]] = []
@@ -209,7 +273,7 @@ def _latest_draft_bus_records(
             brief_id = str(row.get("brief_id") or "").strip()
             if digest_brief_ids and brief_id not in digest_brief_ids:
                 continue
-            article.append(_draft_record_from_article_bus(path, row))
+            article.append(_draft_record_from_article_bus(path, row, brief_topics))
 
     for path in yt_files:
         for row in _iter_jsonl(path):
@@ -218,7 +282,7 @@ def _latest_draft_bus_records(
             brief_id = str(row.get("brief_id") or "").strip()
             if digest_brief_ids and brief_id not in digest_brief_ids:
                 continue
-            yt.append(_draft_record_from_yt_bus(path, row))
+            yt.append(_draft_record_from_yt_bus(path, row, brief_topics))
 
     return article[-limit:], yt[-limit:]
 
@@ -263,7 +327,7 @@ def _build_action_candidates(
                 "target_format": "yt_script",
                 "ready_state": "draft-ready",
                 "title": draft.get("headline") or draft.get("topic") or "",
-                "topic": draft.get("topic") or "",
+                "topic": _normalize_topic(draft.get("topic")),
                 "source": "draft",
                 "path": draft.get("path") or "",
             }
@@ -276,7 +340,7 @@ def _build_action_candidates(
                 "target_format": "article",
                 "ready_state": "draft-ready",
                 "title": draft.get("headline") or draft.get("topic") or "",
-                "topic": draft.get("topic") or "",
+                "topic": _normalize_topic(draft.get("topic")),
                 "source": "draft",
                 "path": draft.get("path") or "",
             }
@@ -289,7 +353,7 @@ def _build_action_candidates(
                 "target_format": brief.get("target_format") or "article",
                 "ready_state": "brief-ready",
                 "title": brief.get("working_title") or brief.get("topic") or "",
-                "topic": brief.get("topic") or "",
+                "topic": _normalize_topic(brief.get("topic")),
                 "source": "brief",
                 "path": "",
             }
@@ -351,15 +415,23 @@ def build_editorial_index(storage_dir: Path, data_dir: Path, digest_at: str | No
     brief_files = sorted((storage_dir / "buses" / "news_piece_brief" / "v1").glob("*.jsonl"))
     article_draft_bus_files = sorted((storage_dir / "buses" / "news_article_draft" / "v1").glob("*.jsonl"))
     yt_script_draft_bus_files = sorted((storage_dir / "buses" / "news_yt_script_draft" / "v1").glob("*.jsonl"))
+    digest_group_files = sorted((storage_dir / "buses" / "news_digest_group" / "v1").glob("*.jsonl"))
     drafts_dir = data_dir / "drafts" / digest_id
     quarantine_files = sorted((data_dir / "quarantine").glob(f"V*{digest_id}*.jsonl"))
 
-    latest_briefs = _latest_briefs(brief_files, digest_id)
+    digest_group_topics = _digest_group_topics(digest_group_files, digest_id)
+    latest_briefs = _latest_briefs(brief_files, digest_id, digest_group_topics)
+    brief_topics = {
+        str(row.get("brief_id") or "").strip(): _normalize_topic(row.get("topic"))
+        for row in latest_briefs
+        if str(row.get("brief_id") or "").strip()
+    }
     digest_brief_ids = {str(row.get("brief_id") or "").strip() for row in latest_briefs if str(row.get("brief_id") or "").strip()}
     bus_article_drafts, bus_yt_script_drafts = _latest_draft_bus_records(
         article_draft_bus_files,
         yt_script_draft_bus_files,
         digest_brief_ids,
+        brief_topics,
     )
     legacy_article_drafts: list[dict[str, Any]] = []
     legacy_yt_script_drafts: list[dict[str, Any]] = []
