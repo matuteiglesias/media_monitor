@@ -42,22 +42,42 @@ function readJsonChecked(filePath) {
 }
 
 function copyFileWithValidation(src, dst, kind) {
-  if (kind === "jsonl") {
-    readJsonlChecked(src);
-  } else {
-    readJsonChecked(src);
-  }
+  const sourcePayload = kind === "jsonl" ? readJsonlChecked(src) : readJsonChecked(src);
 
   const tmp = `${dst}.tmp`;
   fs.copyFileSync(src, tmp);
 
-  if (kind === "jsonl") {
-    readJsonlChecked(tmp);
-  } else {
-    readJsonChecked(tmp);
-  }
+  const copiedPayload = kind === "jsonl" ? readJsonlChecked(tmp) : readJsonChecked(tmp);
+  assertCopiedFromStorage(src, tmp, kind, sourcePayload, copiedPayload);
 
   fs.renameSync(tmp, dst);
+}
+
+function digestSetFromJsonl(rows) {
+  return [...new Set(rows.map((row) => row?.digest_at).filter((value) => typeof value === "string" && value.trim()))].sort();
+}
+
+function assertCopiedFromStorage(src, dst, kind, sourcePayload, copiedPayload) {
+  const sourceRaw = fs.readFileSync(src, "utf-8");
+  const copiedRaw = fs.readFileSync(dst, "utf-8");
+  if (sourceRaw !== copiedRaw) {
+    throw new Error(`Copied public snapshot differs from storage source: ${dst} != ${src}`);
+  }
+
+  if (kind === "jsonl") {
+    const sourceDigests = digestSetFromJsonl(sourcePayload);
+    const copiedDigests = digestSetFromJsonl(copiedPayload);
+    if (JSON.stringify(sourceDigests) !== JSON.stringify(copiedDigests)) {
+      throw new Error(`Copied public snapshot digest_at mismatch: ${dst} != ${src}`);
+    }
+    return;
+  }
+
+  const sourceDigest = sourcePayload?.digest_at ?? null;
+  const copiedDigest = copiedPayload?.digest_at ?? null;
+  if (sourceDigest !== copiedDigest) {
+    throw new Error(`Copied public JSON digest_at mismatch: ${dst} != ${src}`);
+  }
 }
 
 function defaultEditorialFallback() {
