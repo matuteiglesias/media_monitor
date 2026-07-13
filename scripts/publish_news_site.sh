@@ -4,11 +4,26 @@ set -euo pipefail
 DIGEST_AT="${DIGEST_AT:-$(date -u +%Y%m%dT%H)}"
 export DIGEST_AT
 MANIFEST="${PUBLISH_MANIFEST:-apps/news_site/public/data/publish_manifest.json}"
+PYTHON_BIN="${PYTHON:-}"
+
+if [ -z "${PYTHON_BIN}" ]; then
+  if [ -x ./.venv/bin/python ]; then
+    PYTHON_BIN="./.venv/bin/python"
+  elif command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "[publish-news-site] ERROR: no project Python found (tried PYTHON, ./.venv/bin/python, python3, python)" >&2
+    exit 2
+  fi
+fi
+export PYTHON="${PYTHON_BIN}"
 
 echo "[publish-news-site] digest_at=${DIGEST_AT}"
-make build-news-access-indexes DIGEST_AT="${DIGEST_AT}"
+make build-news-access-indexes DIGEST_AT="${DIGEST_AT}" PYTHON="${PYTHON_BIN}"
 make build-editorial-access-indexes DIGEST_AT="${DIGEST_AT}"
-python scripts/validate_publish_surface.py --storage-dir storage
+make validate-publish-surface DIGEST_AT="${DIGEST_AT}" PYTHON="${PYTHON_BIN}"
 npm --prefix apps/news_site run refresh-data
 SMOKE_OUTPUT="$(npm --prefix apps/news_site run --silent smoke:public-data)"
 export SMOKE_OUTPUT

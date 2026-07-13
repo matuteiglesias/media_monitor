@@ -24,7 +24,7 @@ define _env_prefix
 DIGEST_AT=$(DIGEST_AT) DRY_RUN=$(DRY_RUN) LIMIT=$(LIMIT) SAMPLE=$(SAMPLE) NULL_SINK=$(NULL_SINK)
 endef
 
-.PHONY: help hour env preflight-runtime s01 s02 s03 s04 s05 s06 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null export-pr3a build-news-access-indexes build-editorial-access-indexes materialize-editorial-handoff build-enrich-access-indexes validate-publish-surface publish-news-site publish-last-mile-snapshot heartbeat-start heartbeat-stop heartbeat-status
+.PHONY: help hour env preflight-runtime s01 s02 s03 s04 s05 s06 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null export-pr3a build-news-access-indexes build-editorial-access-indexes diagnose-editorial draft-article materialize-editorial-handoff build-enrich-access-indexes validate-publish-surface publish-news-site publish-last-mile-snapshot heartbeat-start heartbeat-stop heartbeat-status
 
 help:      ## Show help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' Makefile | sed 's/:.*## / — /' | sort
@@ -146,10 +146,16 @@ export-pr3a: ## PR3a real exports: legacy outputs -> storage buses/indexes
 	@$(PYTHON) scripts/export_pr3a_buses.py --digest-at $(DIGEST_AT)
 
 build-news-access-indexes: ## Build compact readable latest-news access indexes from exported seams
-	@$(PYTHON) scripts/build_news_access_indexes.py
+	@$(PYTHON) scripts/build_news_access_indexes.py --digest-at $(DIGEST_AT)
 
 build-editorial-access-indexes: ## Build compact editorial status index (seed/brief/draft/fallback)
 	@$(PYTHON) scripts/build_editorial_access_indexes.py --digest-at $(DIGEST_AT)
+
+diagnose-editorial: ## Diagnose editorial producer artifacts for one digest hour
+	@$(PYTHON) scripts/diagnose_editorial_digest.py --digest-at $(DIGEST_AT)
+
+draft-article: ## Generate one minimal news_article_draft.v1 from the current public group snapshot
+	@$(PYTHON) scripts/generate_article_draft_from_group.py --digest-at $(DIGEST_AT)
 
 materialize-editorial-handoff: ## Materialize editorial handoff packet from latest editorial index
 	@$(PYTHON) -m apps.news_editorial.src.news_editorial.handoff_packet --index storage/indexes/editorial_latest.json --out artifacts/editorial_handoff/latest
@@ -158,7 +164,7 @@ build-enrich-access-indexes: ## Build compact enrich status index from scraped_a
 	@$(PYTHON) scripts/build_enrich_access_indexes.py
 
 validate-publish-surface: ## Validate canonical publish surface contract from latest indexes
-	@$(PYTHON) scripts/validate_publish_surface.py --storage-dir storage
+	@$(PYTHON) scripts/validate_publish_surface.py --storage-dir storage --digest-at $(DIGEST_AT)
 
 publish-news-site: ## Build, validate, refresh, smoke, and build deployable news_site snapshot
 	@./scripts/publish_news_site.sh
