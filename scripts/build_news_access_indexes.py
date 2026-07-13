@@ -187,12 +187,50 @@ def _build_group_index(group_rows: list[dict[str, Any]]) -> tuple[dict[str, dict
     return by_link, groups
 
 
+
+def _count_jsonl(path: Path | None) -> int:
+    if path is None or not path.exists() or not path.is_file() or path.stat().st_size == 0:
+        return 0
+    return sum(1 for _ in _iter_jsonl(path))
+
+
+def diagnose_inputs(storage_dir: Path) -> dict[str, Any]:
+    digest_ref, ref_output = _resolve_output(storage_dir, "news_ref.v1")
+    digest_group, group_output = _resolve_output(storage_dir, "news_digest_group.v1")
+    latest = _latest_payload(storage_dir)
+
+    def entry(export_name: str, digest_at: str | None, output: str | None) -> dict[str, Any]:
+        path = Path(output) if output else None
+        return {
+            "export_name": export_name,
+            "digest_at": digest_at,
+            "path": output,
+            "exists": bool(path and path.exists()),
+            "bytes": path.stat().st_size if path and path.exists() else 0,
+            "rows": _count_jsonl(path),
+        }
+
+    return {
+        "storage_dir": str(storage_dir),
+        "pr3a_latest_digest_at": str(latest.get("digest_at") or "") or None,
+        "pr3a_latest_status": str(latest.get("status") or "") or None,
+        "inputs": [
+            entry("news_ref.v1", digest_ref, ref_output),
+            entry("news_digest_group.v1", digest_group, group_output),
+        ],
+    }
+
 def build_access_indexes(storage_dir: Path) -> tuple[Path, Path, int, int]:
     digest_ref, ref_output = _resolve_output(storage_dir, "news_ref.v1")
     digest_group, group_output = _resolve_output(storage_dir, "news_digest_group.v1")
 
     ref_rows = list(_iter_jsonl(Path(ref_output))) if ref_output else []
     group_rows = list(_iter_jsonl(Path(group_output))) if group_output else []
+
+    if not ref_rows:
+        print("[news-access] WARN no news_ref.v1 rows resolved; run `make s01 s02 s03 export-pr3a` for the target DIGEST_AT if acquisition data is missing", flush=True)
+    if not group_rows:
+        print("[news-access] WARN no news_digest_group.v1 rows resolved; run `make s01 s02 s03 export-pr3a` for the target DIGEST_AT if digest groups are missing", flush=True)
 
     # Prefer semantic article content from digest groups.
     # Use refs only to enrich index_id by link when available.
@@ -283,11 +321,16 @@ def build_access_indexes(storage_dir: Path) -> tuple[Path, Path, int, int]:
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Build compact, human-readable latest news indexes from exported seams")
     p.add_argument("--storage-dir", default="storage")
+    p.add_argument("--diagnose", action="store_true", help="Print input resolution diagnostics without writing latest indexes")
     return p.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    if args.diagnose:
+        print(json.dumps(diagnose_inputs(Path(args.storage_dir)), ensure_ascii=False, indent=2))
+        return 0
+
     latest_refs, latest_groups, ref_count, group_count = build_access_indexes(Path(args.storage_dir))
     print(f"[news-access] refs={ref_count} groups={group_count}")
     print(f"[news-access] latest_refs={latest_refs}")

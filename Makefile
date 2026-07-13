@@ -24,7 +24,7 @@ define _env_prefix
 DIGEST_AT=$(DIGEST_AT) DRY_RUN=$(DRY_RUN) LIMIT=$(LIMIT) SAMPLE=$(SAMPLE) NULL_SINK=$(NULL_SINK)
 endef
 
-.PHONY: help hour env preflight-runtime s01 s02 s03 s04 s05 s06 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null export-pr3a build-news-access-indexes build-editorial-access-indexes materialize-editorial-handoff build-enrich-access-indexes validate-publish-surface publish-last-mile-snapshot heartbeat-start heartbeat-stop heartbeat-status
+.PHONY: help hour env preflight-runtime s01 s02 s03 s04 s05 s06 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null export-pr3a build-news-access-indexes build-editorial-access-indexes materialize-editorial-handoff build-enrich-access-indexes validate-publish-surface publish-news-site publish-last-mile-snapshot heartbeat-start heartbeat-stop heartbeat-status
 
 help:      ## Show help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' Makefile | sed 's/:.*## / — /' | sort
@@ -159,6 +159,9 @@ build-enrich-access-indexes: ## Build compact enrich status index from scraped_a
 
 validate-publish-surface: ## Validate canonical publish surface contract from latest indexes
 	@$(PYTHON) scripts/validate_publish_surface.py --storage-dir storage
+
+publish-news-site: ## Build, validate, refresh, smoke, and build deployable news_site snapshot
+	@./scripts/publish_news_site.sh
 
 publish-last-mile-snapshot: ## Publish hardened editorial_latest snapshot for static web deployment
 	@$(PYTHON) scripts/publish_last_mile_snapshot.py

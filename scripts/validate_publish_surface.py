@@ -119,6 +119,11 @@ def validate_publish_surface(storage_dir: Path) -> None:
     groups = _iter_jsonl(groups_path)
     editorial = _read_json(editorial_path)
 
+    if not refs:
+        raise ValueError(f"{refs_path}: no rows; latest public page would be empty/stale")
+    if not groups:
+        raise ValueError(f"{groups_path}: no rows; topic pages would be empty/stale")
+
     for idx, row in enumerate(refs, start=1):
         try:
             _validate_frontpage_item(row, idx)
