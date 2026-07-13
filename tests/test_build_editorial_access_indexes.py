@@ -259,3 +259,86 @@ def test_build_editorial_access_indexes_prefers_draft_buses_without_pf_or_data_d
     assert len(payload["human_handoff"]["latest_article_drafts"]) == 1
     assert len(payload["human_handoff"]["latest_yt_script_drafts"]) == 1
     assert payload["human_handoff"]["action_candidates"][0]["target_format"] == "yt_script"
+
+
+def test_build_editorial_access_indexes_normalizes_missing_draft_bus_topics(tmp_path: Path):
+    data = tmp_path / "data"
+    storage = tmp_path / "storage"
+    digest = "20260713T21"
+    digest_group_id = f"{digest}::A::Science::01"
+
+    _write_jsonl(
+        storage / "buses" / "news_digest_group" / "v1" / "groups.jsonl",
+        [
+            {
+                "schema_name": "news_digest_group.v1",
+                "schema_status": "experimental_structured",
+                "digest_group_id": digest_group_id,
+                "digest_id_hour": digest,
+                "window_type": "A",
+                "topic": "Science",
+                "group_number": 1,
+                "content": [],
+            }
+        ],
+    )
+    _write_jsonl(
+        storage / "buses" / "news_piece_brief" / "v1" / "briefs.jsonl",
+        [
+            {
+                "schema_name": "news_piece_brief.v1",
+                "digest_id_hour": digest,
+                "digest_group_id": digest_group_id,
+                "brief_id": "npb_science",
+                "topic": "",
+                "working_title": "Brief title",
+                "format_candidates": ["article"],
+            }
+        ],
+    )
+    _write_jsonl(
+        storage / "buses" / "news_article_draft" / "v1" / "article.jsonl",
+        [
+            {
+                "schema_name": "news_article_draft.v1",
+                "schema_status": "experimental_structured",
+                "draft_id": "article_npb_science",
+                "brief_id": "npb_science",
+                "topic": "",
+                "title": "Article draft title",
+                "dek": "Article dek",
+            }
+        ],
+    )
+    _write_jsonl(
+        storage / "buses" / "news_yt_script_draft" / "v1" / "yt.jsonl",
+        [
+            {
+                "schema_name": "news_yt_script_draft.v1",
+                "schema_status": "experimental_structured",
+                "script_id": "yt_npb_science",
+                "brief_id": "npb_science",
+                "title": "YT draft title",
+                "thumbnail_hook": "Hook",
+                "cold_open": "Cold open",
+            }
+        ],
+    )
+
+    subprocess.run(
+        [sys.executable, str(SCRIPT), "--storage-dir", str(storage), "--data-dir", str(data), "--digest-at", digest],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    payload = json.loads((storage / "indexes" / "editorial_latest.json").read_text(encoding="utf-8"))
+    handoff = payload["human_handoff"]
+    records = (
+        handoff["latest_briefs"]
+        + handoff["latest_article_drafts"]
+        + handoff["latest_yt_script_drafts"]
+        + handoff["action_candidates"]
+    )
+    assert records
+    assert all(record["topic"] == "Science" for record in records)
