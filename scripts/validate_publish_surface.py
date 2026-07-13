@@ -106,7 +106,25 @@ def _validate_editorial_handoff_item(row: dict[str, Any], idx: int) -> None:
             raise ValueError(f"item#{idx}: invalid '{optional}' (expected string)")
 
 
-def validate_publish_surface(storage_dir: Path) -> None:
+def _collect_digest_values(rows: list[dict[str, Any]], key: str) -> set[str]:
+    values: set[str] = set()
+    for row in rows:
+        value = row.get(key)
+        if isinstance(value, str) and value.strip():
+            values.add(value.strip())
+    return values
+
+
+def _require_digest_match(name: str, values: set[str], expected: str | None) -> None:
+    if not values:
+        raise ValueError(f"{name}: no digest_at values found")
+    if len(values) != 1:
+        raise ValueError(f"{name}: mixed digest_at values: {sorted(values)}")
+    if expected and next(iter(values)) != expected:
+        raise ValueError(f"{name}: digest_at {next(iter(values))} does not match requested {expected}")
+
+
+def validate_publish_surface(storage_dir: Path, digest_at: str | None = None) -> None:
     refs_path = storage_dir / "indexes" / "news_recent_refs_latest.jsonl"
     groups_path = storage_dir / "indexes" / "news_recent_groups_latest.jsonl"
     editorial_path = storage_dir / "indexes" / "editorial_latest.json"
@@ -123,6 +141,15 @@ def validate_publish_surface(storage_dir: Path) -> None:
         raise ValueError(f"{refs_path}: no rows; latest public page would be empty/stale")
     if not groups:
         raise ValueError(f"{groups_path}: no rows; topic pages would be empty/stale")
+
+    _require_digest_match(str(refs_path), _collect_digest_values(refs, "digest_at"), digest_at)
+    _require_digest_match(str(groups_path), _collect_digest_values(groups, "digest_at"), digest_at)
+
+    editorial_digest = editorial.get("digest_at")
+    if not isinstance(editorial_digest, str) or not editorial_digest.strip():
+        raise ValueError(f"{editorial_path}: missing/invalid 'digest_at'")
+    if digest_at and editorial_digest.strip() != digest_at:
+        raise ValueError(f"{editorial_path}: digest_at {editorial_digest.strip()} does not match requested {digest_at}")
 
     for idx, row in enumerate(refs, start=1):
         try:
@@ -162,13 +189,14 @@ def validate_publish_surface(storage_dir: Path) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Validate publish surface canonical contract against latest indexes")
     parser.add_argument("--storage-dir", default="storage", help="Storage root containing indexes/")
+    parser.add_argument("--digest-at", default=None, help="Require latest publish surface files to match this digest hour (YYYYMMDDTHH)")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     try:
-        validate_publish_surface(Path(args.storage_dir))
+        validate_publish_surface(Path(args.storage_dir), args.digest_at)
     except ValueError as exc:
         print(f"[validate-publish-surface] ERROR: {exc}")
         return 1

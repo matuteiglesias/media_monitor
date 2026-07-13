@@ -58,9 +58,34 @@ function assertFreshEnough(storagePath, publicPath) {
   }
 }
 
+function digestSet(rows) {
+  return [...new Set(rows.map((row) => row?.digest_at).filter((value) => typeof value === "string" && value.trim()))].sort();
+}
+
+function assertSameStorageProjection(storagePath, publicPath) {
+  const storageHash = sha256(storagePath);
+  const publicHash = sha256(publicPath);
+  if (storageHash !== publicHash) {
+    throw new Error(`public snapshot is not derived from storage snapshot: ${publicPath} sha256=${publicHash} storage=${storageHash}`);
+  }
+}
+
+function assertExpectedDigest(filename, digests, expectedDigestAt) {
+  if (!digests.length) {
+    throw new Error(`${filename}: no digest_at values found`);
+  }
+  if (digests.length !== 1) {
+    throw new Error(`${filename}: mixed digest_at values: ${digests.join(", ")}`);
+  }
+  if (expectedDigestAt && digests[0] !== expectedDigestAt) {
+    throw new Error(`${filename}: digest_at ${digests[0]} does not match requested ${expectedDigestAt}`);
+  }
+}
+
 export function validatePublicData(options = {}) {
   const repoRoot = options.repoRoot ?? path.resolve(__dirname, "../../..");
   const allowEditorialFallback = options.allowEditorialFallback ?? process.env.ALLOW_EDITORIAL_FALLBACK === "1";
+  const expectedDigestAt = options.digestAt ?? process.env.DIGEST_AT ?? null;
   const storageDir = path.join(repoRoot, "storage", "indexes");
   const publicDir = path.join(repoRoot, "apps", "news_site", "public", "data");
   const manifest = {
@@ -79,13 +104,16 @@ export function validatePublicData(options = {}) {
     const publicRows = readJsonl(publicPath);
     if (storageRows.length === 0 || publicRows.length === 0) throw new Error(`no rows in ${filename}`);
     publicRows.forEach((row, idx) => requireFields(row, fields, publicPath, idx + 1));
+    assertSameStorageProjection(storagePath, publicPath);
+    const digests = digestSet(publicRows);
+    assertExpectedDigest(filename, digests, expectedDigestAt);
     assertFreshEnough(storagePath, publicPath);
     manifest.files[filename] = {
       storage_rows: storageRows.length,
       public_rows: publicRows.length,
       storage_sha256: sha256(storagePath),
       public_sha256: sha256(publicPath),
-      digest_at: publicRows[0]?.digest_at ?? null,
+      digest_at: digests[0] ?? null,
     };
   }
 
@@ -101,7 +129,14 @@ export function validatePublicData(options = {}) {
     throw new Error(`missing storage editorial snapshot: ${editorialStorage}`);
   }
   if (fs.existsSync(editorialStorage)) {
-    readJson(editorialStorage);
+    const storageEditorial = readJson(editorialStorage);
+    if ((storageEditorial.digest_at ?? null) !== (editorial.digest_at ?? null)) {
+      throw new Error(`editorial digest_at mismatch between public and storage snapshots: ${editorialPublic} != ${editorialStorage}`);
+    }
+    if (expectedDigestAt && editorial.digest_at !== expectedDigestAt) {
+      throw new Error(`editorial_latest.json: digest_at ${editorial.digest_at} does not match requested ${expectedDigestAt}`);
+    }
+    assertSameStorageProjection(editorialStorage, editorialPublic);
     assertFreshEnough(editorialStorage, editorialPublic);
     manifest.files["editorial_latest.json"] = {
       storage_sha256: sha256(editorialStorage),

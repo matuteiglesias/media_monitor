@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from datetime import datetime, timezone
 from typing import Any, Literal
 
 from jsonschema import Draft202012Validator
@@ -84,17 +85,26 @@ def article_draft_from_stage05(draft: dict[str, Any]) -> dict[str, Any]:
     dek = str(draft.get("dek") or draft.get("topic") or title).strip()
     lede = dek or title
     section_heading = str(draft.get("topic") or "What matters").strip() or "What matters"
+    digest_at = str(draft.get("digest_id_hour") or "").strip()
+    story_group_id = str(draft.get("cluster_id") or brief_id).strip()
+    slug_candidate = _safe_id(str(draft.get("slug") or title).lower(), index_id.lower())
+    body_markdown = f"# {title}\n\n{lede}"
 
     citations = []
+    source_links = []
+    source_ids = []
     for ordinal, citation in enumerate([c for c in (draft.get("citations") or []) if isinstance(c, dict)], start=1):
         url = _citation_url(citation)
         if not url:
             continue
+        source_ref_id = _source_ref_id(citation, ordinal, index_id)
+        source_links.append(url)
+        source_ids.append(source_ref_id)
         citations.append(
             {
                 "citation_id": f"c{ordinal}",
                 "claim_text": title,
-                "source_ref_id": _source_ref_id(citation, ordinal, index_id),
+                "source_ref_id": source_ref_id,
                 "url": url,
             }
         )
@@ -103,8 +113,12 @@ def article_draft_from_stage05(draft: dict[str, Any]) -> dict[str, Any]:
         "schema_name": "news_article_draft.v1",
         "schema_status": "experimental_structured",
         "draft_id": _safe_id(f"article_{brief_id}_{index_id}", f"article_{index_id}"),
+        "digest_at": digest_at,
+        "story_group_id": story_group_id,
         "brief_id": brief_id,
         "title": title,
+        "slug_candidate": slug_candidate,
+        "summary": dek,
         "dek": dek,
         "lede": lede,
         "sections": [
@@ -114,7 +128,13 @@ def article_draft_from_stage05(draft: dict[str, Any]) -> dict[str, Any]:
                 "summary": lede,
             }
         ],
-        "body_markdown": f"# {title}\n\n{lede}",
+        "body_md": body_markdown,
+        "body_markdown": body_markdown,
+        "source_links": source_links,
+        "source_ids": source_ids,
+        "topic": section_heading,
+        "status": "draft",
+        "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "citations": citations,
         "fact_check_flags": [],
         "revision_notes": [],

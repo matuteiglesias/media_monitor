@@ -2,8 +2,12 @@
   "schema_name": "news_article_draft.v1",
   "schema_status": "experimental_structured",
   "draft_id": "draft_article_2026_03_14_01",
+  "digest_at": "20260314T01",
+  "story_group_id": "20260314T01::1h_window::cloud::01",
   "brief_id": "brief_2026_03_14_001",
   "title": "Una alianza regional que redefine la carrera de nube empresarial",
+  "slug_candidate": "una-alianza-regional-que-redefine-la-carrera-de-nube-empresarial",
+  "summary": "El acuerdo entre dos gigantes tecnológicos eleva la presión de precios y acelera proyectos en empresas medianas.",
   "dek": "El acuerdo entre dos gigantes tecnológicos eleva la presión de precios y acelera proyectos en empresas medianas.",
   "lede": "En menos de una semana, el anuncio pasó de promesa a hoja de ruta comercial en tres mercados clave de LATAM.",
   "sections": [
@@ -18,7 +22,17 @@
       "summary": "Las empresas medianas verán mejores condiciones de entrada, con riesgos de dependencia tecnológica."
     }
   ],
+  "body_md": "## Qué se anunció\n\nEl acuerdo presentado el martes...\n\n## Qué cambia para las empresas\n\nPara muchas compañías...",
   "body_markdown": "## Qué se anunció\n\nEl acuerdo presentado el martes...\n\n## Qué cambia para las empresas\n\nPara muchas compañías...",
+  "source_links": [
+    "https://example.com/official-announcement"
+  ],
+  "source_ids": [
+    "ref_01"
+  ],
+  "topic": "cloud",
+  "status": "draft",
+  "created_at": "2026-03-14T01:00:00Z",
   "citations": [
     {
       "citation_id": "c1",

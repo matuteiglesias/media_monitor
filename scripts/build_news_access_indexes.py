@@ -64,7 +64,13 @@ def _latest_payload(storage_dir: Path) -> dict[str, Any]:
         return {}
 
 
-def _resolve_from_indexes(storage_dir: Path, export_name: str) -> tuple[str | None, str | None]:
+def _digest_matches(found: str | None, requested: str | None) -> bool:
+    if not requested:
+        return True
+    return (found or "").strip() == requested.strip()
+
+
+def _resolve_from_indexes(storage_dir: Path, export_name: str, requested_digest: str | None = None) -> tuple[str | None, str | None]:
     idx_dir = storage_dir / "indexes"
     run_files = sorted(idx_dir.glob("pr3a_exports_*.json"), reverse=True)
     for idx in run_files:
@@ -73,6 +79,8 @@ def _resolve_from_indexes(storage_dir: Path, export_name: str) -> tuple[str | No
         except Exception:
             continue
         digest_at = str(payload.get("digest_at") or "").strip() or None
+        if not _digest_matches(digest_at, requested_digest):
+            continue
         for result in payload.get("results") or []:
             if str(result.get("name") or "") != export_name:
                 continue
@@ -85,7 +93,7 @@ def _resolve_from_indexes(storage_dir: Path, export_name: str) -> tuple[str | No
     return None, None
 
 
-def _resolve_from_manifests(storage_dir: Path, export_name: str) -> tuple[str | None, str | None]:
+def _resolve_from_manifests(storage_dir: Path, export_name: str, requested_digest: str | None = None) -> tuple[str | None, str | None]:
     if export_name == "news_ref.v1":
         manifest_glob = "buses/news_ref/v1/manifest_*.json"
     elif export_name == "news_digest_group.v1":
@@ -98,34 +106,41 @@ def _resolve_from_manifests(storage_dir: Path, export_name: str) -> tuple[str | 
             payload = _read_json(manifest)
         except Exception:
             continue
+        digest_at = str(payload.get("digest_at") or "").strip() or None
+        if not _digest_matches(digest_at, requested_digest):
+            continue
         status = str(payload.get("status") or "")
         if status not in {"exported", "skipped_duplicate"}:
             continue
         out = str(payload.get("output_file") or payload.get("duplicate_of") or "").strip()
         if _safe_exists_jsonl(out):
-            return str(payload.get("digest_at") or "").strip() or None, out
+            return digest_at, out
     return None, None
 
 
-def _resolve_output(storage_dir: Path, export_name: str) -> tuple[str | None, str | None]:
+def _resolve_output(storage_dir: Path, export_name: str, requested_digest: str | None = None, allow_stale_fallback: bool = False) -> tuple[str | None, str | None]:
     latest = _latest_payload(storage_dir)
     digest_at_latest = str(latest.get("digest_at") or "").strip() or None
-    for result in latest.get("results") or []:
-        if str(result.get("name") or "") != export_name:
-            continue
-        out = str(result.get("output_path") or "").strip()
-        if _safe_exists_jsonl(out):
-            return digest_at_latest, out
+    if _digest_matches(digest_at_latest, requested_digest):
+        for result in latest.get("results") or []:
+            if str(result.get("name") or "") != export_name:
+                continue
+            out = str(result.get("output_path") or "").strip()
+            if _safe_exists_jsonl(out):
+                return digest_at_latest, out
 
-    digest_at, out = _resolve_from_indexes(storage_dir, export_name)
+    digest_at, out = _resolve_from_indexes(storage_dir, export_name, requested_digest)
     if out:
         return digest_at or digest_at_latest, out
 
-    digest_at, out = _resolve_from_manifests(storage_dir, export_name)
+    digest_at, out = _resolve_from_manifests(storage_dir, export_name, requested_digest)
     if out:
         return digest_at or digest_at_latest, out
 
-    return digest_at_latest, None
+    if requested_digest and allow_stale_fallback:
+        return _resolve_output(storage_dir, export_name, None, False)
+
+    return digest_at_latest if not requested_digest else requested_digest, None
 
 
 def _title_from_meta(meta: Any) -> str:
@@ -194,9 +209,9 @@ def _count_jsonl(path: Path | None) -> int:
     return sum(1 for _ in _iter_jsonl(path))
 
 
-def diagnose_inputs(storage_dir: Path) -> dict[str, Any]:
-    digest_ref, ref_output = _resolve_output(storage_dir, "news_ref.v1")
-    digest_group, group_output = _resolve_output(storage_dir, "news_digest_group.v1")
+def diagnose_inputs(storage_dir: Path, requested_digest: str | None = None, allow_stale_fallback: bool = False) -> dict[str, Any]:
+    digest_ref, ref_output = _resolve_output(storage_dir, "news_ref.v1", requested_digest, allow_stale_fallback)
+    digest_group, group_output = _resolve_output(storage_dir, "news_digest_group.v1", requested_digest, allow_stale_fallback)
     latest = _latest_payload(storage_dir)
 
     def entry(export_name: str, digest_at: str | None, output: str | None) -> dict[str, Any]:
@@ -212,6 +227,8 @@ def diagnose_inputs(storage_dir: Path) -> dict[str, Any]:
 
     return {
         "storage_dir": str(storage_dir),
+        "requested_digest_at": requested_digest,
+        "allow_stale_fallback": allow_stale_fallback,
         "pr3a_latest_digest_at": str(latest.get("digest_at") or "") or None,
         "pr3a_latest_status": str(latest.get("status") or "") or None,
         "inputs": [
@@ -220,9 +237,14 @@ def diagnose_inputs(storage_dir: Path) -> dict[str, Any]:
         ],
     }
 
-def build_access_indexes(storage_dir: Path) -> tuple[Path, Path, int, int]:
-    digest_ref, ref_output = _resolve_output(storage_dir, "news_ref.v1")
-    digest_group, group_output = _resolve_output(storage_dir, "news_digest_group.v1")
+def build_access_indexes(storage_dir: Path, digest_at: str | None = None, allow_stale_fallback: bool = False) -> tuple[Path, Path, int, int]:
+    digest_ref, ref_output = _resolve_output(storage_dir, "news_ref.v1", digest_at, allow_stale_fallback)
+    digest_group, group_output = _resolve_output(storage_dir, "news_digest_group.v1", digest_at, allow_stale_fallback)
+
+    if digest_at and not ref_output:
+        raise RuntimeError(f"no news_ref.v1 export found for digest_at={digest_at}; run acquisition/export for that digest or set --allow-stale-fallback explicitly")
+    if digest_at and not group_output:
+        raise RuntimeError(f"no news_digest_group.v1 export found for digest_at={digest_at}; run acquisition/export for that digest or set --allow-stale-fallback explicitly")
 
     ref_rows = list(_iter_jsonl(Path(ref_output))) if ref_output else []
     group_rows = list(_iter_jsonl(Path(group_output))) if group_output else []
@@ -305,7 +327,7 @@ def build_access_indexes(storage_dir: Path) -> tuple[Path, Path, int, int]:
     refs.sort(key=lambda r: (r.get("published_at") or "", r.get("link") or ""), reverse=True)
     groups.sort(key=lambda g: (g["digest_at"], g["window_type"], g["topic"], g["group_number"]))
 
-    digest_at = digest_group or digest_ref or "unknown"
+    digest_at = digest_group or digest_ref or digest_at or "unknown"
     built_at = _utc_now_compact()
     idx_dir = storage_dir / "indexes"
     latest_refs = idx_dir / "news_recent_refs_latest.jsonl"
@@ -321,6 +343,8 @@ def build_access_indexes(storage_dir: Path) -> tuple[Path, Path, int, int]:
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Build compact, human-readable latest news indexes from exported seams")
     p.add_argument("--storage-dir", default="storage")
+    p.add_argument("--digest-at", default=None, help="Require inputs for this digest hour (YYYYMMDDTHH); fail instead of publishing stale fallback data")
+    p.add_argument("--allow-stale-fallback", action="store_true", help="When --digest-at is set, explicitly allow falling back to the latest available export")
     p.add_argument("--diagnose", action="store_true", help="Print input resolution diagnostics without writing latest indexes")
     return p.parse_args()
 
@@ -328,10 +352,18 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     if args.diagnose:
-        print(json.dumps(diagnose_inputs(Path(args.storage_dir)), ensure_ascii=False, indent=2))
+        print(json.dumps(diagnose_inputs(Path(args.storage_dir), args.digest_at, args.allow_stale_fallback), ensure_ascii=False, indent=2))
         return 0
 
-    latest_refs, latest_groups, ref_count, group_count = build_access_indexes(Path(args.storage_dir))
+    try:
+        latest_refs, latest_groups, ref_count, group_count = build_access_indexes(
+            Path(args.storage_dir),
+            args.digest_at,
+            args.allow_stale_fallback,
+        )
+    except RuntimeError as exc:
+        print(f"[news-access] ERROR {exc}", flush=True)
+        return 1
     print(f"[news-access] refs={ref_count} groups={group_count}")
     print(f"[news-access] latest_refs={latest_refs}")
     print(f"[news-access] latest_groups={latest_groups}")
