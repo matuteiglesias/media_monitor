@@ -1,0 +1,25 @@
+{
+  "schema_name": "published_article.v1",
+  "article_id": "article_sample-draft",
+  "draft_id": "sample-draft",
+  "digest_at": "20260713T21",
+  "story_group_id": "group-1",
+  "slug": "sample-article",
+  "title": "Sample article",
+  "summary": "A short summary for the public article.",
+  "body_md": "# Sample article\n\nThis is the body.",
+  "topic": "Media",
+  "source_links": ["https://example.com/story"],
+  "citations": [
+    {
+      "citation_id": "c1",
+      "claim_text": "Example claim",
+      "source_ref_id": "source-1",
+      "url": "https://example.com/story"
+    }
+  ],
+  "status": "published",
+  "review_status": "human_approved",
+  "published_at": "2026-07-13T21:00:00Z",
+  "updated_at": "2026-07-13T21:00:00Z"
+}
