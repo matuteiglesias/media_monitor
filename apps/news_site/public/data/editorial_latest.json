@@ -1,6 +1,6 @@
 {
-  "digest_at": "20260713T19",
-  "built_at": "20260713T194641Z",
+  "digest_at": "20260713T20",
+  "built_at": "20260713T202921Z",
   "status": "degraded",
   "metrics": {
     "seed_ideas_emitted": 0,
@@ -17,7 +17,7 @@
   "fallback_inputs": {
     "pf_out": false,
     "data_drafts": false,
-    "quarantine": true
+    "quarantine": false
   },
   "pointers": {
     "pf_outputs": [],
@@ -25,10 +25,7 @@
     "article_draft_bus_files": [],
     "yt_script_draft_bus_files": [],
     "draft_files": [],
-    "quarantine_files": [
-      "data/quarantine/V01_01_digests:20260713T19.jsonl",
-      "data/quarantine/V02_02_master_index_update:20260713T19.jsonl"
-    ]
+    "quarantine_files": []
   },
   "human_handoff": {
     "status": "no-seed-ideas",
