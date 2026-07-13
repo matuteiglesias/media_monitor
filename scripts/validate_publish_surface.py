@@ -34,12 +34,13 @@ def _read_json(path: Path) -> dict[str, Any]:
     return payload
 
 
-def _require_string(obj: dict[str, Any], key: str, *, min_length: int = 0) -> str:
+def _require_string(obj: dict[str, Any], key: str, *, min_length: int = 0, path: str | None = None) -> str:
+    label = path or key
     value = obj.get(key)
     if not isinstance(value, str):
-        raise ValueError(f"missing/invalid '{key}' (expected string)")
+        raise ValueError(f"missing/invalid '{label}' (expected string)")
     if len(value.strip()) < min_length:
-        raise ValueError(f"invalid '{key}' (min_length={min_length})")
+        raise ValueError(f"invalid '{label}' (min_length={min_length})")
     return value
 
 
@@ -96,9 +97,10 @@ def _validate_editorial_handoff_item(row: dict[str, Any], idx: int) -> None:
     if target_format not in {"article", "yt_script"}:
         raise ValueError(f"item#{idx}: invalid 'target_format' ({target_format!r})")
 
-    _require_string(row, "ready_state", min_length=1)
-    _require_string(row, "title", min_length=1)
-    _require_string(row, "topic", min_length=1)
+    base_path = f"human_handoff.action_candidates[{idx - 1}]"
+    _require_string(row, "ready_state", min_length=1, path=f"{base_path}.ready_state")
+    _require_string(row, "title", min_length=1, path=f"{base_path}.title")
+    _require_string(row, "topic", min_length=1, path=f"{base_path}.topic")
 
     for optional in ("priority", "source", "path"):
         value = row.get(optional)
