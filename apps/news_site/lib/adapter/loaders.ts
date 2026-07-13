@@ -44,3 +44,18 @@ export function loadEditorialLatest() {
 
   return readJson(pathname);
 }
+
+
+export function loadPublishedArticles() {
+  const pathname = path.join(PUBLIC_DATA, "published_articles_latest.jsonl");
+  if (!fileExists(pathname)) return [];
+  const raw = fs.readFileSync(pathname, "utf-8");
+  if (!raw.trim()) return [];
+  return raw.split("\n").filter(Boolean).map((line) => JSON.parse(line));
+}
+
+export function loadPublishedArticleBySlug(slug: string) {
+  const pathname = path.join(PUBLIC_DATA, "articles", `${slug}.json`);
+  if (!fileExists(pathname)) return null;
+  return readJson(pathname);
+}

@@ -223,3 +223,15 @@ heartbeat-stop: ## Stop sensing heartbeat background process
 heartbeat-status: ## Show heartbeat process and latest log lines
 	@if [ -f storage/observability/heartbeat.pid ] && kill -0 "$$(cat storage/observability/heartbeat.pid)" 2>/dev/null; then 	  echo "heartbeat running pid=$$(cat storage/observability/heartbeat.pid)"; 	else 	  echo "heartbeat not running"; 	fi
 	@tail -n 20 storage/observability/heartbeat.log 2>/dev/null || true
+
+promote-draft: ## Promote a reviewed draft to published_article.v1: make promote-draft DRAFT_ID=<id>
+	@if [ -z "$(DRAFT_ID)" ]; then echo "DRAFT_ID is required"; exit 2; fi
+	@$(PYTHON) scripts/promote_draft_to_published.py --draft-id $(DRAFT_ID) --approve-human
+
+build-published-article-indexes: ## Build published_article public indexes
+	@$(PYTHON) scripts/build_published_article_indexes.py
+
+publish-article: ## Promote a reviewed draft and rebuild public article indexes: make publish-article DRAFT_ID=<id>
+	@if [ -z "$(DRAFT_ID)" ]; then echo "DRAFT_ID is required"; exit 2; fi
+	@$(MAKE) promote-draft DRAFT_ID=$(DRAFT_ID)
+	@$(MAKE) build-published-article-indexes
