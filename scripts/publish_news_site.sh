@@ -23,6 +23,7 @@ export PYTHON="${PYTHON_BIN}"
 echo "[publish-news-site] digest_at=${DIGEST_AT}"
 make build-news-access-indexes DIGEST_AT="${DIGEST_AT}" PYTHON="${PYTHON_BIN}"
 make build-editorial-access-indexes DIGEST_AT="${DIGEST_AT}"
+make build-published-article-indexes PYTHON="${PYTHON_BIN}"
 make validate-publish-surface DIGEST_AT="${DIGEST_AT}" PYTHON="${PYTHON_BIN}"
 npm --prefix apps/news_site run refresh-data
 SMOKE_OUTPUT="$(npm --prefix apps/news_site run --silent smoke:public-data)"
@@ -42,6 +43,7 @@ const manifest = {
   digest_at: process.env.DIGEST_AT,
   git_sha: cp.execSync("git rev-parse HEAD", {encoding:"utf8"}).trim(),
   validation,
+  published_article_count: validation && typeof validation.published_article_count === "number" ? validation.published_article_count : 0,
 };
 fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(`[publish-news-site] manifest=${manifestPath}`);
