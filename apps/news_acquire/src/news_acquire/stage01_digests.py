@@ -19,10 +19,9 @@ from datetime import datetime, timedelta, timezone
 import pandas as pd
 import feedparser
 
-# Backend layer
+# Acquisition-local backend helpers. Keep this stage independent of the removed legacy `backend` package.
 from . import ids, db
 from . import io as bio
-from backend import models  # not used directly here, but kept for symmetry/import tests
 
 
 # ======================= CONFIG =======================
