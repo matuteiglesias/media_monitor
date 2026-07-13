@@ -113,6 +113,32 @@ export function refreshPublicData(options = {}) {
     copyFileWithValidation(src, dst, "jsonl");
   }
 
+  const publishedSrc = path.join(sourceDir, "published_articles_latest.jsonl");
+  const publishedDst = path.join(targetDir, "published_articles_latest.jsonl");
+  const publishedArticlesDir = path.join(sourceDir, "articles");
+  const targetArticlesDir = path.join(targetDir, "articles");
+  let publishedArticleCount = 0;
+
+  if (fs.existsSync(publishedSrc)) {
+    const rawPublished = fs.readFileSync(publishedSrc, "utf-8");
+    const rows = rawPublished.trim() ? readJsonlChecked(publishedSrc) : [];
+    publishedArticleCount = rows.length;
+    if (rows.length) {
+      copyFileWithValidation(publishedSrc, publishedDst, "jsonl");
+    } else {
+      fs.writeFileSync(publishedDst, "", "utf-8");
+    }
+    ensureDir(targetArticlesDir);
+    for (const file of fs.readdirSync(targetArticlesDir).filter((name) => name.endsWith(".json"))) {
+      fs.unlinkSync(path.join(targetArticlesDir, file));
+    }
+    if (fs.existsSync(publishedArticlesDir)) {
+      for (const file of fs.readdirSync(publishedArticlesDir).filter((name) => name.endsWith(".json"))) {
+        copyFileWithValidation(path.join(publishedArticlesDir, file), path.join(targetArticlesDir, file), "json");
+      }
+    }
+  }
+
   const editorialSrc = path.join(sourceDir, "editorial_latest.json");
   const editorialDst = path.join(targetDir, "editorial_latest.json");
 
@@ -134,7 +160,8 @@ export function refreshPublicData(options = {}) {
     repoRoot,
     sourceDir,
     targetDir,
-    copied: required,
+    copied: fs.existsSync(publishedSrc) ? [...required, "published_articles_latest.jsonl"] : required,
+    published_article_count: publishedArticleCount,
     editorial: fs.existsSync(editorialSrc) ? "copied" : "fallback_written",
   };
 }

@@ -11,6 +11,25 @@ const JSONL_REQUIRED_FIELDS = {
   "news_recent_groups_latest.jsonl": ["digest_at", "window_type", "topic", "group_number", "article_count", "top_titles"],
 };
 
+const PUBLISHED_ARTICLE_FIELDS = [
+  "schema_name",
+  "article_id",
+  "draft_id",
+  "digest_at",
+  "story_group_id",
+  "slug",
+  "title",
+  "summary",
+  "body_md",
+  "topic",
+  "source_links",
+  "citations",
+  "status",
+  "review_status",
+  "published_at",
+  "updated_at",
+];
+
 function readJsonl(filePath) {
   const raw = fs.readFileSync(filePath, "utf-8");
   if (!raw.trim()) throw new Error(`empty file: ${filePath}`);
@@ -115,6 +134,40 @@ export function validatePublicData(options = {}) {
       public_sha256: sha256(publicPath),
       digest_at: digests[0] ?? null,
     };
+  }
+
+  const publishedStorage = path.join(storageDir, "published_articles_latest.jsonl");
+  const publishedPublic = path.join(publicDir, "published_articles_latest.jsonl");
+  if (fs.existsSync(publishedStorage) || fs.existsSync(publishedPublic)) {
+    if (!fs.existsSync(publishedStorage)) throw new Error(`missing storage published articles snapshot: ${publishedStorage}`);
+    if (!fs.existsSync(publishedPublic)) throw new Error(`missing public published articles snapshot: ${publishedPublic}`);
+    const storageRaw = fs.readFileSync(publishedStorage, "utf-8");
+    const publicRaw = fs.readFileSync(publishedPublic, "utf-8");
+    const storageRows = storageRaw.trim() ? readJsonl(publishedStorage) : [];
+    const publicRows = publicRaw.trim() ? readJsonl(publishedPublic) : [];
+    publicRows.forEach((row, idx) => {
+      requireFields(row, PUBLISHED_ARTICLE_FIELDS, publishedPublic, idx + 1);
+      if (row.schema_name !== "published_article.v1") throw new Error(`${publishedPublic}:${idx + 1}: expected published_article.v1`);
+      if (row.status !== "published") throw new Error(`${publishedPublic}:${idx + 1}: expected status=published`);
+      if (!Array.isArray(row.source_links) || row.source_links.length === 0) throw new Error(`${publishedPublic}:${idx + 1}: source_links must be non-empty`);
+      if (!Array.isArray(row.citations)) throw new Error(`${publishedPublic}:${idx + 1}: citations must be an array`);
+      const articlePath = path.join(publicDir, "articles", `${row.slug}.json`);
+      if (!fs.existsSync(articlePath)) throw new Error(`missing per-slug article JSON: ${articlePath}`);
+      const article = readJson(articlePath);
+      if (article.article_id !== row.article_id) throw new Error(`article JSON mismatch for slug ${row.slug}`);
+    });
+    assertSameStorageProjection(publishedStorage, publishedPublic);
+    assertFreshEnough(publishedStorage, publishedPublic);
+    manifest.files["published_articles_latest.jsonl"] = {
+      storage_rows: storageRows.length,
+      public_rows: publicRows.length,
+      storage_sha256: sha256(publishedStorage),
+      public_sha256: sha256(publishedPublic),
+      published_article_count: publicRows.length,
+    };
+    manifest.published_article_count = publicRows.length;
+  } else {
+    manifest.published_article_count = 0;
   }
 
   const editorialStorage = path.join(storageDir, "editorial_latest.json");
