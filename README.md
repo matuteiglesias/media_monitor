@@ -88,23 +88,18 @@ Hardening aplicado:
 Source of truth (news_site): **runtime truth = `storage/indexes` → deploy truth = refreshed snapshot in `apps/news_site/public/data`**.
 
 ```bash
-# 1) generar/actualizar índices runtime
-make build-news-access-indexes DIGEST_AT=$(date -u +%Y%m%dT%H)
-make build-editorial-access-indexes DIGEST_AT=$(date -u +%Y%m%dT%H)
+# 1) generar índices, validar storage, refrescar public/data, smoke-test y build Next
+make s01 s02 s03 export-pr3a DIGEST_AT=$(date -u +%Y%m%dT%H)
+make publish-news-site DIGEST_AT=$(date -u +%Y%m%dT%H)
 
-# 2) refrescar snapshot público (copia + validación)
-npm --prefix apps/news_site run refresh-data
-
-# 3) build deployable (incluye refresh-data)
-npm --prefix apps/news_site run build:deployable
-
-# 4) deploy
+# 2) deploy del proyecto Next apps/news_site
 vercel --prod
 ```
 
 Notas del refresh:
 - Falla con error si faltan `news_recent_refs_latest.jsonl` o `news_recent_groups_latest.jsonl`, si están vacíos o si no parsean como JSONL.
-- Si falta `storage/indexes/editorial_latest.json`, escribe un fallback determinístico en `apps/news_site/public/data/editorial_latest.json`.
+- En producción, `storage/indexes/editorial_latest.json` es obligatorio. El fallback editorial sólo se permite para previews locales con `ALLOW_EDITORIAL_FALLBACK=1`.
+- `npm --prefix apps/news_site run smoke:public-data` verifica que los snapshots públicos existan, parseen, no sean más viejos que `storage/indexes` y no usen fallback silencioso.
 
 ---
 
