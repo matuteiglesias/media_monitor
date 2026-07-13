@@ -42,13 +42,22 @@ function readJsonChecked(filePath) {
 }
 
 function copyFileWithValidation(src, dst, kind) {
-  fs.copyFileSync(src, dst);
+  if (kind === "jsonl") {
+    readJsonlChecked(src);
+  } else {
+    readJsonChecked(src);
+  }
+
+  const tmp = `${dst}.tmp`;
+  fs.copyFileSync(src, tmp);
 
   if (kind === "jsonl") {
-    readJsonlChecked(dst);
+    readJsonlChecked(tmp);
   } else {
-    readJsonChecked(dst);
+    readJsonChecked(tmp);
   }
+
+  fs.renameSync(tmp, dst);
 }
 
 function defaultEditorialFallback() {
@@ -89,9 +98,16 @@ export function refreshPublicData(options = {}) {
 
   if (fs.existsSync(editorialSrc)) {
     copyFileWithValidation(editorialSrc, editorialDst, "json");
-  } else {
-    fs.writeFileSync(editorialDst, `${JSON.stringify(defaultEditorialFallback(), null, 2)}\n`, "utf-8");
+  } else if (process.env.ALLOW_EDITORIAL_FALLBACK === "1") {
+    const fallback = {
+      ...defaultEditorialFallback(),
+      source: "editorial_fallback",
+      generated_at: new Date().toISOString(),
+    };
+    fs.writeFileSync(editorialDst, `${JSON.stringify(fallback, null, 2)}\n`, "utf-8");
     readJsonChecked(editorialDst);
+  } else {
+    throw new Error(`Missing required editorial snapshot: ${editorialSrc}. Set ALLOW_EDITORIAL_FALLBACK=1 only for local emergency previews.`);
   }
 
   return {
