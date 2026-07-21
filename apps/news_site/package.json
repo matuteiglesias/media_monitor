@@ -7,10 +7,8 @@
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "next lint",
-    "refresh-data": "node scripts/refresh_public_data.mjs",
-    "build:deployable": "npm run refresh-data && npm run smoke:public-data && npm run build",
     "test:refresh-data": "node --test scripts/refresh_public_data.test.mjs",
-    "smoke:public-data": "node scripts/validate_public_data.mjs"
+    "prebuild": "python3 ../../scripts/validate_site_snapshot.py --site-id \"${SITE_ID:-argentina-general}\" --digest-at \"${DIGEST_AT:-$(date -u +%Y%m%dT%H)}\" --sites-dir ../../sites --input public/data/site_snapshot.json"
   },
   "dependencies": {
     "next": "14.2.25",

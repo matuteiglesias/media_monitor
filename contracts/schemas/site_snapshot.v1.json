@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/site_snapshot.v1.json",
+  "title": "site_snapshot.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": {"const": "site_snapshot.v1"},
+    "snapshot_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "site": {"type": "object", "additionalProperties": false, "properties": {"site_id":{"type":"string","minLength":1},"name":{"type":"string","minLength":1},"tagline":{"type":"string","minLength":1},"locale":{"type":"string","minLength":1}}, "required":["site_id","name","tagline","locale"]},
+    "digest_at": {"type":"string","pattern":"^[0-9]{8}T[0-9]{2}$"},
+    "generated_at": {"type":"string","format":"date-time"},
+    "status": {"const":"ok"},
+    "metrics": {"type":"object","additionalProperties":false,"properties":{"item_count":{"type":"integer","minimum":1},"section_count":{"type":"integer","minimum":1}},"required":["item_count","section_count"]},
+    "hero": {"$ref":"#/$defs/item"},
+    "latest": {"type":"array","minItems":1,"items":{"$ref":"#/$defs/item"}},
+    "sections": {"type":"array","minItems":1,"items":{"type":"object","additionalProperties":false,"properties":{"topic":{"type":"string","minLength":1},"article_count":{"type":"integer","minimum":0},"top_titles":{"type":"array","items":{"type":"string"}}},"required":["topic","article_count","top_titles"]}},
+    "provenance": {"type":"object","additionalProperties":false,"properties":{"refs_path":{"type":"string","minLength":1},"refs_sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"},"groups_path":{"type":"string","minLength":1},"groups_sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"},"git_sha":{"type":"string","minLength":1}},"required":["refs_path","refs_sha256","groups_path","groups_sha256","git_sha"]}
+  },
+  "required":["schema_name","snapshot_id","site","digest_at","generated_at","status","metrics","hero","latest","sections","provenance"],
+  "$defs": {"item":{"type":"object","additionalProperties":false,"properties":{"index_id":{"type":"string","minLength":1},"title":{"type":"string","minLength":1},"topic":{"type":"string","minLength":1},"published_at":{"type":"string","format":"date-time"},"link":{"type":"string","format":"uri"},"source":{"type":"string"}},"required":["index_id","title","topic","published_at","link","source"]}}
+}
