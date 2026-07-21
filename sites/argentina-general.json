@@ -1,0 +1,16 @@
+{
+  "site_id": "argentina-general",
+  "name": "Actualidad Argentina",
+  "tagline": "Noticias recientes de Argentina",
+  "locale": "es-AR",
+  "selection": {
+    "topics": ["All Topics"],
+    "max_age_hours": 3,
+    "minimum_items": 5,
+    "max_items": 40
+  },
+  "presentation": {
+    "latest_count": 12,
+    "show_sources": true
+  }
+}

@@ -24,7 +24,7 @@ define _env_prefix
 DIGEST_AT=$(DIGEST_AT) DRY_RUN=$(DRY_RUN) LIMIT=$(LIMIT) SAMPLE=$(SAMPLE) NULL_SINK=$(NULL_SINK)
 endef
 
-.PHONY: help hour env preflight-runtime s01 s02 s03 s04 s05 s06 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null export-pr3a build-news-access-indexes build-editorial-access-indexes diagnose-editorial draft-article materialize-editorial-handoff build-enrich-access-indexes validate-publish-surface publish-news-site publish-last-mile-snapshot heartbeat-start heartbeat-stop heartbeat-status
+.PHONY: help hour env preflight-runtime s01 s02 s03 s04 s05 s06 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null export-pr3a build-news-access-indexes build-editorial-access-indexes build-site-snapshot validate-site-snapshot build-source-site roll-site diagnose-editorial draft-article materialize-editorial-handoff build-enrich-access-indexes validate-publish-surface publish-news-site publish-last-mile-snapshot heartbeat-start heartbeat-stop heartbeat-status
 
 help:      ## Show help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' Makefile | sed 's/:.*## / — /' | sort
@@ -235,3 +235,17 @@ publish-article: ## Promote a reviewed draft and rebuild public article indexes:
 	@if [ -z "$(DRAFT_ID)" ]; then echo "DRAFT_ID is required"; exit 2; fi
 	@$(MAKE) promote-draft DRAFT_ID=$(DRAFT_ID)
 	@$(MAKE) build-published-article-indexes
+
+SITE_ID ?= argentina-general
+build-site-snapshot: ## Compile one generic source-site snapshot
+	@$(PYTHON) scripts/build_site_snapshot.py --site-id $(SITE_ID) --digest-at $(DIGEST_AT)
+validate-site-snapshot: ## Validate one generic source-site snapshot
+	@$(PYTHON) scripts/validate_site_snapshot.py --site-id $(SITE_ID) --digest-at $(DIGEST_AT)
+build-source-site: ## Compile, validate, and build the generic source site
+	@$(MAKE) build-site-snapshot SITE_ID=$(SITE_ID) DIGEST_AT=$(DIGEST_AT)
+	@$(MAKE) validate-site-snapshot SITE_ID=$(SITE_ID) DIGEST_AT=$(DIGEST_AT)
+	@SITE_ID=$(SITE_ID) DIGEST_AT=$(DIGEST_AT) npm --prefix apps/news_site run build
+
+roll-site: ## Compile, prebuild, deploy, and verify a source-site snapshot
+	@if [ -z "$(SITE_ID)" ] || [ -z "$(DIGEST_AT)" ] || [ -z "$(TARGET)" ]; then echo "SITE_ID, DIGEST_AT and TARGET are required"; exit 2; fi
+	@$(PYTHON) scripts/roll_site.py --site-id $(SITE_ID) --digest-at $(DIGEST_AT) --target $(TARGET) --repo-root $(PWD)
