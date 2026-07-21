@@ -1,8 +1,2 @@
-export default function TopicPage({ params }: { params: { topic: string } }) {
-  return (
-    <main className="mx-auto max-w-4xl px-6 py-10">
-      <h1 className="text-3xl font-semibold">Tema: {params.topic}</h1>
-      <p className="mt-4 text-neutral-600">Vista placeholder de topic.</p>
-    </main>
-  );
-}
+import Link from "next/link"; import { loadSourceSite } from "@/lib/adapter/mappers";
+export default function TopicPage({params}:{params:{topic:string}}){const s=loadSourceSite();const topic=decodeURIComponent(params.topic);const items=s.latest.filter((x:any)=>x.topic===topic);return <main className="mx-auto max-w-4xl px-6 py-10"><h1 className="text-3xl font-semibold">{s.site.name}: {topic}</h1><div className="mt-8 space-y-4">{items.map((item:any)=><Link className="block border-b pb-4" key={item.index_id} href={`/story/${item.index_id}`}>{item.title}</Link>)}</div></main>}

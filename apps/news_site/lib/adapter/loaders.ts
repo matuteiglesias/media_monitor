@@ -1,61 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
-import { PUBLIC_DATA } from "./paths";
 
-export function fileExists(pathname: string) {
-  return fs.existsSync(pathname);
-}
+export const PUBLIC_DATA = path.join(process.cwd(), "public", "data");
+export type SiteSnapshot = any;
 
-export function readJson(pathname: string) {
+export function loadSiteSnapshot(): SiteSnapshot {
+  const pathname = path.join(PUBLIC_DATA, "site_snapshot.json");
+  if (!fs.existsSync(pathname)) throw new Error("Missing required site_snapshot.json");
   return JSON.parse(fs.readFileSync(pathname, "utf-8"));
-}
-
-export function readJsonl(pathname: string) {
-  return fs
-    .readFileSync(pathname, "utf-8")
-    .split("\n")
-    .filter(Boolean)
-    .map((line) => JSON.parse(line));
-}
-
-export function loadRecentRefs() {
-  const pathname = path.join(PUBLIC_DATA, "news_recent_refs_latest.jsonl");
-  if (!fileExists(pathname)) return [];
-  return readJsonl(pathname);
-}
-
-export function loadRecentGroups() {
-  const pathname = path.join(PUBLIC_DATA, "news_recent_groups_latest.jsonl");
-  if (!fileExists(pathname)) return [];
-  return readJsonl(pathname);
-}
-
-export function loadEditorialLatest() {
-  const pathname = path.join(PUBLIC_DATA, "editorial_latest.json");
-  if (!fileExists(pathname)) {
-    return {
-      status: "missing_public_snapshot",
-      message: "Missing apps/news_site/public/data/editorial_latest.json",
-      generated_at: null,
-      digest_at: null,
-      source: pathname,
-    };
-  }
-
-  return readJson(pathname);
-}
-
-
-export function loadPublishedArticles() {
-  const pathname = path.join(PUBLIC_DATA, "published_articles_latest.jsonl");
-  if (!fileExists(pathname)) return [];
-  const raw = fs.readFileSync(pathname, "utf-8");
-  if (!raw.trim()) return [];
-  return raw.split("\n").filter(Boolean).map((line) => JSON.parse(line));
-}
-
-export function loadPublishedArticleBySlug(slug: string) {
-  const pathname = path.join(PUBLIC_DATA, "articles", `${slug}.json`);
-  if (!fileExists(pathname)) return null;
-  return readJson(pathname);
 }
