@@ -277,8 +277,8 @@ def _latest_draft_bus_records(
             if brief_id not in digest_brief_ids:
                 continue
 
-            if row.get("digest_at") != digest_id:
-                continue
+            # if row.get("digest_at") != digest_id:
+            #     continue
 
 
 
@@ -295,8 +295,8 @@ def _latest_draft_bus_records(
             if brief_id not in digest_brief_ids:
                 continue
 
-            if row.get("digest_at") != digest_id:
-                continue
+            # if row.get("digest_at") != digest_id:
+            #     continue
             yt.append(_draft_record_from_yt_bus(path, row, brief_topics))
 
     return article[-limit:], yt[-limit:]
