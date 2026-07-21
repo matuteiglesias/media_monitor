@@ -271,8 +271,17 @@ def _latest_draft_bus_records(
             if str(row.get("schema_name") or "") != "news_article_draft.v1":
                 continue
             brief_id = str(row.get("brief_id") or "").strip()
-            if digest_brief_ids and brief_id not in digest_brief_ids:
+            # if digest_brief_ids and brief_id not in digest_brief_ids:
+            #     continue
+
+            if brief_id not in digest_brief_ids:
                 continue
+
+            if row.get("digest_at") != digest_id:
+                continue
+
+
+
             article.append(_draft_record_from_article_bus(path, row, brief_topics))
 
     for path in yt_files:
@@ -280,7 +289,13 @@ def _latest_draft_bus_records(
             if str(row.get("schema_name") or "") != "news_yt_script_draft.v1":
                 continue
             brief_id = str(row.get("brief_id") or "").strip()
-            if digest_brief_ids and brief_id not in digest_brief_ids:
+            # if digest_brief_ids and brief_id not in digest_brief_ids:
+            #     continue
+
+            if brief_id not in digest_brief_ids:
+                continue
+
+            if row.get("digest_at") != digest_id:
                 continue
             yt.append(_draft_record_from_yt_bus(path, row, brief_topics))
 
