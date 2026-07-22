@@ -8,7 +8,7 @@
     "start": "next start -p 3001",
     "lint": "next lint",
     "test:refresh-data": "node --test scripts/refresh_public_data.test.mjs",
-    "prebuild": "python3 ../../scripts/validate_site_snapshot.py --site-id \"${SITE_ID:-argentina-general}\" --digest-at \"${DIGEST_AT:-$(date -u +%Y%m%dT%H)}\" --sites-dir ../../sites --input public/data/site_snapshot.json"
+    "prebuild": "node scripts/validate_site_snapshot.mjs"
   },
   "dependencies": {
     "next": "14.2.25",
