@@ -30,3 +30,8 @@ apps/news_site/public/data/articles/
 .DS_Store
 .idea/
 .vscode/
+
+# Local secrets
+.env
+.env.*
+!.env.example
