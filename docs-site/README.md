@@ -40,6 +40,13 @@ repository source/contract links are deliberately sent to GitHub.
 > Root Directory in the Build Step” must be enabled. The sync fails explicitly
 > when canonical docs are unavailable.**
 
+> **Stop if the Vercel log says `Detected Next.js`, installs the `news-site`
+> package, or runs `validate_site_snapshot.mjs`. That proves the deployment is
+> targeting the existing publication project/root, not this docs project. Do
+> not change that project's root to compensate: cancel the deployment and
+> create/import a separate project with Root Directory `docs-site`. A correct
+> log installs `@media-monitor/docs-site` with `npm ci` and runs VitePress.**
+
 Create a new project without linking or changing the existing publication
 project:
 
@@ -71,6 +78,12 @@ cd docs-site
 npx vercel link --project media-monitor-docs
 npx vercel --preview
 ```
+
+Do not run the preview command from the repository root and do not select the
+existing news-site/publication project when `vercel link` prompts. Before
+deploying, inspect `.vercel/project.json` (ignored) and confirm its project ID is
+the newly created docs-only project. If a root-level link already exists, the
+explicit `cd docs-site` boundary is mandatory.
 
 Verify `/`, `/architecture/system-overview`, `/operations/sensing-run-bundles`,
 `/reference/contracts-and-schemas`, `/case-studies/aws-immutable-sensing-retrofit`,

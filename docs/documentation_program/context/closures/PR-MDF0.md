@@ -82,6 +82,16 @@ project, create a preview, execute the route/browser checklist, and independentl
 confirm the existing Media Monitor deployment. Exact dashboard and CLI steps
 are in `docs-site/README.md`.
 
+Follow-up correction: the authored `/artifacts/` landing page was initially
+masked by the repository-wide runtime `artifacts/` ignore rule and therefore
+was absent from the commit. `docs-site/.gitignore` now explicitly re-includes
+only `scaffold/artifacts/index.md`; generated/runtime artifact directories stay
+ignored. A reported Vercel log that detected Next.js 14.2.25 and executed
+`validate_site_snapshot.mjs` was also confirmed to be the existing publication
+project, not this subproject. The handoff now treats those log lines as an
+explicit stop signal rather than suggesting any change to existing deployment
+behavior.
+
 ## Scope and non-goals
 
 No sensing, enrich, editorial, approval, publication, contract, storage,
