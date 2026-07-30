@@ -8,6 +8,7 @@
     "dev": "npm run sync && vitepress dev .generated/site",
     "sync": "node scripts/sync-content.mjs",
     "check": "npm run sync && node scripts/check-content.mjs",
+    "test:isolation": "node --test scripts/isolation.test.mjs",
     "build": "npm run check && vitepress build .generated/site",
     "preview": "vitepress preview .generated/site"
   },
