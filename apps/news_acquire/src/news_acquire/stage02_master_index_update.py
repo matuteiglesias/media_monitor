@@ -12,6 +12,7 @@ from pandas.errors import EmptyDataError
 
 from . import ids, db
 from . import io as bio
+from .runtime import SensingControls
 
 DATA_DIR = Path(os.getenv("DATA_DIR", "data"))
 RSS_DUMPS_DIR = DATA_DIR / "rss_slices" / "rss_dumps"
@@ -39,7 +40,7 @@ def quarantine_path(stage: str, run_id: str) -> Path:
 REQUIRED_COLS = ["digest_file", "window_type", "article_id", "Title", "Source", "Link", "Published", "index_id"]
 
 
-def validate_input_df(df: pd.DataFrame, run_id: str) -> Tuple[pd.DataFrame, int]:
+def validate_input_df(df: pd.DataFrame, run_id: str, write_artifacts: bool = True) -> Tuple[pd.DataFrame, int]:
     """Ensure required columns and sane values; quarantine bad rows."""
     missing = [c for c in REQUIRED_COLS if c not in df.columns]
     if missing:
@@ -57,11 +58,12 @@ def validate_input_df(df: pd.DataFrame, run_id: str) -> Tuple[pd.DataFrame, int]
     )
 
     bad = df[bad_mask]
-    for _, r in bad.iterrows():
-        bio.append_jsonl(
-            quarantine_path("V02", run_id),
-            {"reason": "bad_row", "row": _serializable_row(r)},
-        )
+    if write_artifacts:
+        for _, r in bad.iterrows():
+            bio.append_jsonl(
+                quarantine_path("V02", run_id),
+                {"reason": "bad_row", "row": _serializable_row(r)},
+            )
 
     good = df[~bad_mask].copy()
     good["article_id"] = good["article_id"].astype(str)
@@ -125,10 +127,8 @@ def write_digest_map_csv(df_map: pd.DataFrame, digest_id: str, null_sink: bool) 
 # -------------------- core --------------------
 
 def run() -> int:
-    ensure_dirs()
-
     digest_at_env = os.getenv("DIGEST_AT")
-    dry_run = _env_bool("DRY_RUN", False)
+    controls = SensingControls.from_env()
     null_sink = _env_bool("NULL_SINK", False)
     run_id = os.getenv("RUN_ID")
 
@@ -140,17 +140,15 @@ def run() -> int:
     stage_name = "02_master_index_update"
     run_id = run_id or f"{stage_name}:{digest_id}"
 
-    try:
+    if controls.write_artifacts:
+        ensure_dirs()
+    if controls.db_run_bookkeeping:
         db.start_run(run_id, stage_name, {"digest_id": digest_id})
-    except Exception:
-        pass
 
     files = load_hour_slice_files(digest_id)
     if not files:
-        try:
+        if controls.db_run_bookkeeping:
             db.finish_run(run_id, stage=stage_name, ok=0, fail=0, meta={"digest_id": digest_id, "note": "no slice files"})
-        except Exception:
-            pass
         print(f"[{stage_name}] digest_id={digest_id} no slice files")
         return 0
 
@@ -159,23 +157,31 @@ def run() -> int:
         try:
             dfs.append(pd.read_csv(p))
         except Exception as e:
-            bio.append_jsonl(quarantine_path("V02", run_id), {"reason": "read_error", "file": str(p), "error": str(e)})
+            if controls.write_artifacts:
+                bio.append_jsonl(quarantine_path("V02", run_id), {"reason": "read_error", "file": str(p), "error": str(e)})
 
     if not dfs:
-        try:
+        if controls.db_run_bookkeeping:
             db.finish_run(run_id, stage=stage_name, ok=0, fail=0, meta={"digest_id": digest_id, "note": "read failures"})
-        except Exception:
-            pass
         print(f"[{stage_name}] digest_id={digest_id} failed to read slice files")
         return 1
 
     raw = pd.concat(dfs, ignore_index=True)
-    good, n_bad = validate_input_df(raw, run_id)
+    try:
+        good, n_bad = validate_input_df(raw, run_id, controls.write_artifacts)
+    except Exception as exc:
+        if controls.db_run_bookkeeping:
+            db.finish_run(
+                run_id,
+                stage=stage_name,
+                ok=0,
+                fail=1,
+                meta={"digest_id": digest_id, "error": f"{type(exc).__name__}: {exc}"},
+            )
+        raise
     if good.empty:
-        try:
+        if controls.db_run_bookkeeping:
             db.finish_run(run_id, stage=stage_name, ok=0, fail=n_bad, meta={"digest_id": digest_id})
-        except Exception:
-            pass
         print(f"[{stage_name}] digest_id={digest_id} all rows invalid")
         return 1
 
@@ -186,7 +192,9 @@ def run() -> int:
     digest_map = digest_map.sort_values(["digest_file", "article_id", "Published"]).drop_duplicates(
         subset=["digest_file", "article_id"], keep="last"
     )
-    map_path = write_digest_map_csv(digest_map, digest_id, null_sink)
+    map_path = ((DATA_DIR / "_tmp" / "null" / "digest_map") if null_sink else DIGEST_MAP_DIR) / f"{digest_id}.csv"
+    if controls.write_artifacts:
+        map_path = write_digest_map_csv(digest_map, digest_id, null_sink)
 
     hour_stats = good.groupby("index_id").agg(
         source=("Source", "last"),
@@ -238,10 +246,11 @@ def run() -> int:
         master_final["topics"] = [[] for _ in range(len(master_final))]
         master_final["meta"] = [{} for _ in range(len(master_final))]
 
-    write_master_ref_csv(master_final, null_sink)
+    if controls.write_artifacts:
+        write_master_ref_csv(master_final, null_sink)
 
     ok_rows = len(hour_stats)
-    if not _env_bool("DRY_RUN", False):
+    if controls.db_run_bookkeeping:
         try:
             payload = []
             for _, r in hour_stats.iterrows():
@@ -258,10 +267,17 @@ def run() -> int:
                 )
             if payload:
                 db.upsert_master_ref(payload)
-        except Exception as e:
-            bio.append_jsonl(quarantine_path("V02", run_id), {"reason": "db_upsert_error", "error": str(e)})
+        except Exception as exc:
+            db.finish_run(
+                run_id,
+                stage=stage_name,
+                ok=0,
+                fail=max(n_bad, 1),
+                meta={"digest_id": digest_id, "error": f"{type(exc).__name__}: {exc}"},
+            )
+            raise
 
-    try:
+    if controls.db_run_bookkeeping:
         db.finish_run(
             run_id,
             stage="02_master_index_update",
@@ -269,12 +285,11 @@ def run() -> int:
             fail=n_bad,
             meta={"digest_id": digest_id, "digest_map": str(map_path), "files": len(files)},
         )
-    except Exception:
-        pass
 
     print(
         f"[02_master_index_update] digest_id={digest_id} ok={ok_rows} bad={n_bad} "
-        f"files={len(files)} dry_run={_env_bool('DRY_RUN', False)} null_sink={_env_bool('NULL_SINK', False)}"
+        f"files={len(files)} write_artifacts={controls.write_artifacts} "
+        f"db_run_bookkeeping={controls.db_run_bookkeeping} null_sink={_env_bool('NULL_SINK', False)}"
     )
     return 0
 

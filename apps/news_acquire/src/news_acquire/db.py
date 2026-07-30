@@ -55,7 +55,13 @@ def start_run(run_id: str, stage: str, meta: dict):
         cur.execute("insert into runs(run_id,stage,started_at,meta) values (%s,%s,now(),%s::jsonb)",
                     (run_id, stage, json.dumps(meta)))
 
-def finish_run(run_id: str, ok: int, fail: int):
+def finish_run(run_id: str, ok: int, fail: int, *, stage: str | None = None, meta: dict | None = None):
+    """Finish a run using the metadata contract used by acquisition stages."""
     with get_conn() as c, c.cursor() as cur:
-        cur.execute("update runs set finished_at=now(), ok_count=%s, fail_count=%s where run_id=%s",
-                    (ok, fail, run_id))
+        cur.execute(
+            """update runs
+               set finished_at=now(), ok_count=%s, fail_count=%s,
+                   meta=coalesce(meta, '{}'::jsonb) || %s::jsonb
+               where run_id=%s and (%s is null or stage=%s)""",
+            (ok, fail, json.dumps(meta or {}), run_id, stage, stage),
+        )

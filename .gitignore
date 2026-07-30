@@ -35,3 +35,12 @@ apps/news_site/public/data/articles/
 .env
 .env.*
 !.env.example
+
+# Terraform local/provider state
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.auto.tfvars
+*.auto.tfvars.json
+crash.log

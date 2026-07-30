@@ -95,6 +95,16 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--logs-dir")
     parser.add_argument("--status-dir")
     parser.add_argument("--summary-path")
+    parser.add_argument(
+        "--no-lane-status",
+        action="store_true",
+        help="Emit immutable per-command telemetry only; orchestration owns lane latest/summary.",
+    )
+    parser.add_argument(
+        "--no-run-record",
+        action="store_true",
+        help="Write command log/manifest only; orchestration emits the consolidated run record.",
+    )
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     if args.command and args.command[0] == "--":
@@ -289,7 +299,11 @@ def main(argv: Sequence[str]) -> int:
         "manifest_path": str(manifest_path),
         "log_path": str(log_path),
     }
-    append_jsonl(runs_path, run_record)
+    if not args.no_run_record:
+        append_jsonl(runs_path, run_record)
+
+    if args.no_lane_status:
+        return proc.returncode
 
     previous = {}
     if status_path.exists():

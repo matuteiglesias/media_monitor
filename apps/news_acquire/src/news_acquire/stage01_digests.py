@@ -1,11 +1,11 @@
 # legacy/01_digests.py
 # Pull & slice (no heavy work). Deterministic on DIGEST_AT.
-# - Reads Google News/RSS feeds (hardcoded here; you can swap to config later)
+# - Reads Google News/RSS feeds from a validated, versioned configuration
 # - Normalizes items, computes stable index_id
 # - Slices into digest windows anchored at DIGEST_AT
 # - Writes CSVs under data/rss_slices/rss_dumps/<digest_file>.csv
 # - Optional JSONL mirror: data/slices/jsonl/<digest_id_hour>.jsonl
-# - If not DRY_RUN, enqueues scrape jobs keyed by index_id
+# - Independently controls acquisition, artifact writes, enqueue, and DB bookkeeping
 
 from __future__ import annotations
 
@@ -22,20 +22,11 @@ import feedparser
 # Acquisition-local backend helpers. Keep this stage independent of the removed legacy `backend` package.
 from . import ids, db
 from . import io as bio
+from .feed_config import load_feed_config
+from .runtime import SensingControls
 
 
 # ======================= CONFIG =======================
-
-# You can move these to data/config/*.yml later
-RSS_FEEDS: Dict[str, str] = {
-    "Inflación y Precios": "https://news.google.com/rss/search?q=(%22inflación%22+OR+%22IPC%22+OR+%22canasta+básica%22+OR+INDEC+OR+consultoras)+Argentina&hl=es-419&gl=AR&ceid=AR:es-419",
-    "Tipo de Cambio y Reservas": "https://news.google.com/rss/search?q=dólar+OR+blue+OR+oficial+OR+reservas+OR+BCRA+OR+intervención+OR+futuros+OR+planchado&hl=es-419&gl=AR&ceid=AR:es-419",
-    "Deuda y Financiamiento": "https://news.google.com/rss/search?q=bono+OR+licitación+OR+vencimientos+OR+Bonte+OR+tasa+OR+rollover&hl=es-419&gl=AR&ceid=AR:es-419",
-    "Actividad y Empleo": "https://news.google.com/rss/search?q=subsidios+OR+paritarias+OR+gremios+OR+conciliación+OR+emple+OR+trabaj+OR+informal+OR+desemple+OR+EPH+OR+salarios&hl=es-419&gl=AR&ceid=AR:es-419",
-    "Sector Externo": "https://news.google.com/rss/search?q=(comerc+exterior+OR+balanz+argentin+OR+export+OR+import+OR+arancel)+site:infobae.com+OR+site:lanacion.com.ar+OR+site:clarin.com+OR+site:ambito.com.ar+OR+site:telam.com.ar+OR+site:iprofesional.com&hl=es-419&gl=AR&ceid=AR:es-419",
-    "Finanzas": "https://news.google.com/rss/search?q=(gasto+public+OR+ajuste+fiscal+OR+deficit+OR+superavit+OR+BCRA+OR+presupuesto+OR+bono+OR+banco+OR+riesgo+pais+OR+tasa+interes+OR+financier)&site:ambito.com.ar+OR+site:infobae.com+OR+site:lanacion.com.ar+OR+site:cronista.com+OR+site:baenegocios.com+OR+site:bna.com.ar&hl=es-419&gl=AR&ceid=AR:es-419",
-    "Personajes Políticos y Económicos": "https://news.google.com/rss/search?q=(Milei+OR+Caputo+OR+Bausili+OR+Rubinstein+OR+Prat-Gay+OR+Cavallo+OR+Cristina+OR+Massa+OR+Melconian+OR+Macri+OR+Kicillof)+site:.ar&hl=es-419&gl=AR&ceid=AR:es-419",
-}
 
 DATA_DIR = Path(os.getenv("DATA_DIR", "data"))
 SLICE_DIR = DATA_DIR / "rss_slices"
@@ -186,11 +177,9 @@ def _serializable_row(r):
 
 
 def run() -> int:
-    ensure_dirs()
-
     # ----- env knobs -----
     digest_at_env = os.getenv("DIGEST_AT")  # YYYYMMDDTHH expected
-    dry_run = _env_bool("DRY_RUN", False)
+    controls = SensingControls.from_env()
     limit = _env_float("LIMIT", None)
     sample = _env_float("SAMPLE", None)
     null_sink = _env_bool("NULL_SINK", False)
@@ -207,19 +196,30 @@ def run() -> int:
     stage_name = "01_digests"
     run_id = run_id or f"{stage_name}:{digest_id}"
 
-    # Run bookkeeping (best-effort; don't crash the stage if runs table is absent)
-    try:
-        db.start_run(run_id, stage_name, {"digest_id": digest_id})
-    except Exception:
-        pass
+    feeds = load_feed_config()
+    if controls.write_artifacts:
+        ensure_dirs()
 
-    # ----- fetch (skip network if DRY_RUN) -----
-    if dry_run:
-        # In DRY_RUN, we don't hit the network. We proceed to slicing using whatever we can fetch now.
-        # If you want to read a cached raw CSV here, add that read; for now we keep it simple.
-        df_news = pd.DataFrame(columns=["uid", "Topic", "Title", "Link", "Published", "Source"])
-    else:
-        df_news = fetch_rss_now(RSS_FEEDS, limit=None if limit is None else int(limit))
+    if controls.db_run_bookkeeping:
+        db.start_run(run_id, stage_name, {"digest_id": digest_id})
+
+    # Acquisition and downstream side effects are deliberately independent.
+    try:
+        df_news = (
+            fetch_rss_now(feeds, limit=None if limit is None else int(limit))
+            if controls.acquire_network
+            else pd.DataFrame(columns=["uid", "Topic", "Title", "Link", "Published", "Source"])
+        )
+    except Exception as exc:
+        if controls.db_run_bookkeeping:
+            db.finish_run(
+                run_id,
+                stage=stage_name,
+                ok=0,
+                fail=1,
+                meta={"digest_id": digest_id, "error": f"{type(exc).__name__}: {exc}"},
+            )
+        raise
 
     # Optional downsample for iteration
     if sample is not None and 0 < sample < 1 and not df_news.empty:
@@ -239,7 +239,8 @@ def run() -> int:
 
     # Where to write
     out_dir = RSS_DUMPS_DIR if not null_sink else (DATA_DIR / "_tmp" / "null" / "rss_dumps")
-    out_dir.mkdir(parents=True, exist_ok=True)
+    if controls.write_artifacts:
+        out_dir.mkdir(parents=True, exist_ok=True)
     mirror_path = (JSONL_DIR / f"{digest_id}.jsonl") if not null_sink else (DATA_DIR / "_tmp" / "null" / "slices" / "jsonl" / f"{digest_id}.jsonl")
 
     # ----- per-slice processing -----
@@ -274,15 +275,13 @@ def run() -> int:
                 total_bad += 1
 
                 r = _serializable_row(r)
-                bio.append_jsonl(
-                    quarantine_path("V01", run_id),
-                    {
+                if controls.write_artifacts:
+                    bio.append_jsonl(quarantine_path("V01", run_id), {
                     "reason": reason,
                     "row": r,
                     "digest_id": digest_id,
                     "window_type": label
-                    }
-                )
+                    })
                 continue
             good_rows.append(r.to_dict())
 
@@ -316,8 +315,9 @@ def run() -> int:
 
         # Write slice CSV (overwrite)
         out_path = out_dir / f"{digest_file}.csv"
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        gdf.to_csv(out_path, index=False)
+        if controls.write_artifacts:
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            gdf.to_csv(out_path, index=False)
         total_ok += len(gdf)
 
         # Mirror JSONL (per-row)
@@ -337,7 +337,7 @@ def run() -> int:
             mirror_records.append(rec)
 
             # Enqueue scrape jobs (side effect)
-            if not dry_run:
+            if controls.enqueue_scrape:
                 try:
                     db.push_work(
                         "scrape",
@@ -353,28 +353,28 @@ def run() -> int:
                 except Exception as e:
                     # Don't break the whole slice on queue errors; send to quarantine
                     r = _serializable_row(r)
-                    bio.append_jsonl(
-                        quarantine_path("V01", run_id),
-                        {
+                    if controls.write_artifacts:
+                        bio.append_jsonl(quarantine_path("V01", run_id), {
                         "reason": f"enqueue_error:{type(e).__name__}",
                         "error": str(e), 
                         "row": r,
                         "digest_id": digest_id,
-                        }
-                    )
+                        })
 
     # Write/replace the JSONL mirror once (atomic)
-    if mirror_records:
+    if controls.write_artifacts and mirror_records:
         write_jsonl_mirror_atomic(mirror_path, mirror_records)
 
-    # Finish run
-    try:
+    if controls.db_run_bookkeeping:
         db.finish_run(run_id, stage=stage_name, ok=total_ok, fail=total_bad, meta={"digest_id": digest_id, "slices": len(slices)})
-    except Exception:
-        pass
 
     # Console summary
-    print(f"[{stage_name}] digest_id={digest_id} ok={total_ok} bad={total_bad} slices={len(slices)} dry_run={dry_run} null_sink={null_sink}")
+    print(
+        f"[{stage_name}] digest_id={digest_id} ok={total_ok} bad={total_bad} slices={len(slices)} "
+        f"acquire_network={controls.acquire_network} write_artifacts={controls.write_artifacts} "
+        f"enqueue_scrape={controls.enqueue_scrape} db_run_bookkeeping={controls.db_run_bookkeeping} "
+        f"null_sink={null_sink}"
+    )
     return 0
 
 
