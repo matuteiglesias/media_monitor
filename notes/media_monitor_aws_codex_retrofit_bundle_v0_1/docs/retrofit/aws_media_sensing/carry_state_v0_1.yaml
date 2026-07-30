@@ -1,15 +1,44 @@
 schema_version: cloud_retrofit_carry.v1
 retrofit_id: aws_media_sensing
 repository: matuteiglesias/media_monitor
-status: PLANNED
-current_phase: phase_0
-current_pr: null
-last_accepted_pr: null
-next_pr: PR-A0
-accepted_commit: null
-accepted_artifacts: []
-decisions: []
-blockers: []
+status: BLOCKED_EXTERNAL
+current_phase: phase_5
+current_pr: PR-A5
+last_accepted_pr: PR-A4
+next_pr: PR-A5
+accepted_commit: dcb3f8d
+accepted_artifacts:
+  - 03_writer_side_effect_inventory_v0_1.md
+  - context/closures/PR-A0.md
+  - tests/test_sensing_characterization.py
+  - config/sensing_feeds.v1.yaml
+  - context/closures/PR-A1.md
+  - tests/test_sensing_a1_controls.py
+  - 04_run_bundle_contract_v0_1.md
+  - context/closures/PR-A2.md
+  - tests/test_sensing_run_bundle.py
+  - 05_compactor_contract_v0_1.md
+  - context/closures/PR-A3.md
+  - tests/test_sensing_compactor.py
+  - 06_aws_task_adapter_contract_v0_1.md
+  - context/closures/PR-A4.md
+  - tests/test_sensing_s3_store.py
+decisions:
+  - PR-A0 diagnostics accepted by the human reviewer on 2026-07-29.
+  - The outer sensing orchestrator owns the consolidated run record and lane status; child wrappers own command logs and manifests.
+  - DRY_RUN remains a compatibility alias while explicit sensing side-effect controls take precedence.
+  - PR-A1 local sensing controls and bookkeeping semantics accepted by the human reviewer on 2026-07-29.
+  - Immutable run production and legacy local promotion are separate commands.
+  - PR-A2 accepted after correcting zero-row runs to finalize as empty_success.
+  - Only the compactor selects canonical state; the compatibility adapter may only mirror its selected generation.
+  - PR-A3 deterministic selection, cumulative merge, and atomic pointer publication accepted by the human reviewer.
+  - Producer and compactor S3 write authorities remain disjoint in the adapter API.
+  - PR-A4 storage, task, telemetry, and sensing-only container contracts accepted by the human reviewer.
+  - PR-A5 application role is confined to run objects; execution role remains separate.
+blockers:
+  - AWS credentials and account identity.
+  - AWS region and globally unique S3 bucket name.
+  - AWS CLI and Docker daemon/CLI for image publication and remote execution.
 pruned_items: []
 next_entry:
   read_first:
@@ -18,4 +47,4 @@ next_entry:
     - 01_starting_context_v0_1.md
   first_action: Execute only the PR named by next_pr.
 do_not_reopen: []
-updated_at: null
+updated_at: 2026-07-29

@@ -71,6 +71,71 @@ DIGEST_AT=20260313T15 apps/news_acquire/entrypoints/run_acquire_owner.sh --dry-r
 DIGEST_AT=20260313T15 RUN_EXPORTS=0 apps/news_acquire/entrypoints/run_acquire_owner.sh
 ```
 
+## Sensing side-effect controls
+
+The minimal sensing loop and acquisition stages expose independent controls:
+
+| Environment variable | Default | Effect |
+|---|---:|---|
+| `ACQUIRE_NETWORK` | `1` unless `DRY_RUN=1` | Fetch configured RSS sources. |
+| `WRITE_ARTIFACTS` | `1` | Write acquisition CSV/JSONL/Markdown and quarantine artifacts. |
+| `ENQUEUE_SCRAPE` | `1` unless `DRY_RUN=1` | Enqueue scrape work for acquired valid rows. |
+| `DB_RUN_BOOKKEEPING` | `0` | Start/finish Postgres stage runs and upsert stage-02 master state. When enabled, DB errors fail the stage instead of being silently suppressed. |
+| `SENSING_FEED_CONFIG` | `config/sensing_feeds.v1.yaml` | Select the validated `sensing_feeds.v1` configuration. |
+
+`DRY_RUN=1` remains a compatibility shortcut for `ACQUIRE_NETWORK=0` and
+`ENQUEUE_SCRAPE=0`; explicit controls override it. Artifact writes remain enabled
+for compatibility. The outer minimal-loop orchestrator is the authoritative
+writer of the consolidated sensing run record, lane-latest, and summary status;
+child wrappers retain per-command logs and manifests only.
+
+## Immutable local run bundle
+
+Run one isolated sensing attempt with:
+
+```bash
+make sensing-bundle DIGEST_AT=20260729T00 RUN_ROOT=artifacts/sensing_runs
+```
+
+Each attempt gets a unique `run_id` and finalizes under
+`<run-root>/runs/<run-id>/`. The finalized bundle contains the feed and input
+state snapshot, stage outputs, exported contract buses, candidate state/indexes,
+stage logs/results, checksums, a run record, and a manifest. Failed attempts are
+also finalized as diagnostic bundles and the command exits non-zero. Finalized
+run IDs cannot be overwritten, including retries for the same `DIGEST_AT`.
+
+No filename containing `latest` is published inside a bundle. Run the sole
+compactor to validate bundles, select attempts, and publish canonical state:
+
+```bash
+make compact-sensing-bundles RUN_ROOT=artifacts/sensing_runs STATE_ROOT=storage/sensing_compacted
+```
+
+Canonical generations are immutable beneath `STATE_ROOT/generations/`; consumers
+select the complete generation through the atomically replaced
+`STATE_ROOT/current.json` pointer. If legacy local consumers still need the old
+paths, mirror only the compactor-selected generation afterward:
+
+```bash
+make promote-sensing-bundle-local SENSING_STATE_ROOT=storage/sensing_compacted
+```
+
+The compatibility command cannot select a run bundle and is not a compactor.
+
+## AWS task adapter (no infrastructure)
+
+Build the sensing-only image with `Dockerfile.sensing`. Its entrypoint requires
+`DIGEST_AT`, `SENSING_S3_BUCKET`, `SOURCE_COMMIT`, and `IMAGE_DIGEST`; optional
+settings include `SENSING_S3_PREFIX`, `RUN_ID`, `ATTEMPT`, and a timeout no larger
+than 900 seconds. The producer uploads only
+`<prefix>/runs/<run_id>/` and writes `FINALIZED` last.
+
+The separately invoked `scripts/run_sensing_compactor_task.py` lists finalized
+run prefixes, executes the accepted deterministic compactor, uploads immutable
+`<prefix>/compacted/<generation>/` objects, and replaces
+`<prefix>/latest/current.json` last. Role and resource expectations are frozen in
+`06_aws_task_adapter_contract_v0_1.md`; Terraform remains PR-A5 work.
+
 ## Constraints (explicit)
 - Does **not** replace `bin/run_hour.sh`.
 - Does **not** replace `make s01..s05`.

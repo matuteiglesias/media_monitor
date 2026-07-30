@@ -1,0 +1,6 @@
+boto3==1.43.59
+feedparser==6.0.13
+pandas==2.3.3
+psycopg[binary]==3.3.4
+pydantic==2.13.4
+PyYAML==6.0.3

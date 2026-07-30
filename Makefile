@@ -24,7 +24,7 @@ define _env_prefix
 DIGEST_AT=$(DIGEST_AT) DRY_RUN=$(DRY_RUN) LIMIT=$(LIMIT) SAMPLE=$(SAMPLE) NULL_SINK=$(NULL_SINK)
 endef
 
-.PHONY: help hour env preflight-runtime s01 s02 s03 s04 s05 s06 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null export-pr3a build-news-access-indexes build-editorial-access-indexes build-site-snapshot validate-site-snapshot build-source-site roll-site diagnose-editorial draft-article materialize-editorial-handoff build-enrich-access-indexes validate-publish-surface publish-news-site publish-last-mile-snapshot heartbeat-start heartbeat-stop heartbeat-status
+.PHONY: help hour env preflight-runtime s01 s02 s03 sensing-bundle compact-sensing-bundles promote-sensing-bundle-local s04 s05 s06 prep pf explode all stage-any scrape-one requeue-fails ls pf-ls clean-null export-pr3a build-news-access-indexes build-editorial-access-indexes build-site-snapshot validate-site-snapshot build-source-site roll-site diagnose-editorial draft-article materialize-editorial-handoff build-enrich-access-indexes validate-publish-surface publish-news-site publish-last-mile-snapshot heartbeat-start heartbeat-stop heartbeat-status
 
 help:      ## Show help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' Makefile | sed 's/:.*## / — /' | sort
@@ -83,6 +83,15 @@ s02:       ## Stage 02 — master index update + digest_map
 
 s03:       ## Stage 03 — headlines digests (build grouped JSONL + MD)
 	@$(_env_prefix) $(PYTHON) -m apps.news_acquire.src.news_acquire.stage03_headlines_digests
+
+sensing-bundle: ## Run sensing in an isolated root and finalize an immutable bundle
+	@$(PYTHON) scripts/run_sensing_bundle.py --digest-at $(DIGEST_AT) $(if $(RUN_ROOT),--run-root $(RUN_ROOT),) $(if $(RUN_ID),--run-id $(RUN_ID),) --attempt $${ATTEMPT:-1}
+
+promote-sensing-bundle-local: ## Mirror the compactor-selected generation to legacy local paths
+	@$(PYTHON) scripts/promote_sensing_bundle_local.py --state-root "$${SENSING_STATE_ROOT:-storage/sensing_compacted}" --repo-root .
+
+compact-sensing-bundles: ## Sole writer: compact immutable sensing bundles into canonical generations
+	@$(PYTHON) scripts/compact_sensing_bundles.py $(if $(RUN_ROOT),--run-root $(RUN_ROOT),) $(if $(STATE_ROOT),--state-root $(STATE_ROOT),)
 
 
 # Trim PF_MODE once (prevents "legacy           " issues)

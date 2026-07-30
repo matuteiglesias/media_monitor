@@ -237,13 +237,18 @@ def diagnose_inputs(storage_dir: Path, requested_digest: str | None = None, allo
         ],
     }
 
-def build_access_indexes(storage_dir: Path, digest_at: str | None = None, allow_stale_fallback: bool = False) -> tuple[Path, Path, int, int]:
+def build_access_indexes(
+    storage_dir: Path,
+    digest_at: str | None = None,
+    allow_stale_fallback: bool = False,
+    allow_empty: bool = False,
+) -> tuple[Path, Path, int, int]:
     digest_ref, ref_output = _resolve_output(storage_dir, "news_ref.v1", digest_at, allow_stale_fallback)
     digest_group, group_output = _resolve_output(storage_dir, "news_digest_group.v1", digest_at, allow_stale_fallback)
 
-    if digest_at and not ref_output:
+    if digest_at and not ref_output and not allow_empty:
         raise RuntimeError(f"no news_ref.v1 export found for digest_at={digest_at}; run acquisition/export for that digest or set --allow-stale-fallback explicitly")
-    if digest_at and not group_output:
+    if digest_at and not group_output and not allow_empty:
         raise RuntimeError(f"no news_digest_group.v1 export found for digest_at={digest_at}; run acquisition/export for that digest or set --allow-stale-fallback explicitly")
 
     ref_rows = list(_iter_jsonl(Path(ref_output))) if ref_output else []
@@ -345,6 +350,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--storage-dir", default="storage")
     p.add_argument("--digest-at", default=None, help="Require inputs for this digest hour (YYYYMMDDTHH); fail instead of publishing stale fallback data")
     p.add_argument("--allow-stale-fallback", action="store_true", help="When --digest-at is set, explicitly allow falling back to the latest available export")
+    p.add_argument("--allow-empty", action="store_true", help="Publish empty candidate indexes when the requested digest exported no rows")
     p.add_argument("--diagnose", action="store_true", help="Print input resolution diagnostics without writing latest indexes")
     return p.parse_args()
 
@@ -360,6 +366,7 @@ def main() -> int:
             Path(args.storage_dir),
             args.digest_at,
             args.allow_stale_fallback,
+            args.allow_empty,
         )
     except RuntimeError as exc:
         print(f"[news-access] ERROR {exc}", flush=True)
