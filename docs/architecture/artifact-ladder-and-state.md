@@ -4,11 +4,11 @@
 
 ```mermaid
 flowchart TB
-  L0[Level 0: data workspace] --> L1[Level 1: contract buses]
+  L0["Level 0: data workspace"] --> L1["Level 1: contract buses"]
   RB[Immutable sensing runs] --> CG[Immutable compacted generations]
   CG --> CP[Mutable sensing current pointer]
-  L1 --> L2[Level 2: access/decision indexes]
-  L2 --> L3[Level 3: hardened/public snapshots]
+  L1 --> L2["Level 2: access/decision indexes"]
+  L2 --> L3["Level 3: hardened/public snapshots"]
   L3 --> UI[Rendered site]
 ```
 

@@ -3,6 +3,8 @@ dist/
 .vercel/
 node_modules/
 *.log
+test-results/
+playwright-report/
 
 # Root .gitignore excludes runtime artifacts/ directories globally. This
 # authored route is part of the presentation scaffold, not runtime evidence.
