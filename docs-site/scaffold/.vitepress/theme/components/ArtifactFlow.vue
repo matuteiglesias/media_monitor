@@ -1,0 +1,1 @@
+<template><div class="artifact-flow" aria-label="Media Monitor core artifact flow"><span>Feeds</span><i>→</i><span>Sensing</span><i>→</i><span>Enrichment</span><i>→</i><span>Editorial</span><i>→</i><span class="gate">Human approval</span><i>→</i><span>Snapshot</span><i>→</i><span>Public site</span></div></template>
