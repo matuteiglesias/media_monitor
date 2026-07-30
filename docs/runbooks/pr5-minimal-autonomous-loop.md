@@ -1,3 +1,5 @@
+> **Historical PR-era document.** It does not own current commands. Start at the [canonical documentation router](../README.md).
+
 # PR5 execution runbook: minimal autonomous loop (alive-first)
 
 ## Objective

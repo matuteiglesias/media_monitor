@@ -1,3 +1,5 @@
+> **Historical PR-era document.** It does not own current commands. Start at the [canonical documentation router](../README.md).
+
 # PR9 — Newspaper skin: PRs reales a ejecutar
 
 Este runbook convierte la guía estratégica en una secuencia de PRs **ejecutables hoy** para llegar a una superficie pública viva sin romper la ruta canónica:

@@ -88,3 +88,7 @@ make build-enrich-access-indexes
 ```
 
 Downstream consumers should prefer `enrich_latest.json` for health/status and the `scraped_article.v1` bus for full records. Treat `data/scrape/*.enriched.jsonl` as an optional Level-0 mirror rather than a public artifact.
+
+## Canonical documentation
+
+Use the canonical [news_enrich component guide](../../docs/components/news-enrich.md) for ownership and contracts. This app-local README and its runbook remain supporting implementation context; canonical operational procedures will be consolidated in PR-MD4.

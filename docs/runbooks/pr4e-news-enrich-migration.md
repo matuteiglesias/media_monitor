@@ -1,3 +1,5 @@
+> **Historical PR-era document.** It does not own current commands. Start at the [canonical documentation router](../README.md).
+
 # PR4e runbook: enrich implementation migrated under apps/news_enrich
 
 ## Decision

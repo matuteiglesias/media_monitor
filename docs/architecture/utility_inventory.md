@@ -1,3 +1,5 @@
+> **Status:** supporting precursor; canonical replacement: [artifact ladder and state](artifact-ladder-and-state.md).
+
 Yes. The **artifact ladder + utilities** abstraction is more than internal engineering hygiene. It lets you identify:
 
 1. **seams**: where one module can stop and another can begin.

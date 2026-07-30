@@ -1,3 +1,5 @@
+> **Historical PR-era document.** It does not own current commands. Start at the [canonical documentation router](../README.md).
+
 # PR8 — Wrap-up final + próximos PRs sugeridos
 
 Estado actual (resumen): la ruta canónica ya es visible, wrappers legacy están más controlados y `editorial_latest.json` evolucionó hacia handoff humano.

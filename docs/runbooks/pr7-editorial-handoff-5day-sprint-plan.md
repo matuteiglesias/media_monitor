@@ -1,3 +1,5 @@
+> **Historical PR-era document.** It does not own current commands. Start at the [canonical documentation router](../README.md).
+
 # PR7 — Sprint de 5 días: editorial handoff como producto principal
 
 ## Objetivo del sprint

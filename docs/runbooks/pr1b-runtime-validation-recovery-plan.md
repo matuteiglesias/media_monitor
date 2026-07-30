@@ -1,3 +1,5 @@
+> **Historical PR-era document.** It does not own current commands. Start at the [canonical documentation router](../README.md).
+
 # PR1b Design: Runtime validation and recovery evidence (pre-PR3 gate)
 
 Status: proposed (design-only)

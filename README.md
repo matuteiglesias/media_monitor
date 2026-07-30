@@ -6,6 +6,10 @@
 
 Hoy el foco no es agregar capas, sino mantener viva la ruta útil y reducir ambigüedad operacional.
 
+**Mapa de documentación:** [`docs/README.md`](docs/README.md) reúne rutas por
+audiencia, capacidad y estado de madurez. Este README conserva solamente la ruta
+operativa corta.
+
 ---
 
 ## ✅ Ruta canónica (operativa)
@@ -24,15 +28,19 @@ La ejecución recomendada es por lanes independientes vía `bin/run_minimal_loop
   - `make s05`
   - `make build-editorial-access-indexes`
 - **enrich** (opcional, queue/on-demand)
-  - `python scripts/06_scrape_enrich.py`
+  - `MODE=batch apps/news_enrich/entrypoints/run_enrich_owner.sh`
 
 Entrypoint único por lane:
 
 ```bash
 bin/run_minimal_loop_once.sh --lane sensing
 bin/run_minimal_loop_once.sh --lane editorial
-bin/run_minimal_loop_once.sh --lane enrich
+MODE=batch apps/news_enrich/entrypoints/run_enrich_owner.sh
 ```
+
+> El branch `enrich` de `bin/run_minimal_loop_once.sh` todavía apunta al wrapper
+> ausente `scripts/06_scrape_enrich.py`; hasta corregir esa deuda fuera de este PR
+> documental, se usa el entrypoint del módulo propietario indicado arriba.
 
 ### DoD mínimo del sprint (cierre operacional)
 
@@ -99,7 +107,10 @@ vercel --prod
 Notas del refresh:
 - Falla con error si faltan `news_recent_refs_latest.jsonl` o `news_recent_groups_latest.jsonl`, si están vacíos o si no parsean como JSONL.
 - En producción, `storage/indexes/editorial_latest.json` es obligatorio. El fallback editorial sólo se permite para previews locales con `ALLOW_EDITORIAL_FALLBACK=1`.
-- `npm --prefix apps/news_site run smoke:public-data` verifica que los snapshots públicos existan, parseen, no sean más viejos que `storage/indexes` y no usen fallback silencioso.
+- `scripts/publish_news_site.sh` intenta ejecutar los scripts npm `refresh-data` y
+  `smoke:public-data`, pero esos scripts no están definidos actualmente en
+  `apps/news_site/package.json`; por eso esta ruta de publicación está
+  **implementada pero no validada de extremo a extremo** en el commit actual.
 
 ---
 
@@ -146,4 +157,5 @@ make heartbeat-status
 - Priorizar claridad de entrypoints sobre expansión de superficies.
 - Tratar artefactos intermedios (`data/pf_out`, `data/drafts`, `data/quarantine`) como internos, no contratos públicos.
 
-Para más detalle operativo: ver `docs/runbooks/pr5-minimal-autonomous-loop.md`.
+Para elegir la guía vigente sin depender de nombres de PR, comenzar en el
+[`mapa de documentación`](docs/README.md).
