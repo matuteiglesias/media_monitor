@@ -73,7 +73,7 @@ export default defineConfig({
       '/case-studies/': [{ text: 'Case Studies', items: [{ text: 'Case-study desk', link: '/case-studies/' }, { text: 'AWS immutable sensing', link: '/case-studies/aws-immutable-sensing-retrofit' }, { text: 'Deterministic publication', link: '/case-studies/deterministic-site-publication' }] }]
     },
     outline: { level: [2, 3], label: 'On this page' },
-    editLink: { pattern: ({ filePath }) => ['architecture/', 'components/', 'operations/', 'reference/', 'case-studies/', 'maintenance/'].some(prefix => filePath.startsWith(prefix)) ? `https://github.com/matuteiglesias/media_monitor/edit/main/docs/${filePath}` : undefined, text: 'Edit canonical source on GitHub' },
+    editLink: { pattern: 'https://github.com/matuteiglesias/media_monitor/edit/main/docs/:path', text: 'Edit canonical source on GitHub' },
     lastUpdated: { text: 'Source updated', formatOptions: { dateStyle: 'medium' } },
     socialLinks: [{ icon: 'github', link: 'https://github.com/matuteiglesias/media_monitor' }],
     footer: { message: 'Documentation presentation only — runtime authority remains in source and contracts.', copyright: 'Media Monitor' }

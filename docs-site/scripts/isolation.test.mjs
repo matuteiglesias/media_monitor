@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdtemp, writeFile, mkdir } from 'node:fs/promises'
+import { mkdtemp, readFile, writeFile, mkdir } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
@@ -12,6 +12,12 @@ test('formatting and newline normalization are not protected changes', () => {
 
 test('protected path ownership is explicit', () => {
   assert.deepEqual(protectedChanges(['vercel.json', 'apps/news_site/package.json', 'scripts/build_site_snapshot.py']), ['vercel.json', 'apps/news_site/package.json', 'scripts/build_site_snapshot.py'])
+})
+
+test('edit links use a CSP-safe string pattern', async () => {
+  const config = await readFile(new URL('../scaffold/.vitepress/config.mts', import.meta.url), 'utf8')
+  assert.match(config, /editLink:\s*\{\s*pattern:\s*['"]https:\/\/github\.com\/matuteiglesias\/media_monitor\/edit\/main\/docs\/:path['"]/)
+  assert.doesNotMatch(config, /editLink:\s*\{\s*pattern:\s*\(/)
 })
 
 test('CLI guard passes docs-only diff and fails a protected synthetic diff', async () => {
