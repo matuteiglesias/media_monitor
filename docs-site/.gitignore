@@ -1,0 +1,10 @@
+.generated/
+dist/
+.vercel/
+node_modules/
+*.log
+
+# Root .gitignore excludes runtime artifacts/ directories globally. This
+# authored route is part of the presentation scaffold, not runtime evidence.
+!scaffold/artifacts/
+!scaffold/artifacts/index.md

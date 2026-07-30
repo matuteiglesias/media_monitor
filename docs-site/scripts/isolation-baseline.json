@@ -1,0 +1,6 @@
+{
+  "vercel.json": "2e9eb3851c4ab50dd93f0fc600a2d13699ebdcf170ec58da8849d49e53ce2774",
+  "apps/news_site/package.json": "8340f75b25253e7e06ee685fb832d94b19487a94d9724193ad23345646700dd6",
+  "apps/news_site/package-lock.json": "6055af9334449ed59b1129e26b6ae396fdc0a6d8aceeada1f67273afa65fb468",
+  "apps/news_site/next.config.js": "ea91b4da7798ba5d5490a02c73764b4db874161f2d12c423cc6420c5a494a6ac"
+}
