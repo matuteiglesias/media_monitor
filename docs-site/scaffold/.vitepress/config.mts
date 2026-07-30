@@ -1,11 +1,10 @@
 import { defineConfig } from 'vitepress'
-import { withMermaid } from 'vitepress-plugin-mermaid'
 import container from 'markdown-it-container'
 import path from 'node:path'
 
 const siteUrl = (process.env.DOCS_SITE_URL || '').replace(/\/$/, '')
 
-export default withMermaid(defineConfig({
+export default defineConfig({
   title: 'Media Monitor',
   description: 'Engineering documentation for an evidence-driven editorial pipeline.',
   lang: 'en-US',
@@ -15,6 +14,14 @@ export default withMermaid(defineConfig({
   ignoreDeadLinks: false,
   markdown: {
     config(md) {
+      const fence = md.renderer.rules.fence!
+      md.renderer.rules.fence = (tokens, index, options, env, self) => {
+        const token = tokens[index]
+        if (['mermaid', 'mmd'].includes(token.info.trim())) {
+          return `<MermaidDiagram id="mermaid-${index}" graph="${encodeURIComponent(token.content)}" />`
+        }
+        return fence(tokens, index, options, env, self)
+      }
       for (const kind of ['contract', 'human-gate', 'failure', 'evidence', 'current-status']) {
         md.use(container, kind, {
           render(tokens, index) {
@@ -34,6 +41,7 @@ export default withMermaid(defineConfig({
     ['meta', { name: 'theme-color', content: '#a43e2f' }]
   ],
   themeConfig: {
+    notFound: { title: 'Signal lost.', quote: 'The requested dispatch is not in the public documentation edition.', linkText: 'Return to the front page' },
     logo: '/signal-mark.svg',
     siteTitle: 'Media Monitor / Field Manual',
     search: { provider: 'local', options: { detailedView: true, miniSearch: { searchOptions: { fuzzy: 0.2, prefix: true } } } },
@@ -70,6 +78,4 @@ export default withMermaid(defineConfig({
     socialLinks: [{ icon: 'github', link: 'https://github.com/matuteiglesias/media_monitor' }],
     footer: { message: 'Documentation presentation only — runtime authority remains in source and contracts.', copyright: 'Media Monitor' }
   },
-  mermaid: { theme: 'base', themeVariables: { primaryColor: '#efe5d1', primaryTextColor: '#172536', lineColor: '#a43e2f' } },
-  mermaidPlugin: { class: 'mermaid' }
-}))
+})
