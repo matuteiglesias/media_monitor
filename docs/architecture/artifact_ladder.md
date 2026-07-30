@@ -1,3 +1,5 @@
+> **Status:** supporting precursor; canonical replacement: [artifact ladder and state](artifact-ladder-and-state.md).
+
 # Media Monitor Artifact Ladder
 
 ## Level 0 — Runtime workspace

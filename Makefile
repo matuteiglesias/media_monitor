@@ -258,3 +258,7 @@ build-source-site: ## Compile, validate, and build the generic source site
 roll-site: ## Compile, prebuild, deploy, and verify a source-site snapshot
 	@if [ -z "$(SITE_ID)" ] || [ -z "$(DIGEST_AT)" ] || [ -z "$(TARGET)" ]; then echo "SITE_ID, DIGEST_AT and TARGET are required"; exit 2; fi
 	@$(PYTHON) scripts/roll_site.py --site-id $(SITE_ID) --digest-at $(DIGEST_AT) --target $(TARGET) --repo-root $(PWD)
+
+.PHONY: docs-check
+docs-check: ## Validate documentation links, metadata, and canonical naming
+	@$(PYTHON) scripts/validate_docs.py

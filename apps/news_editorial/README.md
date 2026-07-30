@@ -134,3 +134,7 @@ See operational details in [`runbook.md`](./runbook.md).
 - No file moves.
 - No UI work.
 - No fallback deletion.
+
+## Canonical documentation
+
+Use the canonical [news_editorial component guide](../../docs/components/news-editorial.md) for ownership and contracts. This app-local README and its runbook remain supporting implementation context; canonical operational procedures will be consolidated in PR-MD4.

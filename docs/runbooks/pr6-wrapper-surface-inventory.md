@@ -1,3 +1,5 @@
+> **Historical PR-era document.** It does not own current commands. Start at the [canonical documentation router](../README.md).
+
 # PR6 wrapper surface inventory (runtime-guided pruning)
 
 Objetivo: reducir entrypoints que compiten con la ruta real sin romper continuidad.

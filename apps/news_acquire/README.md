@@ -54,3 +54,7 @@ See operational details in [`runbook.md`](./runbook.md).
 - No replacement of canonical `make s01..s05` flow.
 - No PromptFlow refactor.
 - No ownership migration for `news_editorial` or `news_enrich` (handled in future PR4b/PR4c).
+
+## Canonical documentation
+
+Use the canonical [news_acquire component guide](../../docs/components/news-acquire.md) for ownership and contracts. This app-local README and its runbook remain supporting implementation context; canonical operational procedures will be consolidated in PR-MD4.
