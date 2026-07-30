@@ -1,5 +1,6 @@
 import { readFile, readdir, stat } from 'node:fs/promises'
 import path from 'node:path'
+import { validateBuildIsolation } from './validate-build-isolation.mjs'
 
 const project = path.resolve(import.meta.dirname, '..')
 const site = path.join(project, '.generated/site')
@@ -62,12 +63,7 @@ for (const file of markdown) {
   }
 }
 
-const expected = JSON.parse(await readFile(path.join(project, 'scripts/isolation-baseline.json'), 'utf8'))
-for (const [file, digest] of Object.entries(expected)) {
-  const { createHash } = await import('node:crypto')
-  const actual = createHash('sha256').update(await readFile(path.join(root, file))).digest('hex')
-  if (actual !== digest) errors.push(`protected deployment file changed: ${file}`)
-}
+errors.push(...await validateBuildIsolation({ project, root, site }))
 if (!exclusions.excluded.length) errors.push('exclusion report is empty')
 if (errors.length) { console.error(errors.join('\n')); process.exit(1) }
 console.log(`Content check passed: ${manifest.routes.length} canonical routes, ${markdown.length} rendered pages, ${exclusions.excluded.length} exclusions.`)

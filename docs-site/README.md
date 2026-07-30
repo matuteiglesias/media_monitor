@@ -23,6 +23,13 @@ npm run preview
 coverage, excluded-path leakage, deployment isolation, and unsafe generated
 paths. VitePress also fails the production build on dead links. Search is a
 local, build-generated fuzzy index; no publication runtime endpoint is used.
+Production isolation is structural: the check verifies the docs configuration,
+content source, route manifest, build commands, and emitted paths. It does not
+freeze sibling news-project files by byte hash. On pull requests, GitHub Actions
+separately diffs the base and head commits and rejects a docs-frontend change
+that also touches root Vercel, `apps/news_site/**`, or owned publication/snapshot
+deployment scripts. Without base/head SHAs that guard reports a skip and does
+not break a local or Vercel production build.
 
 ## Public-content policy
 
@@ -53,7 +60,7 @@ project:
 | Setting | Value |
 |---|---|
 | Repository | `matuteiglesias/media_monitor` |
-| Project | new docs-only project (for example `media-monitor-docs`) |
+| Project | explicit docs-only project (for example `media-monitor-docs`) |
 | Root Directory | `docs-site` |
 | Include source files outside Root Directory | enabled |
 | Install Command | `npm ci` |
@@ -82,8 +89,14 @@ npx vercel --preview
 Do not run the preview command from the repository root and do not select the
 existing news-site/publication project when `vercel link` prompts. Before
 deploying, inspect `.vercel/project.json` (ignored) and confirm its project ID is
-the newly created docs-only project. If a root-level link already exists, the
+the newly created docs-only project. `.vercel/` must remain ignored and must not
+be committed. If a root-level link already exists, the
 explicit `cd docs-site` boundary is mandatory.
+
+The existing news/publication project remains separate. It keeps its current
+root/project configuration, owns root `vercel.json` and `/web` publication-data
+behavior, and must never use `docs-site/vercel.json`. Do not relink or redeploy
+that project while deploying docs.
 
 Verify `/`, `/architecture/system-overview`, `/operations/sensing-run-bundles`,
 `/reference/contracts-and-schemas`, `/case-studies/aws-immutable-sensing-retrofit`,
