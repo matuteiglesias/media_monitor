@@ -318,3 +318,26 @@ def test_build_news_access_indexes_succeeds_without_digest_groups(tmp_path: Path
     assert ref_rows[0]["title"] == "Election update"
     assert ref_rows[0]["topic"] == "Politics"
     assert group_rows == []
+
+
+def test_build_news_access_indexes_allows_explicit_empty_candidate(tmp_path: Path):
+    storage = tmp_path / "storage"
+
+    out = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--storage-dir",
+            str(storage),
+            "--digest-at",
+            "20260313T23",
+            "--allow-empty",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    assert "refs=0 groups=0" in out.stdout
+    assert (storage / "indexes" / "news_recent_refs_latest.jsonl").read_text() == ""
+    assert (storage / "indexes" / "news_recent_groups_latest.jsonl").read_text() == ""

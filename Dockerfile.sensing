@@ -1,0 +1,28 @@
+FROM python:3.12.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    ACQUIRE_NETWORK=1 \
+    ENQUEUE_SCRAPE=0 \
+    DB_RUN_BOOKKEEPING=0 \
+    WRITE_ARTIFACTS=1 \
+    SENSING_TASK_TIMEOUT_SECONDS=900
+
+WORKDIR /app
+
+COPY requirements-sensing.txt /app/requirements-sensing.txt
+RUN pip install --no-cache-dir --requirement /app/requirements-sensing.txt \
+    && useradd --create-home --uid 10001 --shell /usr/sbin/nologin sensing
+
+COPY --chown=sensing:sensing apps/__init__.py /app/apps/__init__.py
+COPY --chown=sensing:sensing apps/news_acquire /app/apps/news_acquire
+COPY --chown=sensing:sensing config/sensing_feeds.v1.yaml /app/config/sensing_feeds.v1.yaml
+COPY --chown=sensing:sensing contracts /app/contracts
+COPY --chown=sensing:sensing scripts/export_pr3a_buses.py /app/scripts/export_pr3a_buses.py
+COPY --chown=sensing:sensing scripts/build_news_access_indexes.py /app/scripts/build_news_access_indexes.py
+COPY --chown=sensing:sensing scripts/run_sensing_task.py /app/scripts/run_sensing_task.py
+COPY --chown=sensing:sensing scripts/run_sensing_compactor_task.py /app/scripts/run_sensing_compactor_task.py
+
+USER sensing
+ENTRYPOINT ["python", "scripts/run_sensing_task.py"]

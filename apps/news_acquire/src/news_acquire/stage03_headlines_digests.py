@@ -13,6 +13,7 @@ from pydantic import BaseModel, ValidationError
 
 from . import ids, db
 from . import io as bio  # for append_jsonl and JSON helpers
+from .runtime import SensingControls
 
 # ---------- Paths ----------
 DATA_DIR = Path(os.getenv("DATA_DIR", "data"))
@@ -126,11 +127,9 @@ def _write_md_mirror(dir_: Path, digest_id: str, window_type: str, topic: str, g
 
 # ---------- Core ----------
 def run() -> int:
-    ensure_dirs()
-
     # Env knobs
     digest_at_env = os.getenv("DIGEST_AT")  # YYYYMMDDTHH
-    dry_run = _env_bool("DRY_RUN", False)   # no effect on file writes; only skip DB
+    controls = SensingControls.from_env()
     null_sink = _env_bool("NULL_SINK", False)
     run_id = os.getenv("RUN_ID")
     limit = _env_float("LIMIT", None)       # caps rows before grouping
@@ -144,32 +143,38 @@ def run() -> int:
     stage_name = "03_headlines_digests"
     run_id = run_id or f"{stage_name}:{digest_id}"
 
-    # Run start
-    try:
+    if controls.write_artifacts:
+        ensure_dirs()
+    if controls.db_run_bookkeeping:
         db.start_run(run_id, stage=stage_name, meta={"digest_id": digest_id})
-    except Exception:
-        pass
 
     # Load digest_map for the hour
     map_csv = DIGEST_MAP_DIR / f"{digest_id}.csv"
     if not map_csv.exists():
-        try:
+        if controls.db_run_bookkeeping:
             db.finish_run(run_id, stage=stage_name, ok=0, fail=0, meta={"note": "no digest_map", "digest_id": digest_id})
-        except Exception:
-            pass
         print(f"[{stage_name}] no digest_map for {digest_id}: {map_csv}")
         return 0
 
     try:
         df = pd.read_csv(map_csv)
     except Exception as e:
-        bio.append_jsonl(quarantine_path("V03", run_id), {"reason": "read_error", "file": str(map_csv), "error": str(e)})
+        if controls.write_artifacts:
+            bio.append_jsonl(quarantine_path("V03", run_id), {"reason": "read_error", "file": str(map_csv), "error": str(e)})
         print(f"[{stage_name}] failed reading {map_csv}: {e}")
         return 1
 
     # Validate columns
     missing = [c for c in REQUIRED_MAP_COLS if c not in df.columns]
     if missing:
+        if controls.db_run_bookkeeping:
+            db.finish_run(
+                run_id,
+                stage=stage_name,
+                ok=0,
+                fail=1,
+                meta={"digest_id": digest_id, "error": f"missing required columns: {missing}"},
+            )
         raise ValueError(f"{stage_name}: missing required columns in {map_csv}: {missing}")
 
     # Normalize types/fields
@@ -195,7 +200,8 @@ def run() -> int:
     # Determine output dirs
     jsonl_dir = (DATA_DIR / "_tmp" / "null" / "digest_jsonls") if null_sink else OUT_JSONL_DIR
     md_dir = (DATA_DIR / "_tmp" / "null" / "output_digests") if null_sink else OUT_MD_DIR
-    jsonl_dir.mkdir(parents=True, exist_ok=True); md_dir.mkdir(parents=True, exist_ok=True)
+    if controls.write_artifacts:
+        jsonl_dir.mkdir(parents=True, exist_ok=True); md_dir.mkdir(parents=True, exist_ok=True)
     out_jsonl = jsonl_dir / f"{digest_id}.jsonl"
 
     # Group by window_type then Topic for human sense
@@ -220,22 +226,24 @@ def run() -> int:
                     PFGroupInputV1(**rec)
                 except ValidationError as ve:
                     bad += 1
-                    bio.append_jsonl(quarantine_path("V03", run_id), {"reason": "validation_error", "error": str(ve), "record": rec})
+                    if controls.write_artifacts:
+                        bio.append_jsonl(quarantine_path("V03", run_id), {"reason": "validation_error", "error": str(ve), "record": rec})
                     continue
 
                 # Optional MD mirror (kept for legacy ergonomics)
-                _write_md_mirror(md_dir, digest_id, window_type, _safe_topic(topic), group_no, content)
-                md_written += 1
+                if controls.write_artifacts:
+                    _write_md_mirror(md_dir, digest_id, window_type, _safe_topic(topic), group_no, content)
+                    md_written += 1
 
                 out_records.append(rec)
                 idx_counter += 1
 
     # Write JSONL atomically (idempotent)
-    if out_records:
+    if controls.write_artifacts and out_records:
         atomic_overwrite_jsonl(out_jsonl, out_records)
 
     ok = len(out_records)
-    try:
+    if controls.db_run_bookkeeping:
         db.finish_run(
             run_id,
             stage=stage_name,
@@ -250,8 +258,6 @@ def run() -> int:
                 "max_rows": max_rows,
             },
         )
-    except Exception:
-        pass
 
     print(f"[{stage_name}] digest_id={digest_id} groups={ok} bad={bad} -> {out_jsonl}")
     return 0

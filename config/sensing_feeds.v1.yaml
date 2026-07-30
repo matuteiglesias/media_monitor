@@ -1,0 +1,16 @@
+schema_version: sensing_feeds.v1
+feeds:
+  - topic: Inflación y Precios
+    url: https://news.google.com/rss/search?q=(%22inflación%22+OR+%22IPC%22+OR+%22canasta+básica%22+OR+INDEC+OR+consultoras)+Argentina&hl=es-419&gl=AR&ceid=AR:es-419
+  - topic: Tipo de Cambio y Reservas
+    url: https://news.google.com/rss/search?q=dólar+OR+blue+OR+oficial+OR+reservas+OR+BCRA+OR+intervención+OR+futuros+OR+planchado&hl=es-419&gl=AR&ceid=AR:es-419
+  - topic: Deuda y Financiamiento
+    url: https://news.google.com/rss/search?q=bono+OR+licitación+OR+vencimientos+OR+Bonte+OR+tasa+OR+rollover&hl=es-419&gl=AR&ceid=AR:es-419
+  - topic: Actividad y Empleo
+    url: https://news.google.com/rss/search?q=subsidios+OR+paritarias+OR+gremios+OR+conciliación+OR+emple+OR+trabaj+OR+informal+OR+desemple+OR+EPH+OR+salarios&hl=es-419&gl=AR&ceid=AR:es-419
+  - topic: Sector Externo
+    url: https://news.google.com/rss/search?q=(comerc+exterior+OR+balanz+argentin+OR+export+OR+import+OR+arancel)+site:infobae.com+OR+site:lanacion.com.ar+OR+site:clarin.com+OR+site:ambito.com.ar+OR+site:telam.com.ar+OR+site:iprofesional.com&hl=es-419&gl=AR&ceid=AR:es-419
+  - topic: Finanzas
+    url: https://news.google.com/rss/search?q=(gasto+public+OR+ajuste+fiscal+OR+deficit+OR+superavit+OR+BCRA+OR+presupuesto+OR+bono+OR+banco+OR+riesgo+pais+OR+tasa+interes+OR+financier)&site:ambito.com.ar+OR+site:infobae.com+OR+site:lanacion.com.ar+OR+site:cronista.com+OR+site:baenegocios.com+OR+site:bna.com.ar&hl=es-419&gl=AR&ceid=AR:es-419
+  - topic: Personajes Políticos y Económicos
+    url: https://news.google.com/rss/search?q=(Milei+OR+Caputo+OR+Bausili+OR+Rubinstein+OR+Prat-Gay+OR+Cavallo+OR+Cristina+OR+Massa+OR+Melconian+OR+Macri+OR+Kicillof)+site:.ar&hl=es-419&gl=AR&ceid=AR:es-419
