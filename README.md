@@ -28,19 +28,20 @@ La ejecución recomendada es por lanes independientes vía `bin/run_minimal_loop
   - `make s05`
   - `make build-editorial-access-indexes`
 - **enrich** (opcional, queue/on-demand)
-  - `MODE=batch apps/news_enrich/entrypoints/run_enrich_owner.sh`
+  - `bin/run_minimal_loop_once.sh --lane enrich`
 
 Entrypoint único por lane:
 
 ```bash
 bin/run_minimal_loop_once.sh --lane sensing
 bin/run_minimal_loop_once.sh --lane editorial
-MODE=batch apps/news_enrich/entrypoints/run_enrich_owner.sh
+bin/run_minimal_loop_once.sh --lane enrich
 ```
 
-> El branch `enrich` de `bin/run_minimal_loop_once.sh` todavía apunta al wrapper
-> ausente `scripts/06_scrape_enrich.py`; hasta corregir esa deuda fuera de este PR
-> documental, se usa el entrypoint del módulo propietario indicado arriba.
+> La lane `enrich` conserva el contrato histórico mediante
+> `scripts/06_scrape_enrich.py`, un wrapper fino que delega en el entrypoint del
+> módulo propietario con `MODE=batch`. Para operación especializada siguen
+> disponibles los modos de `apps/news_enrich/entrypoints/run_enrich_owner.sh`.
 
 ### DoD mínimo del sprint (cierre operacional)
 
