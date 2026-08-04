@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "next lint",
+    "refresh-data": "node scripts/refresh_public_data.mjs",
+    "smoke:public-data": "node scripts/validate_public_data.mjs",
     "test:refresh-data": "node --test scripts/refresh_public_data.test.mjs",
     "prebuild": "node scripts/validate_site_snapshot.mjs"
   },
