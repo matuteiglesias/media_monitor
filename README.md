@@ -107,10 +107,10 @@ vercel --prod
 Notas del refresh:
 - Falla con error si faltan `news_recent_refs_latest.jsonl` o `news_recent_groups_latest.jsonl`, si están vacíos o si no parsean como JSONL.
 - En producción, `storage/indexes/editorial_latest.json` es obligatorio. El fallback editorial sólo se permite para previews locales con `ALLOW_EDITORIAL_FALLBACK=1`.
-- `scripts/publish_news_site.sh` intenta ejecutar los scripts npm `refresh-data` y
-  `smoke:public-data`, pero esos scripts no están definidos actualmente en
-  `apps/news_site/package.json`; por eso esta ruta de publicación está
-  **implementada pero no validada de extremo a extremo** en el commit actual.
+- `scripts/publish_news_site.sh` usa los scripts npm `refresh-data` y
+  `smoke:public-data` definidos por `apps/news_site/package.json`; cualquier
+  error en refresh, validación o build interrumpe la publicación antes de escribir
+  el manifest final.
 
 ---
 
