@@ -10,7 +10,8 @@
     "refresh-data": "node scripts/refresh_public_data.mjs",
     "smoke:public-data": "node scripts/validate_public_data.mjs",
     "test:refresh-data": "node --test scripts/refresh_public_data.test.mjs",
-    "prebuild": "node scripts/validate_site_snapshot.mjs"
+    "test:site-snapshot": "node --test scripts/site_snapshot_digest.test.mjs",
+    "prebuild": "node scripts/validate_site_snapshot_for_build.mjs"
   },
   "dependencies": {
     "next": "14.2.25",
