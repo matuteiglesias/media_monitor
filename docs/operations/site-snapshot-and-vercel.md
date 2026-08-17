@@ -1,6 +1,20 @@
 # Site snapshot and Vercel publication
 
-> **Status:** canonical runbook; tooling locally validated, provider operation unverified · **Owner:** snapshot/site operator · **Verified against:** `e068f5a`
+> **Status:** canonical runbook; tooling locally validated, provider operation unverified · **Owner:** snapshot/site operator · **Verified against:** `6f39d25`
+
+## Repository connections
+
+Vercel currently reports two repository status contexts. Treat only
+`Vercel – media-monitor` as the active news-site connection. The underscore-named
+`Vercel – media_monitor` project is a legacy duplicate and should be disconnected
+from this repository in Vercel rather than repaired or made required.
+
+This classification was checked on 2026-08-17: the active context succeeded and
+the legacy context failed on PR #56 and on `main`. The same pair of results was
+present on merged PR #55, and GitHub reported `main` as unprotected with no
+required status checks. A legacy failure is therefore provider cleanup, not a
+code or merge blocker. This status evidence does not by itself prove a successful
+production health reconciliation; retain the deployment verification below.
 
 ## Preflight/build
 
