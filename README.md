@@ -77,7 +77,7 @@ flowchart LR
     F --> K
     I --> K
     K --> L[Next outlet]
-    L --> M[/api/health + sitemap + feeds + OG/JSON-LD]
+    L --> M["/api/health + sitemap + feeds + OG/JSON-LD"]
 ```
 
 
