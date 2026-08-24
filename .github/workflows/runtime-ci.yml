@@ -10,12 +10,14 @@ on:
       - "apps/news_site/**"
       - "artifacts/editorial_c3_rehearsal/**"
       - "config/**"
+      - "OWNED_DOMAIN_CUTOVER.md"
       - "scripts/**"
       - "tests/**"
       - "requirements-sensing.txt"
       - "Makefile"
       - ".github/workflows/runtime-ci.yml"
       - ".github/workflows/scheduled-publication.yml"
+      - ".github/workflows/owned-domain-readiness.yml"
   push:
     branches: [main]
     paths:
@@ -26,12 +28,14 @@ on:
       - "apps/news_site/**"
       - "artifacts/editorial_c3_rehearsal/**"
       - "config/**"
+      - "OWNED_DOMAIN_CUTOVER.md"
       - "scripts/**"
       - "tests/**"
       - "requirements-sensing.txt"
       - "Makefile"
       - ".github/workflows/runtime-ci.yml"
       - ".github/workflows/scheduled-publication.yml"
+      - ".github/workflows/owned-domain-readiness.yml"
 
 permissions:
   contents: read
@@ -74,6 +78,7 @@ jobs:
             tests/test_verify_public_deployment.py \
             tests/test_verify_crawler_surface.py \
             tests/test_social_metadata.py \
+            tests/test_owned_domain_cutover.py \
             tests/test_media_ops.py \
             tests/test_news_site_publish_contract.py \
             tests/test_editorial_identity.py \

@@ -20,6 +20,7 @@ permissions:
 env:
   SITE_ID: argentina-general
   PUBLICATION_TARGET_MINUTES: "120"
+  CANONICAL_OWNED_DOMAIN_ACTIVE: ${{ vars.CANONICAL_OWNED_DOMAIN_ACTIVE || '0' }}
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -61,18 +62,13 @@ jobs:
           import json
           import os
           from pathlib import Path
-
           required = ("VERCEL_TOKEN", "VERCEL_ORG_ID", "VERCEL_PROJECT_ID")
           missing = [name for name in required if not os.getenv(name, "").strip()]
           if missing:
               raise SystemExit("Missing required GitHub Actions secrets: " + ", ".join(missing))
-
           link = Path(".vercel/project.json")
           link.parent.mkdir(parents=True, exist_ok=True)
-          link.write_text(
-              json.dumps({"orgId": os.environ["VERCEL_ORG_ID"], "projectId": os.environ["VERCEL_PROJECT_ID"]}) + "\n",
-              encoding="utf-8",
-          )
+          link.write_text(json.dumps({"orgId": os.environ["VERCEL_ORG_ID"], "projectId": os.environ["VERCEL_PROJECT_ID"]}) + "\n", encoding="utf-8")
           print("Vercel project link materialized from CI secrets")
           PY
           vercel whoami --token "$VERCEL_TOKEN" >/dev/null
@@ -118,8 +114,10 @@ jobs:
         run: |
           set -o pipefail
           PUBLIC_URL="$(python - <<'PY'
-          import json
-          print(json.load(open('apps/news_site/config/public_identity.json'))['public_outlet_url'])
+          import json, os
+          identity = json.load(open('apps/news_site/config/public_identity.json'))
+          active = os.getenv('CANONICAL_OWNED_DOMAIN_ACTIVE') == '1'
+          print(identity['owned_outlet_url'] if active else identity['public_outlet_url'])
           PY
           )"
           python scripts/verify_crawler_surface.py --base-url "$PUBLIC_URL" \
@@ -131,7 +129,6 @@ jobs:
           python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
           import json
           from pathlib import Path
-
           print("## Scheduled public refresh")
           for label, path in (
               ("Predeploy guard", Path("storage/observability/publication_cycle_guard_latest.json")),
