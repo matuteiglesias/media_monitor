@@ -10,7 +10,6 @@ def test_contributor_contract_preserves_authority_and_has_runnable_entrypoints()
     assert "bin/media demo" in text
     assert "published_article.v1" in text
     assert "monitored ≠ selected ≠ generated ≠ approved ≠ published" in text
-    assert "Never bypass" not in text  # avoid imperative ambiguity; exact gate language lives below
     assert "Never bypass the explicit promotion gate" in text
     assert "Do not weaken an ownership or publication guard" in text
     assert "EVIDENCE.md" in text
