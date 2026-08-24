@@ -1,0 +1,129 @@
+{
+  "schema_name": "site_snapshot.v3",
+  "snapshot_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "site": {
+    "site_id": "argentina-general",
+    "name": "Media Monitor",
+    "tagline": "Noticias y análisis",
+    "locale": "es-AR"
+  },
+  "digest_at": "20260824T18",
+  "generated_at": "2026-08-24T18:30:00Z",
+  "status": "ok",
+  "metrics": {
+    "item_count": 1,
+    "section_count": 1,
+    "published_article_count": 1,
+    "curated_signal_count": 1
+  },
+  "publication": {
+    "featured": {
+      "article_id": "article-sample",
+      "slug": "sample-article",
+      "title": "Sample article",
+      "summary": "A short summary for the public article.",
+      "topic": "Inflación y Precios",
+      "published_at": "2026-08-24T17:00:00Z",
+      "updated_at": "2026-08-24T17:00:00Z"
+    },
+    "latest": [
+      {
+        "article_id": "article-sample",
+        "slug": "sample-article",
+        "title": "Sample article",
+        "summary": "A short summary for the public article.",
+        "topic": "Inflación y Precios",
+        "published_at": "2026-08-24T17:00:00Z",
+        "updated_at": "2026-08-24T17:00:00Z"
+      }
+    ]
+  },
+  "signals": {
+    "hero": {
+      "index_id": "signal-1",
+      "title": "Sample monitored signal",
+      "topic": "Inflación y Precios",
+      "published_at": "2026-08-24T18:10:00Z",
+      "link": "https://example.com/signal",
+      "source": "Example"
+    },
+    "curated": [
+      {
+        "rank": 1,
+        "index_id": "signal-1",
+        "title": "Sample monitored signal",
+        "topic": "Inflación y Precios",
+        "published_at": "2026-08-24T18:10:00Z",
+        "link": "https://example.com/signal",
+        "source": "Example",
+        "score": 72,
+        "score_components": {
+          "topic_priority": 18,
+          "freshness": 40,
+          "first_source_bonus": 8,
+          "first_topic_bonus": 6,
+          "repeat_source_penalty": 0,
+          "repeat_topic_penalty": 0
+        },
+        "reason_codes": ["fresh_under_30m", "high_topic_priority", "new_source_bonus", "new_topic_bonus"]
+      }
+    ],
+    "latest": [
+      {
+        "index_id": "signal-1",
+        "title": "Sample monitored signal",
+        "topic": "Inflación y Precios",
+        "published_at": "2026-08-24T18:10:00Z",
+        "link": "https://example.com/signal",
+        "source": "Example"
+      }
+    ],
+    "sections": [
+      {
+        "topic": "Inflación y Precios",
+        "article_count": 1,
+        "top_titles": ["Sample monitored signal"]
+      }
+    ]
+  },
+  "articles": {
+    "sample-article": {
+      "schema_name": "published_article.v1",
+      "article_id": "article-sample",
+      "draft_id": "draft-sample",
+      "digest_at": "20260824T17",
+      "story_group_id": "group-1",
+      "slug": "sample-article",
+      "title": "Sample article",
+      "summary": "A short summary for the public article.",
+      "body_md": "# Sample article\n\nThis is the body.",
+      "topic": "Inflación y Precios",
+      "source_links": ["https://example.com/story"],
+      "citations": [
+        {
+          "citation_id": "c1",
+          "claim_text": "Example claim",
+          "source_ref_id": "source-1",
+          "url": "https://example.com/story"
+        }
+      ],
+      "status": "published",
+      "review_status": "human_approved",
+      "published_at": "2026-08-24T17:00:00Z",
+      "updated_at": "2026-08-24T17:00:00Z"
+    }
+  },
+  "provenance": {
+    "refs_path": "storage/indexes/news_recent_refs_latest.jsonl",
+    "refs_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "groups_path": "storage/indexes/news_recent_groups_latest.jsonl",
+    "groups_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "published_articles_path": "storage/indexes/published_articles_latest.jsonl",
+    "published_articles_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "editorial_selection_path": "storage/indexes/editorial_selection_latest.json",
+    "editorial_selection_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "editorial_selection_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "editorial_selection_policy_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+    "git_sha": "fixture"
+  }
+}
