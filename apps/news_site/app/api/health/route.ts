@@ -17,6 +17,7 @@ export async function GET() {
       generated_at: snapshot.generated_at,
       item_count: snapshot.metrics.item_count,
       section_count: snapshot.metrics.section_count,
+      published_article_count: snapshot.metrics.published_article_count ?? 0,
       freshness_status: publicationHealth.freshness_status,
       is_current: publicationHealth.is_current,
       publication_health: publicationHealth,

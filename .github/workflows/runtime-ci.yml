@@ -88,4 +88,5 @@ jobs:
           npm run test:refresh-data
           npm run test:site-snapshot
           npm run test:freshness
+          node --check scripts/validate_site_snapshot.mjs
           npm run typecheck

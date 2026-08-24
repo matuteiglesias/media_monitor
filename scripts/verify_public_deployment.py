@@ -24,13 +24,15 @@ def validate_health(roll: dict[str, Any], observed: dict[str, Any]) -> dict[str,
     if not host:
         raise ValueError("roll record is missing deployment_host")
 
+    roll_expected = roll.get("expected") or {}
     expected = {
         "status": "ok",
         "site_id": roll.get("site_id"),
         "digest_at": roll.get("digest_at"),
         "snapshot_id": roll.get("snapshot_id"),
-        "item_count": (roll.get("expected") or {}).get("item_count"),
-        "section_count": (roll.get("expected") or {}).get("section_count"),
+        "item_count": roll_expected.get("item_count"),
+        "section_count": roll_expected.get("section_count"),
+        "published_article_count": roll_expected.get("published_article_count", 0),
     }
     mismatches = {
         key: {"expected": value, "observed": observed.get(key)}
@@ -63,6 +65,7 @@ def validate_health(roll: dict[str, Any], observed: dict[str, Any]) -> dict[str,
         "site_id": expected["site_id"],
         "digest_at": expected["digest_at"],
         "snapshot_id": expected["snapshot_id"],
+        "published_article_count": expected["published_article_count"],
         "freshness_status": publication.get("freshness_status"),
         "within_target": publication.get("within_target"),
         "age_minutes": publication.get("age_minutes"),
