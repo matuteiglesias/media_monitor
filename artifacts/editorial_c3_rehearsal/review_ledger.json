@@ -1,0 +1,47 @@
+{
+  "schema_name": "c3_editorial_rehearsal.v1",
+  "review_mode": "SIMULATED_HUMAN_JUDGMENT",
+  "reviewed_at": "2026-08-24T19:00:00Z",
+  "disclaimer": "These decisions exercise editorial judgment and promotion readiness only. They are not real human publication approvals and must never be written to the production published_article bus as human_approved.",
+  "criteria": [
+    "public relevance",
+    "primary-source evidence",
+    "claim-to-citation coverage",
+    "interpretive restraint",
+    "distinct editorial value",
+    "remaining fact-check risk"
+  ],
+  "reviews": [
+    {
+      "draft_id": "c3-trade-july-2026",
+      "decision": "SIMULATED_APPROVE",
+      "score": 9,
+      "rationale": "Best of the tranche. It adds interpretation beyond the headline by decomposing the trade improvement into price and quantity effects, relies on two primary INDEC surfaces, and explicitly avoids turning one month into a structural conclusion.",
+      "required_before_real_approval": [
+        "Final copy edit",
+        "Confirm both INDEC URLs remain stable and accessible"
+      ]
+    },
+    {
+      "draft_id": "c3-cpi-july-2026",
+      "decision": "SIMULATED_APPROVE",
+      "score": 8,
+      "rationale": "Clear, useful and restrained. The piece does not overclaim from a single monthly print and distinguishes the observation from persistence. It is publishable as a short analytical note, though a richer version should add the core/regulated/seasonal decomposition.",
+      "required_before_real_approval": [
+        "Optional: enrich with CPI composition if available",
+        "Final title and copy edit"
+      ]
+    },
+    {
+      "draft_id": "c3-retail-june-2026",
+      "decision": "SIMULATED_REVISE",
+      "score": 6,
+      "rationale": "The signal is relevant and appears across two retail channels, but the current evidence surface is the INDEC homepage rather than the stable technical reports. The interpretation also needs context on income, employment or other consumption measures before it earns an analytical slot.",
+      "required_before_real_approval": [
+        "Replace homepage citations with stable June technical-report URLs",
+        "Add at least one contextual measure before causal interpretation",
+        "Re-review after revision"
+      ]
+    }
+  ]
+}
