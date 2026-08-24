@@ -4,6 +4,18 @@ This page is the current front door to `media_monitor` documentation. It routes
 readers to the best available source without turning plans, dated evidence, or
 PR-era migration records into canonical operating instructions.
 
+## Canonical public surfaces
+
+- **Public outlet:** https://mediamonitor-psi.vercel.app
+- **Documentation:** https://github.com/matuteiglesias/media_monitor/tree/main/docs
+- **Repository:** https://github.com/matuteiglesias/media_monitor
+- **Owner / portfolio:** https://main.matuteiglesias.link
+
+These four surfaces are the public identity boundary for Media Monitor. Preview,
+branch, or older deployment URLs are deployment artifacts rather than alternate
+public identities. Machine-readable ownership lives in
+[`apps/news_site/config/public_identity.json`](../apps/news_site/config/public_identity.json).
+
 The short local path remains in the [root README](../README.md). The repository
 does not yet have all of the capability-oriented pages planned by the
 [documentation program](documentation_program/02_target_docs_stack_v0_1.md), so
@@ -47,7 +59,7 @@ never inferred from an earlier one.
 | Human-approved article promotion | implemented; focused tests locally validated | `scripts/promote_draft_to_published.py`, `scripts/build_published_article_indexes.py`, promotion/index tests; [root last-mile route](../README.md#-last-mile-página-simple-de-publicación) | approval is intentionally a human boundary |
 | Generic site snapshot and roll | implemented; focused tests locally validated; deployment tooling present | snapshot builder/validator, `scripts/roll_site.py`, site-roll tests; [source-site roll](runbooks/site-roll.md) | no provider-side deployment or repeated operation is claimed |
 | `publish-news-site` aggregate path | implemented; focused script-contract tests locally validated | `scripts/publish_news_site.sh`, `apps/news_site` `refresh-data` and `smoke:public-data`; [publishing audit](runbooks/news-site-publishing.md) | requires coherent current storage indexes; provider deployment/operation is a separate evidence state |
-| Next.js news site | implemented; focused Node tests locally validated | `apps/news_site`; [newspaper skin guide](runbooks/newspaper_skin_guide.md) | Vercel project root and live production routes are not evidenced here |
+| Next.js news site | implemented; focused Node tests locally validated; canonical public identity defined | `apps/news_site`, `apps/news_site/config/public_identity.json`; [newspaper skin guide](runbooks/newspaper_skin_guide.md) | provider materialization and repeated operation remain separately verified |
 
 ## Current task routes
 
