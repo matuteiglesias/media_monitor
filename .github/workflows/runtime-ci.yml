@@ -65,6 +65,7 @@ jobs:
             tests/test_publish_last_mile_snapshot.py \
             tests/test_published_article_pipeline.py \
             tests/test_c3_editorial_rehearsal.py \
+            tests/test_c3_toy_approved_tranche.py \
             tests/test_validate_publish_surface.py \
             tests/test_build_site_snapshot.py \
             tests/test_validate_site_snapshot.py \
