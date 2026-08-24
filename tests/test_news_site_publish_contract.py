@@ -49,7 +49,7 @@ def test_freshness_notice_is_global_and_request_time() -> None:
     assert '"Cache-Control": "no-store"' in route
 
 
-def test_v2_contract_is_adapted_without_premature_ui_redesign() -> None:
+def test_v2_outlet_adapter_separates_publication_from_signals() -> None:
     mapper = (NEWS_SITE_ROOT / "lib" / "adapter" / "mappers.ts").read_text(
         encoding="utf-8"
     )
@@ -57,8 +57,50 @@ def test_v2_contract_is_adapted_without_premature_ui_redesign() -> None:
         encoding="utf-8"
     )
     assert 'snapshot?.schema_name === "site_snapshot.v2"' in mapper
-    assert "hero: snapshot.signals.hero" in mapper
-    assert "latest: snapshot.signals.latest" in mapper
-    assert "sections: snapshot.signals.sections" in mapper
+    assert "publication: snapshot.publication" in mapper
+    assert "articles: snapshot.articles" in mapper
+    assert "signals: snapshot.signals" in mapper
+    assert "publication: { featured: null, latest: [] }" in mapper
+    assert "findArticle" in mapper
     assert 'snapshot?.schema_name === "site_snapshot.v2"' in health
     assert "snapshot?.signals" in health
+
+
+def test_homepage_makes_editorial_and_external_layers_visibly_distinct() -> None:
+    home = (NEWS_SITE_ROOT / "app" / "page.tsx").read_text(encoding="utf-8")
+    assert "Análisis editorial · aprobado" in home
+    assert "Señal monitoreada · fuente externa" in home
+    assert "No hay análisis editorial aprobado publicado" in home
+    assert "no se presentan" in home and "contenido propio" in home
+    assert "href={`/articles/${featured.slug}`}" in home
+    assert "href={`/story/${signals.hero.index_id}`}" in home
+
+
+def test_article_route_only_reads_published_article_projection() -> None:
+    article_route = (
+        NEWS_SITE_ROOT / "app" / "articles" / "[slug]" / "page.tsx"
+    ).read_text(encoding="utf-8")
+    assert "findArticle(params.slug)" in article_route
+    assert "Análisis editorial · aprobado" in article_route
+    assert "article.summary" in article_route
+    assert "article.body_md" in article_route
+    assert "article.citations" in article_route
+    assert "article.source_links" in article_route
+    assert "article.review_status" in article_route
+
+
+def test_signal_routes_do_not_masquerade_as_editorial_articles() -> None:
+    story = (NEWS_SITE_ROOT / "app" / "story" / "[id]" / "page.tsx").read_text(
+        encoding="utf-8"
+    )
+    latest = (NEWS_SITE_ROOT / "app" / "latest" / "page.tsx").read_text(
+        encoding="utf-8"
+    )
+    topic = (
+        NEWS_SITE_ROOT / "app" / "topic" / "[topic]" / "page.tsx"
+    ).read_text(encoding="utf-8")
+    assert "Señal monitoreada · fuente externa" in story
+    assert "no es" in story and "análisis editorial" in story
+    assert "Señales monitoreadas · fuentes externas" in latest
+    assert "no análisis editorial propio" in latest
+    assert "Señales monitoreadas · fuentes externas" in topic

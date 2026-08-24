@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Media Monitor",
-  description: "Semi-automated editorial outlet",
+  description: "Análisis editorial aprobado y monitoreo de señales de fuentes externas.",
 };
 
 export default function RootLayout({
