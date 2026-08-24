@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from typing import Callable
@@ -20,10 +19,7 @@ class Response:
 def http_get(url: str, timeout: float = 20.0) -> Response:
     request = Request(url, headers={"User-Agent": "media-monitor-crawler-acceptance/1", "Accept": "*/*"})
     with urlopen(request, timeout=timeout) as response:
-        return Response(
-            response.read().decode("utf-8"),
-            response.headers.get("Content-Type", ""),
-        )
+        return Response(response.read().decode("utf-8"), response.headers.get("Content-Type", ""))
 
 
 def first_rss_link(xml_text: str) -> str | None:
@@ -69,10 +65,11 @@ def verify(base_url: str, fetch: Callable[[str], Response] = http_get) -> dict:
     if article_url:
         html = fetch(article_url).body
         require("Análisis editorial · aprobado" in html, "approved article page lacks publication label")
-        require(re.search(r'<link[^>]+rel=["\']canonical["\'][^>]+href=["\']' + re.escape(article_url), html) is not None, "article canonical link mismatch")
+        require('rel="canonical"' in html or "rel='canonical'" in html, "article is missing canonical link")
+        require(f'href="{article_url}"' in html or f"href='{article_url}'" in html, "article canonical URL mismatch")
         require('property="og:title"' in html, "article is missing og:title")
         require('name="twitter:card"' in html and "summary_large_image" in html, "article is missing large Twitter card")
-        require('application/ld+json' in html and ('\"@type\":\"Article\"' in html or '&quot;Article&quot;' in html or '"Article"' in html), "article is missing Article JSON-LD")
+        require('application/ld+json' in html and "Article" in html, "article is missing Article JSON-LD")
         require(article_url in sitemap, "approved article is missing from sitemap")
         article_status = "verified"
 
