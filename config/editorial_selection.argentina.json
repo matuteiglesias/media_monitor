@@ -1,0 +1,29 @@
+{
+  "policy_id": "argentina-general-v1",
+  "policy_version": "1",
+  "max_age_minutes": 180,
+  "future_tolerance_minutes": 5,
+  "minimum_items": 5,
+  "max_items": 8,
+  "high_priority_threshold": 15,
+  "default_topic_weight": 0,
+  "topic_weights": {
+    "Inflación y Precios": 18,
+    "Tipo de Cambio y Reservas": 18,
+    "Deuda y Financiamiento": 16,
+    "Actividad y Empleo": 16,
+    "Sector Externo": 14,
+    "Finanzas": 12,
+    "Personajes Políticos y Económicos": 8
+  },
+  "freshness_buckets": [
+    {"max_age_minutes": 30, "score": 40, "reason_code": "fresh_under_30m"},
+    {"max_age_minutes": 60, "score": 30, "reason_code": "fresh_under_60m"},
+    {"max_age_minutes": 120, "score": 20, "reason_code": "fresh_under_120m"},
+    {"max_age_minutes": 180, "score": 10, "reason_code": "fresh_under_180m"}
+  ],
+  "first_source_bonus": 8,
+  "first_topic_bonus": 6,
+  "repeat_source_penalty": 7,
+  "repeat_topic_penalty": 3
+}

@@ -1,0 +1,51 @@
+{
+  "schema_name": "editorial_selection.v1",
+  "selection_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "digest_at": "20260824T20",
+  "as_of": "2026-08-24T20:00:00Z",
+  "policy": {
+    "policy_id": "argentina-general-v1",
+    "policy_version": "1",
+    "policy_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "metrics": {
+    "candidate_count": 6,
+    "eligible_count": 5,
+    "deduplicated_count": 1,
+    "discarded_stale_count": 0,
+    "discarded_missing_identity_count": 0,
+    "selected_count": 5
+  },
+  "selected": [
+    {
+      "rank": 1,
+      "index_id": "signal-1",
+      "title": "Inflación: nuevo dato oficial",
+      "topic": "Inflación y Precios",
+      "published_at": "2026-08-24T19:55:00Z",
+      "link": "https://example.com/inflacion",
+      "source": "Fuente A",
+      "score": 72,
+      "score_components": {
+        "topic_priority": 18,
+        "freshness": 40,
+        "first_source_bonus": 8,
+        "first_topic_bonus": 6,
+        "repeat_source_penalty": 0,
+        "repeat_topic_penalty": 0
+      },
+      "reason_codes": [
+        "fresh_under_30m",
+        "high_topic_priority",
+        "new_source_bonus",
+        "new_topic_bonus"
+      ]
+    }
+  ],
+  "provenance": {
+    "refs_path": "storage/indexes/news_recent_refs_latest.jsonl",
+    "refs_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "policy_path": "config/editorial_selection.argentina.json",
+    "policy_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  }
+}
