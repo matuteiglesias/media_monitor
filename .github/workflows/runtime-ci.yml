@@ -13,6 +13,7 @@ on:
       - "requirements-sensing.txt"
       - "Makefile"
       - ".github/workflows/runtime-ci.yml"
+      - ".github/workflows/scheduled-publication.yml"
   push:
     branches: [main]
     paths:
@@ -26,6 +27,7 @@ on:
       - "requirements-sensing.txt"
       - "Makefile"
       - ".github/workflows/runtime-ci.yml"
+      - ".github/workflows/scheduled-publication.yml"
 
 permissions:
   contents: read
@@ -62,6 +64,8 @@ jobs:
             tests/test_build_site_snapshot.py \
             tests/test_validate_site_snapshot.py \
             tests/test_roll_site.py \
+            tests/test_publication_cycle_guard.py \
+            tests/test_verify_public_deployment.py \
             tests/test_media_ops.py \
             tests/test_news_site_publish_contract.py
 
