@@ -42,13 +42,13 @@ def _safe_int(value: Any, default: int = 0) -> int:
     return default
 
 
-def _normalize_candidate(candidate: Any) -> dict[str, Any] | str:
+def _normalize_candidate(candidate: Any) -> dict[str, str] | str:
     if isinstance(candidate, str):
         return _safe_text(candidate, "sin título")
     if not isinstance(candidate, dict):
         return "sin título"
     return {
-        "priority": _safe_int(candidate.get("priority"), 999),
+        "priority": _safe_text(candidate.get("priority"), "normal"),
         "kind": _safe_text(candidate.get("kind") or candidate.get("target_format"), "n/a"),
         "title": _safe_text(candidate.get("title") or candidate.get("index_id"), "sin título"),
     }
@@ -58,8 +58,8 @@ def _normalize_draft(draft: Any) -> dict[str, str]:
     if not isinstance(draft, dict):
         return {"title": "sin título", "index_id": ""}
     return {
-        "title": _safe_text(draft.get("title"), "sin título"),
-        "index_id": _safe_text(draft.get("index_id"), ""),
+        "title": _safe_text(draft.get("title") or draft.get("headline"), "sin título"),
+        "index_id": _safe_text(draft.get("index_id") or draft.get("draft_id") or draft.get("script_id"), ""),
     }
 
 
