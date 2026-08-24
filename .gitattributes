@@ -1,0 +1,5 @@
+# Generated acceptance/runtime artifacts should not dominate repository language statistics.
+artifacts/** linguist-generated=true
+
+# Markdown and documentation remain documentation; core apps/scripts are intentionally untouched.
+*.md linguist-documentation=true
