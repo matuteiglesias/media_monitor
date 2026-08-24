@@ -1,10 +1,20 @@
 import { loadSiteSnapshot } from "./loaders";
+import { PUBLIC_IDENTITY } from "@/lib/public_identity";
+
+function canonicalSite(site: any) {
+  return {
+    ...site,
+    name: PUBLIC_IDENTITY.outlet_name,
+    tagline: PUBLIC_IDENTITY.outlet_tagline,
+  };
+}
 
 export function loadOutlet() {
   const snapshot = loadSiteSnapshot();
   if (snapshot?.schema_name === "site_snapshot.v2") {
     return {
       ...snapshot,
+      site: canonicalSite(snapshot.site),
       publication: snapshot.publication,
       articles: snapshot.articles,
       signals: snapshot.signals,
@@ -13,6 +23,7 @@ export function loadOutlet() {
 
   return {
     ...snapshot,
+    site: canonicalSite(snapshot.site),
     publication: { featured: null, latest: [] },
     articles: {},
     signals: {

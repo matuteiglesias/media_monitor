@@ -6,6 +6,19 @@
 
 Hoy el foco no es agregar capas, sino mantener viva la ruta útil y reducir ambigüedad operacional.
 
+## 🌐 Superficies públicas canónicas
+
+- **Outlet público:** https://mediamonitor-psi.vercel.app
+- **Documentación:** https://github.com/matuteiglesias/media_monitor/tree/main/docs
+- **Repositorio:** https://github.com/matuteiglesias/media_monitor
+- **Owner / portfolio:** https://main.matuteiglesias.link
+
+La identidad pública de máquina vive en
+[`apps/news_site/config/public_identity.json`](apps/news_site/config/public_identity.json).
+El outlet anterior o cualquier otra URL de preview/deploy no es una identidad pública
+canónica. La aplicación publica `canonical_url` en `/api/health` y usa la misma
+fuente para metadata/canonical HTML.
+
 **Mapa de documentación:** [`docs/README.md`](docs/README.md) reúne rutas por
 audiencia, capacidad y estado de madurez. Este README conserva solamente la ruta
 operativa corta.

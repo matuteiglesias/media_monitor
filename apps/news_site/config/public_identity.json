@@ -1,0 +1,9 @@
+{
+  "schema_name": "public_identity.v1",
+  "outlet_name": "Media Monitor",
+  "outlet_tagline": "Análisis editorial aprobado y monitoreo de señales económicas de Argentina.",
+  "public_outlet_url": "https://mediamonitor-psi.vercel.app",
+  "docs_url": "https://github.com/matuteiglesias/media_monitor/tree/main/docs",
+  "repository_url": "https://github.com/matuteiglesias/media_monitor",
+  "owner_url": "https://main.matuteiglesias.link"
+}

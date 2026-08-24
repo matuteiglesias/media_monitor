@@ -1,7 +1,7 @@
 {
   "site_id": "argentina-general",
-  "name": "Actualidad Argentina",
-  "tagline": "Noticias recientes de Argentina",
+  "name": "Media Monitor",
+  "tagline": "Análisis editorial aprobado y monitoreo de señales económicas de Argentina.",
   "locale": "es-AR",
   "selection": {
     "topics": ["All Topics"],

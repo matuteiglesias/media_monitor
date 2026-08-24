@@ -49,6 +49,33 @@ def test_freshness_notice_is_global_and_request_time() -> None:
     assert '"Cache-Control": "no-store"' in route
 
 
+def test_public_identity_is_single_sourced_across_runtime_and_root_readme() -> None:
+    identity = json.loads(
+        (NEWS_SITE_ROOT / "config" / "public_identity.json").read_text(encoding="utf-8")
+    )
+    site = json.loads((REPO_ROOT / "sites" / "argentina-general.json").read_text(encoding="utf-8"))
+    layout = (NEWS_SITE_ROOT / "app" / "layout.tsx").read_text(encoding="utf-8")
+    mapper = (NEWS_SITE_ROOT / "lib" / "adapter" / "mappers.ts").read_text(encoding="utf-8")
+    health = (NEWS_SITE_ROOT / "app" / "api" / "health" / "route.ts").read_text(encoding="utf-8")
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+
+    assert identity["schema_name"] == "public_identity.v1"
+    assert identity["public_outlet_url"] == "https://mediamonitor-psi.vercel.app"
+    assert site["name"] == identity["outlet_name"]
+    assert site["tagline"] == identity["outlet_tagline"]
+    assert "PUBLIC_IDENTITY.public_outlet_url" in layout
+    assert "alternates" in layout and "canonical" in layout
+    assert "PUBLIC_IDENTITY.outlet_name" in mapper
+    assert "canonical_url: PUBLIC_IDENTITY.public_outlet_url" in health
+    for value in (
+        identity["public_outlet_url"],
+        identity["docs_url"],
+        identity["repository_url"],
+        identity["owner_url"],
+    ):
+        assert value in readme
+
+
 def test_v2_outlet_adapter_separates_publication_from_signals() -> None:
     mapper = (NEWS_SITE_ROOT / "lib" / "adapter" / "mappers.ts").read_text(
         encoding="utf-8"
