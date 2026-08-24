@@ -1,0 +1,41 @@
+name: Reuse / second-outlet requirement
+description: Report a legitimate adopter need that the current configuration boundary cannot express.
+title: "[reuse] "
+body:
+  - type: textarea
+    id: outlet
+    attributes:
+      label: Outlet/use case
+      description: Describe the new outlet or deployment context without private data.
+    validations:
+      required: true
+  - type: textarea
+    id: current_boundary
+    attributes:
+      label: What configuration is insufficient?
+      description: Point to the current site/policy/identity/deployment surface that cannot express the requirement.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_primitive
+    attributes:
+      label: Smallest reusable primitive
+      description: What provider-neutral/general capability would solve the problem without an outlet-specific conditional?
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals
+      description: What should remain outside this change?
+    validations:
+      required: true
+  - type: checkboxes
+    id: proof
+    attributes:
+      label: Reuse check
+      options:
+        - label: I tried the canonical `examples/outlet/` path first.
+          required: true
+        - label: The requirement cannot be solved only by site identity, topics, selection policy, presentation config, or deployment config.
+          required: true
