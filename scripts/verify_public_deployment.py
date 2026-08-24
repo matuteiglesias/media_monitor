@@ -34,6 +34,7 @@ def validate_health(roll: dict[str, Any], observed: dict[str, Any]) -> dict[str,
         "section_count": roll_expected.get("section_count"),
         "published_article_count": roll_expected.get("published_article_count", 0),
         "curated_signal_count": roll_expected.get("curated_signal_count", 0),
+        "story_context_count": roll_expected.get("story_context_count", 0),
     }
     mismatches = {
         key: {"expected": value, "observed": observed.get(key)}
@@ -68,6 +69,7 @@ def validate_health(roll: dict[str, Any], observed: dict[str, Any]) -> dict[str,
         "snapshot_id": expected["snapshot_id"],
         "published_article_count": expected["published_article_count"],
         "curated_signal_count": expected["curated_signal_count"],
+        "story_context_count": expected["story_context_count"],
         "freshness_status": publication.get("freshness_status"),
         "within_target": publication.get("within_target"),
         "age_minutes": publication.get("age_minutes"),

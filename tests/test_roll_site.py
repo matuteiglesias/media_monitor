@@ -14,7 +14,7 @@ def snapshot(root, site="argentina-general", digest="20260721T18"):
     path.write_text(
         json.dumps(
             {
-                "schema_name": "site_snapshot.v3",
+                "schema_name": "site_snapshot.v4",
                 "site": {"site_id": site},
                 "digest_at": digest,
                 "snapshot_id": "a" * 64,
@@ -23,6 +23,7 @@ def snapshot(root, site="argentina-general", digest="20260721T18"):
                     "section_count": 1,
                     "published_article_count": 2,
                     "curated_signal_count": 6,
+                    "story_context_count": 11,
                 },
             }
         )
@@ -52,6 +53,7 @@ def default_health():
         "section_count": 1,
         "published_article_count": 2,
         "curated_signal_count": 6,
+        "story_context_count": 11,
         "publication_health": healthy_publication(),
     }
 
@@ -87,7 +89,7 @@ def latest(root):
     return json.loads(next((root / "storage/observability").glob("site_roll_latest_*.json")).read_text())
 
 
-def test_successful_preview_roll_rebuilds_publication_index_first(tmp_path):
+def test_successful_preview_roll_rebuilds_public_read_models_first(tmp_path):
     snapshot(tmp_path)
     fake = Fake(tmp_path)
     record, code = roll("argentina-general", "20260721T18", "preview", tmp_path, fake, lambda _: None)
@@ -95,9 +97,11 @@ def test_successful_preview_roll_rebuilds_publication_index_first(tmp_path):
     commands = [call[0] for call in fake.calls]
     assert commands[0][:2] == ["make", "build-published-article-indexes"]
     assert any("scripts/build_editorial_selection.py" in command for command in commands)
+    assert any("scripts/build_story_contexts.py" in command for command in commands)
     assert ["vercel", "pull", "--yes", "--environment=preview"] in commands
     assert record["expected"]["published_article_count"] == 2
     assert record["expected"]["curated_signal_count"] == 6
+    assert record["expected"]["story_context_count"] == 11
     assert latest(tmp_path)["snapshot_id"] == "a" * 64
 
 
@@ -113,6 +117,7 @@ def test_production_command_construction_and_freshness_record(tmp_path):
     assert record["observed"]["within_target"] is True
     assert record["observed"]["published_article_count"] == 2
     assert record["observed"]["curated_signal_count"] == 6
+    assert record["observed"]["story_context_count"] == 11
 
 
 def test_ci_token_is_forwarded_without_entering_roll_record(tmp_path, monkeypatch):
@@ -165,6 +170,13 @@ def test_curated_count_identity_mismatch_fails(tmp_path):
     assert code == 1 and record["failed_stage"] == "health"
 
 
+def test_story_context_count_identity_mismatch_fails(tmp_path):
+    snapshot(tmp_path)
+    health = default_health() | {"story_context_count": 10}
+    record, code = roll("argentina-general", "20260721T18", "preview", tmp_path, Fake(tmp_path, health=health), lambda _: None)
+    assert code == 1 and record["failed_stage"] == "health"
+
+
 def test_invalid_target_never_defaults_production(tmp_path):
     snapshot(tmp_path)
     try:
@@ -188,6 +200,14 @@ def test_publication_index_failure_stops_before_snapshot_or_vercel(tmp_path):
     fake = Fake(tmp_path, fail=["make", "build-published-article-indexes"])
     record, code = roll("argentina-general", "20260721T18", "preview", tmp_path, fake)
     assert code == 1 and record["failed_stage"] == "publication-index"
+    assert not any(call[0][0] == "vercel" for call in fake.calls)
+
+
+def test_story_context_failure_stops_before_snapshot_or_vercel(tmp_path):
+    snapshot(tmp_path)
+    fake = Fake(tmp_path, fail=[sys.executable, "scripts/build_story_contexts.py"])
+    record, code = roll("argentina-general", "20260721T18", "preview", tmp_path, fake)
+    assert code == 1 and record["failed_stage"] == "story-contexts"
     assert not any(call[0][0] == "vercel" for call in fake.calls)
 
 

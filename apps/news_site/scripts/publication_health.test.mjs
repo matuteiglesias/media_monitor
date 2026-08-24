@@ -59,6 +59,20 @@ function snapshotV3(times) {
   };
 }
 
+function snapshotV4(times) {
+  const value = snapshotV3(times);
+  return {
+    ...value,
+    schema_name: "site_snapshot.v4",
+    story_contexts: {
+      [value.signals.latest[0].index_id]: {
+        schema_name: "story_context.v1",
+        coverage_latest_published_at: "2024-01-01T00:00:00Z",
+      },
+    },
+  };
+}
+
 test("fresh publication is current and within target", () => {
   const health = buildPublicationHealth(
     snapshot(["2026-08-24T16:00:00Z"]),
@@ -89,6 +103,14 @@ test("v3 freshness follows chronological wire rather than curated ranking", () =
   const health = buildPublicationHealth(value, "2026-08-24T17:00:00Z");
   assert.equal(health.newest_item_at, "2026-08-24T16:40:00.000Z");
   assert.equal(health.age_minutes, 20);
+  assert.equal(health.within_target, true);
+});
+
+test("v4 freshness ignores story-context timestamps", () => {
+  const value = snapshotV4(["2026-08-24T16:45:00Z"]);
+  const health = buildPublicationHealth(value, "2026-08-24T17:00:00Z");
+  assert.equal(health.newest_item_at, "2026-08-24T16:45:00.000Z");
+  assert.equal(health.age_minutes, 15);
   assert.equal(health.within_target, true);
 });
 
@@ -146,7 +168,7 @@ test("missing monitored items fail closed", () => {
     /no monitored items/,
   );
   assert.throws(
-    () => buildPublicationHealth({ schema_name: "site_snapshot.v3", site: { site_id: "x" }, snapshot_id: "s", digest_at: "d", signals: { latest: [] } }),
+    () => buildPublicationHealth({ schema_name: "site_snapshot.v4", site: { site_id: "x" }, snapshot_id: "s", digest_at: "d", signals: { latest: [] } }),
     /no monitored items/,
   );
 });

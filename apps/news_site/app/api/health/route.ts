@@ -20,6 +20,7 @@ export async function GET() {
       section_count: snapshot.metrics.section_count,
       published_article_count: snapshot.metrics.published_article_count ?? 0,
       curated_signal_count: snapshot.metrics.curated_signal_count ?? 0,
+      story_context_count: snapshot.metrics.story_context_count ?? 0,
       canonical_url: PUBLIC_IDENTITY.public_outlet_url,
       repository_url: PUBLIC_IDENTITY.repository_url,
       docs_url: PUBLIC_IDENTITY.docs_url,

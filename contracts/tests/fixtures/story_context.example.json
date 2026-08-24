@@ -1,0 +1,36 @@
+{
+  "schema_name": "story_context.v1",
+  "context_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "digest_at": "20260824T20",
+  "index_id": "signal-1",
+  "topic": "Inflación y Precios",
+  "coverage_first_published_at": "2026-08-24T19:00:00Z",
+  "coverage_latest_published_at": "2026-08-24T19:45:00Z",
+  "coverage_count": 2,
+  "source_count": 2,
+  "sources": ["Fuente A", "Fuente B"],
+  "group_ids": ["20260824T20:4h_window:Inflación y Precios:1"],
+  "window_types": ["4h_window"],
+  "related_signals": [
+    {
+      "index_id": "signal-2",
+      "title": "Otra cobertura del dato de inflación",
+      "source": "Fuente B",
+      "published_at": "2026-08-24T19:00:00Z",
+      "link": "https://example.com/signal-2"
+    }
+  ],
+  "curation": {
+    "selected": true,
+    "rank": 1,
+    "score": 82,
+    "reason_codes": ["fresh_under_120m", "high_topic_priority", "new_source_bonus"]
+  },
+  "provenance": {
+    "refs_path": "storage/indexes/news_recent_refs_latest.jsonl",
+    "refs_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "groups_path": "storage/buses/news_digest_group/v1/example.jsonl",
+    "groups_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "editorial_selection_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  }
+}

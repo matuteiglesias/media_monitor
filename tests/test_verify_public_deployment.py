@@ -22,6 +22,7 @@ def roll_record():
             "section_count": 3,
             "published_article_count": 2,
             "curated_signal_count": 6,
+            "story_context_count": 11,
         },
     }
 
@@ -44,6 +45,7 @@ def public_health(**publication_overrides):
         "section_count": 3,
         "published_article_count": 2,
         "curated_signal_count": 6,
+        "story_context_count": 11,
         "publication_health": publication,
     }
 
@@ -55,6 +57,7 @@ def test_public_health_must_match_roll_and_freshness_target():
     assert report["within_target"] is True
     assert report["published_article_count"] == 2
     assert report["curated_signal_count"] == 6
+    assert report["story_context_count"] == 11
 
 
 def test_public_identity_mismatch_fails():
@@ -74,6 +77,13 @@ def test_publication_count_identity_mismatch_fails():
 def test_curated_count_identity_mismatch_fails():
     bad = public_health()
     bad["curated_signal_count"] = 5
+    with pytest.raises(ValueError, match="identity mismatch"):
+        validate_health(roll_record(), bad)
+
+
+def test_story_context_count_identity_mismatch_fails():
+    bad = public_health()
+    bad["story_context_count"] = 10
     with pytest.raises(ValueError, match="identity mismatch"):
         validate_health(roll_record(), bad)
 

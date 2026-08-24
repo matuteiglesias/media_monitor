@@ -20,7 +20,7 @@ function requireText(value, label) {
 }
 
 function signalProjection(snapshot) {
-  if (["site_snapshot.v2", "site_snapshot.v3"].includes(snapshot?.schema_name)) {
+  if (["site_snapshot.v2", "site_snapshot.v3", "site_snapshot.v4"].includes(snapshot?.schema_name)) {
     return snapshot?.signals ?? {};
   }
   // Transitional compatibility for already-materialized v1 deployments.
@@ -29,7 +29,7 @@ function signalProjection(snapshot) {
 
 function newestMonitoredAt(snapshot) {
   const signals = signalProjection(snapshot);
-  // Freshness intentionally follows the chronological wire, never curation or article recency.
+  // Freshness intentionally follows the chronological wire, never curation, context, or article recency.
   const latest = Array.isArray(signals?.latest) ? signals.latest : [];
   const candidates = [...latest];
   if (signals?.hero) candidates.push(signals.hero);

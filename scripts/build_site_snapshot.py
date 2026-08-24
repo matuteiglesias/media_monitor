@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Compile one digest-scoped public deployment snapshot.
 
-site_snapshot.v3 separates three public classes:
+site_snapshot.v4 separates four public classes:
 - publication: human-approved published_article.v1 records only
 - signals.curated: deterministic editorial_selection.v1 over monitored sources
 - signals.latest: chronological monitored external-source news
+- story_contexts: deterministic coverage/read-model context for public signals
 
-Selection never confers authorship or publication approval. Runtime freshness remains
-request-time state and is therefore not frozen into this immutable snapshot.
+Selection/context never confer authorship or publication approval. Runtime freshness
+remains request-time state and is therefore not frozen into this immutable snapshot.
 """
 from __future__ import annotations
 
@@ -136,6 +137,11 @@ def editorial_selection_validator() -> Draft202012Validator:
     return Draft202012Validator(schema, format_checker=FormatChecker())
 
 
+def story_context_validator() -> Draft202012Validator:
+    schema = read_json(ROOT / "contracts/schemas/story_context.v1.json")
+    return Draft202012Validator(schema, format_checker=FormatChecker())
+
+
 def validate_published_article(
     article: dict[str, Any], label: str, validator: Draft202012Validator
 ) -> None:
@@ -178,6 +184,18 @@ def canonical_selection_id(payload: dict[str, Any]) -> str:
     ).hexdigest()
 
 
+def canonical_story_context_id(payload: dict[str, Any]) -> str:
+    canonical = {key: value for key, value in payload.items() if key != "context_id"}
+    return hashlib.sha256(
+        json.dumps(
+            canonical,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
+
+
 def validate_editorial_selection(
     selection: dict[str, Any], *, path: Path, digest_at: str, now: datetime, max_age_hours: int
 ) -> None:
@@ -201,8 +219,23 @@ def validate_editorial_selection(
         raise ValueError(f"{path}: selection artifact is stale for this site snapshot")
 
 
+def validate_story_context(
+    context: dict[str, Any], *, label: str, digest_at: str, validator: Draft202012Validator
+) -> None:
+    errors = sorted(validator.iter_errors(context), key=lambda error: list(error.path))
+    if errors:
+        raise ValueError(
+            f"{label}: not a valid story_context.v1: "
+            + "; ".join(error.message for error in errors)
+        )
+    if context.get("digest_at") != digest_at:
+        raise ValueError(f"{label}: story context digest does not match requested digest")
+    if context.get("context_id") != canonical_story_context_id(context):
+        raise ValueError(f"{label}: context_id is not deterministic canonical payload hash")
+
+
 def validate_schema(payload: dict[str, Any]) -> None:
-    schema = read_json(ROOT / "contracts/schemas/site_snapshot.v3.json")
+    schema = read_json(ROOT / "contracts/schemas/site_snapshot.v4.json")
     errors = sorted(
         Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(payload),
         key=lambda error: list(error.path),
@@ -215,7 +248,6 @@ def validate_schema(payload: dict[str, Any]) -> None:
 
 
 def canonical_id(payload: dict[str, Any]) -> str:
-    # generated_at is operational metadata; identical source inputs keep one stable ID.
     canonical = {
         key: value
         for key, value in payload.items()
@@ -242,18 +274,29 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     refs_path = indexes_dir / "news_recent_refs_latest.jsonl"
     groups_path = indexes_dir / "news_recent_groups_latest.jsonl"
     published_path = indexes_dir / "published_articles_latest.jsonl"
-    editorial_selection_path = Path(args.editorial_selection) if args.editorial_selection else indexes_dir / "editorial_selection_latest.json"
+    editorial_selection_path = (
+        Path(args.editorial_selection)
+        if args.editorial_selection
+        else indexes_dir / "editorial_selection_latest.json"
+    )
+    story_contexts_path = (
+        Path(args.story_contexts)
+        if args.story_contexts
+        else indexes_dir / "story_contexts_latest.jsonl"
+    )
 
     refs = rows(refs_path)
     groups = rows(groups_path)
     published_rows = rows(published_path, allow_empty=True)
     selection_artifact = read_json(editorial_selection_path)
+    context_rows = rows(story_contexts_path)
 
     if (
         digest_set(refs, refs_path) != args.digest_at
         or digest_set(groups, groups_path) != args.digest_at
+        or digest_set(context_rows, story_contexts_path) != args.digest_at
     ):
-        raise ValueError("signal index digest_at does not match requested digest")
+        raise ValueError("signal/context index digest_at does not match requested digest")
 
     now = parse_time(args.now, "--now") if args.now else datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=config["selection"]["max_age_hours"])
@@ -371,8 +414,46 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         for article in sorted(approved, key=lambda article: str(article["slug"]))
     }
 
+    latest_signals = selected[: config["presentation"]["latest_count"]]
+    context_validator = story_context_validator()
+    contexts_by_id: dict[str, dict[str, Any]] = {}
+    for index, context in enumerate(context_rows):
+        label = f"{story_contexts_path}:{index + 1}"
+        validate_story_context(
+            context,
+            label=label,
+            digest_at=args.digest_at,
+            validator=context_validator,
+        )
+        index_id = str(context["index_id"])
+        if index_id in contexts_by_id:
+            raise ValueError(f"{label}: duplicate story context index_id {index_id}")
+        contexts_by_id[index_id] = context
+
+    curated_by_id = {str(item["index_id"]): item for item in curated}
+    story_contexts: dict[str, dict[str, Any]] = {}
+    for signal in latest_signals:
+        index_id = signal["index_id"]
+        context = contexts_by_id.get(index_id)
+        if context is None:
+            raise ValueError(f"missing story_context.v1 for public signal {index_id}")
+        if context["topic"] != signal["topic"]:
+            raise ValueError(f"story context topic mismatch for public signal {index_id}")
+        curated_item = curated_by_id.get(index_id)
+        expected_curation = {
+            "selected": curated_item is not None,
+            "rank": curated_item["rank"] if curated_item is not None else None,
+            "score": curated_item["score"] if curated_item is not None else None,
+            "reason_codes": curated_item["reason_codes"] if curated_item is not None else [],
+        }
+        if context["curation"] != expected_curation:
+            raise ValueError(f"story context curation mismatch for public signal {index_id}")
+        if context["provenance"]["editorial_selection_id"] != selection_artifact["selection_id"]:
+            raise ValueError(f"story context selection provenance mismatch for public signal {index_id}")
+        story_contexts[index_id] = context
+
     payload: dict[str, Any] = {
-        "schema_name": "site_snapshot.v3",
+        "schema_name": "site_snapshot.v4",
         "snapshot_id": "",
         "site": {
             key: config[key] for key in ("site_id", "name", "tagline", "locale")
@@ -385,18 +466,19 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             "section_count": len(sections),
             "published_article_count": len(approved),
             "curated_signal_count": len(curated),
+            "story_context_count": len(story_contexts),
         },
         "publication": {
             "featured": publication_latest[0] if publication_latest else None,
             "latest": publication_latest,
         },
         "signals": {
-            # hero/latest remain chronological monitored-news semantics.
             "hero": selected[0],
             "curated": curated,
-            "latest": selected[: config["presentation"]["latest_count"]],
+            "latest": latest_signals,
             "sections": sections,
         },
+        "story_contexts": story_contexts,
         "articles": articles,
         "provenance": {
             "refs_path": str(refs_path),
@@ -409,6 +491,8 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             "editorial_selection_sha256": sha(editorial_selection_path),
             "editorial_selection_id": selection_artifact["selection_id"],
             "editorial_selection_policy_sha256": selection_artifact["policy"]["policy_sha256"],
+            "story_contexts_path": str(story_contexts_path),
+            "story_contexts_sha256": sha(story_contexts_path),
             "git_sha": git_sha(),
         },
     }
@@ -434,6 +518,7 @@ def main() -> int:
     parser.add_argument("--sites-dir", default="sites")
     parser.add_argument("--indexes-dir", default="storage/indexes")
     parser.add_argument("--editorial-selection", default=None)
+    parser.add_argument("--story-contexts", default=None)
     parser.add_argument(
         "--output", default="apps/news_site/public/data/site_snapshot.json"
     )

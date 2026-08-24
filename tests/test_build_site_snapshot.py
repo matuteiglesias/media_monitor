@@ -25,6 +25,13 @@ def canonical_selection_id(payload):
     ).hexdigest()
 
 
+def canonical_context_id(payload):
+    canonical = {key: value for key, value in payload.items() if key != "context_id"}
+    return hashlib.sha256(
+        json.dumps(canonical, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
 def write_selection(tmp, refs, digest="20260721T18", selected_count=None):
     chosen = refs[: selected_count if selected_count is not None else len(refs)]
     selected = []
@@ -76,6 +83,48 @@ def write_selection(tmp, refs, digest="20260721T18", selected_count=None):
     return payload
 
 
+def write_story_contexts(tmp, refs, digest="20260721T18"):
+    selection = json.loads((tmp / "indexes/editorial_selection_latest.json").read_text())
+    curated = {item["index_id"]: item for item in selection["selected"]}
+    refs_path = tmp / "indexes/news_recent_refs_latest.jsonl"
+    refs_hash = hashlib.sha256(refs_path.read_bytes()).hexdigest()
+    contexts = []
+    for ref in refs:
+        selected = curated.get(ref["index_id"])
+        context = {
+            "schema_name": "story_context.v1",
+            "context_id": "",
+            "digest_at": digest,
+            "index_id": ref["index_id"],
+            "topic": ref["topic"],
+            "coverage_first_published_at": ref["published_at"],
+            "coverage_latest_published_at": ref["published_at"],
+            "coverage_count": 1,
+            "source_count": 1,
+            "sources": [ref["source"]],
+            "group_ids": [],
+            "window_types": [],
+            "related_signals": [],
+            "curation": {
+                "selected": selected is not None,
+                "rank": selected["rank"] if selected is not None else None,
+                "score": selected["score"] if selected is not None else None,
+                "reason_codes": selected["reason_codes"] if selected is not None else [],
+            },
+            "provenance": {
+                "refs_path": str(refs_path),
+                "refs_sha256": refs_hash,
+                "groups_path": None,
+                "groups_sha256": None,
+                "editorial_selection_id": selection["selection_id"],
+            },
+        }
+        context["context_id"] = canonical_context_id(context)
+        contexts.append(context)
+    write_jsonl(tmp / "indexes/story_contexts_latest.jsonl", contexts)
+    return contexts
+
+
 def config(tmp, **selection):
     value = {
         "site_id": "test",
@@ -121,6 +170,7 @@ def inputs(tmp, digest="20260721T18", n=5, topic="All Topics"):
     write_jsonl(tmp / "indexes/news_recent_groups_latest.jsonl", groups)
     write_jsonl(tmp / "indexes/published_articles_latest.jsonl", [])
     write_selection(tmp, refs, digest)
+    write_story_contexts(tmp, refs, digest)
     return refs
 
 
@@ -162,14 +212,16 @@ def test_valid_snapshot_and_deterministic_id_with_empty_publication(tmp_path):
     one = json.loads((tmp_path / "out.json").read_text())
     run(tmp_path)
     two = json.loads((tmp_path / "out.json").read_text())
-    assert one["schema_name"] == "site_snapshot.v3"
+    assert one["schema_name"] == "site_snapshot.v4"
     assert one["snapshot_id"] == two["snapshot_id"]
-    assert one["metrics"] == {"item_count": 5, "section_count": 1, "published_article_count": 0, "curated_signal_count": 5}
+    assert one["metrics"] == {"item_count": 5, "section_count": 1, "published_article_count": 0, "curated_signal_count": 5, "story_context_count": 5}
     assert one["publication"] == {"featured": None, "latest": []}
     assert one["articles"] == {}
     assert one["signals"]["hero"] == one["signals"]["latest"][0]
     assert [item["rank"] for item in one["signals"]["curated"]] == [1, 2, 3, 4, 5]
+    assert set(one["story_contexts"]) == {item["index_id"] for item in one["signals"]["latest"]}
     assert one["provenance"]["editorial_selection_id"]
+    assert one["provenance"]["story_contexts_sha256"]
 
 
 def test_approved_article_enters_snapshot_with_evidence_intact(tmp_path):
@@ -208,6 +260,28 @@ def test_curated_signal_must_match_monitored_index(tmp_path):
     write_json(path, selection)
     result = run(tmp_path, False)
     assert "does not match monitored index" in result.stdout
+
+
+def test_missing_public_story_context_fails_closed(tmp_path):
+    config(tmp_path)
+    inputs(tmp_path)
+    path = tmp_path / "indexes/story_contexts_latest.jsonl"
+    contexts = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    write_jsonl(path, contexts[1:])
+    result = run(tmp_path, False)
+    assert "missing story_context.v1" in result.stdout
+
+
+def test_story_context_curation_tamper_fails_closed(tmp_path):
+    config(tmp_path)
+    inputs(tmp_path)
+    path = tmp_path / "indexes/story_contexts_latest.jsonl"
+    contexts = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    contexts[0]["curation"]["score"] = 999
+    contexts[0]["context_id"] = canonical_context_id(contexts[0])
+    write_jsonl(path, contexts)
+    result = run(tmp_path, False)
+    assert "story context curation mismatch" in result.stdout
 
 
 def test_draft_contamination_of_published_index_fails_closed(tmp_path):
@@ -254,12 +328,13 @@ def test_requested_signal_digest_mismatch_fails(tmp_path):
 
 def test_stale_signal_input_fails(tmp_path):
     config(tmp_path)
-    inputs(tmp_path)
+    refs = inputs(tmp_path)
     path = tmp_path / "indexes/news_recent_refs_latest.jsonl"
     rows = [json.loads(line) for line in path.read_text().splitlines()]
     for row in rows:
         row["published_at"] = "2026-07-21T10:00:00Z"
     write_jsonl(path, rows)
+    write_story_contexts(tmp_path, refs)
     run(tmp_path, False)
 
 
@@ -274,10 +349,12 @@ def test_topic_max_items_and_branding(tmp_path):
     refs = inputs(tmp_path, n=3, topic="Sports")
     public_refs = sorted(refs, key=lambda item: (item["published_at"], item["index_id"]), reverse=True)[:2]
     write_selection(tmp_path, public_refs, selected_count=2)
+    write_story_contexts(tmp_path, refs)
     run(tmp_path)
     snapshot = json.loads((tmp_path / "out.json").read_text())
     assert len(snapshot["signals"]["latest"]) == 2
     assert len(snapshot["signals"]["curated"]) == 2
+    assert len(snapshot["story_contexts"]) == 2
     assert {item["index_id"] for item in snapshot["signals"]["curated"]} == {item["index_id"] for item in snapshot["signals"]["latest"]}
     assert snapshot["site"]["name"] == "Test news"
 
@@ -290,6 +367,7 @@ def test_all_topics_is_wildcard_for_concrete_signal_and_publication_topics(tmp_p
     snapshot = json.loads((tmp_path / "out.json").read_text())
     assert snapshot["signals"]["hero"]["topic"] == "Inflación y Precios"
     assert snapshot["signals"]["curated"][0]["topic"] == "Inflación y Precios"
+    assert snapshot["story_contexts"][snapshot["signals"]["hero"]["index_id"]]["topic"] == "Inflación y Precios"
     assert snapshot["publication"]["featured"]["topic"] == "Inflación y Precios"
 
 
