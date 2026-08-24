@@ -70,12 +70,7 @@ jobs:
           link = Path(".vercel/project.json")
           link.parent.mkdir(parents=True, exist_ok=True)
           link.write_text(
-              json.dumps(
-                  {
-                      "orgId": os.environ["VERCEL_ORG_ID"],
-                      "projectId": os.environ["VERCEL_PROJECT_ID"],
-                  }
-              ) + "\n",
+              json.dumps({"orgId": os.environ["VERCEL_ORG_ID"], "projectId": os.environ["VERCEL_PROJECT_ID"]}) + "\n",
               encoding="utf-8",
           )
           print("Vercel project link materialized from CI secrets")
@@ -119,6 +114,17 @@ jobs:
           python scripts/verify_public_deployment.py \
             --roll-record "storage/observability/site_roll_latest_${SITE_ID}.json"
 
+      - name: Verify crawler, feed and social-card surface
+        run: |
+          set -o pipefail
+          PUBLIC_URL="$(python - <<'PY'
+          import json
+          print(json.load(open('apps/news_site/config/public_identity.json'))['public_outlet_url'])
+          PY
+          )"
+          python scripts/verify_crawler_surface.py --base-url "$PUBLIC_URL" \
+            | tee storage/observability/crawler_surface_check_latest.json
+
       - name: Publish cycle summary
         if: always()
         run: |
@@ -131,6 +137,7 @@ jobs:
               ("Predeploy guard", Path("storage/observability/publication_cycle_guard_latest.json")),
               ("Site roll", Path("storage/observability/site_roll_latest_argentina-general.json")),
               ("Public check", Path("storage/observability/public_deployment_check_latest.json")),
+              ("Crawler/social check", Path("storage/observability/crawler_surface_check_latest.json")),
           ):
               if not path.exists():
                   print(f"- **{label}:** no record (cycle stopped earlier)")
