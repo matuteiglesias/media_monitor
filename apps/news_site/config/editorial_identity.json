@@ -7,10 +7,7 @@
     "role": "Editor y autor",
     "bio_short": "Economista (PhD) e ingeniero de datos e IA. Trabaja en la intersección entre economía argentina, datos públicos, investigación empírica y sistemas reproducibles.",
     "location": "Buenos Aires, Argentina",
-    "credentials": [
-      "PhD en Economía",
-      "MSc en Física"
-    ],
+    "credentials": ["PhD en Economía", "MSc en Física"],
     "expertise": [
       "economía argentina",
       "inflación y precios",
@@ -34,6 +31,7 @@
   "routes": {
     "about": "/about",
     "methodology": "/methodology",
-    "journalists": "/journalists"
+    "journalists": "/journalists",
+    "author": "/authors/matias-iglesias"
   }
 }
