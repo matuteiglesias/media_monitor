@@ -1,24 +1,7 @@
 import Link from "next/link";
 import { loadOutlet } from "@/lib/adapter/mappers";
+import { curationReasonLabel } from "@/lib/curation_labels";
 import { EDITORIAL_IDENTITY } from "@/lib/editorial_identity";
-
-const REASON_LABELS: Record<string, string> = {
-  fresh_under_30m: "muy reciente",
-  fresh_under_60m: "reciente",
-  fresh_under_120m: "últimas 2 h",
-  fresh_under_180m: "últimas 3 h",
-  high_topic_priority: "tema prioritario",
-  standard_topic_priority: "tema relevante",
-  unweighted_topic: "sin prioridad temática extra",
-  new_source_bonus: "diversidad de fuente",
-  new_topic_bonus: "diversidad temática",
-  repeat_source_penalty: "fuente ya representada",
-  repeat_topic_penalty: "tema ya representado",
-};
-
-function reasonLabel(code: string) {
-  return REASON_LABELS[code] ?? code.replaceAll("_", " ");
-}
 
 export default function HomePage() {
   const outlet = loadOutlet();
@@ -130,7 +113,7 @@ export default function HomePage() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   {item.reason_codes.map((code: string) => (
                     <span key={code} className="border px-2 py-1 text-xs text-neutral-600">
-                      {reasonLabel(code)}
+                      {curationReasonLabel(code)}
                     </span>
                   ))}
                 </div>
