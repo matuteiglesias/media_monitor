@@ -36,6 +36,7 @@ def validate_config(config):
         if not isinstance(s.get(k),int) or s[k] < 0: raise ValueError(f'site config selection.{k} must be non-negative int')
     if not 0 < s['minimum_items'] <= s['max_items']: raise ValueError('site config minimum_items must be positive and <= max_items')
     if not isinstance(p.get('latest_count'),int) or p['latest_count'] < 1: raise ValueError('site config presentation.latest_count must be positive int')
+def topic_selected(topic, configured): return 'All Topics' in configured or topic in configured
 def project_item(row, label):
     required=('index_id','title','topic','published_at','link')
     if any(not str(row.get(k) or '').strip() for k in required): raise ValueError(f'{label}: missing required item field')
@@ -59,10 +60,11 @@ def build(args):
     if digest_set(refs,refs_path)!=args.digest_at or digest_set(groups,groups_path)!=args.digest_at: raise ValueError('index digest_at does not match requested digest')
     now=parse_time(args.now,'--now') if args.now else datetime.now(timezone.utc)
     cutoff=now-timedelta(hours=config['selection']['max_age_hours'])
+    configured_topics=config['selection']['topics']
     selected=[]; seen=set()
     for i,row in enumerate(refs):
         item=project_item(row,f'{refs_path}:{i+1}')
-        if item['topic'] not in config['selection']['topics'] or item['published_at'] and parse_time(item['published_at'],item['index_id']) < cutoff: continue
+        if not topic_selected(item['topic'], configured_topics) or item['published_at'] and parse_time(item['published_at'],item['index_id']) < cutoff: continue
         if item['index_id'] in seen: continue
         seen.add(item['index_id']); selected.append(item)
     selected.sort(key=lambda x:(x['published_at'],x['index_id']),reverse=True); selected=selected[:config['selection']['max_items']]
@@ -70,7 +72,7 @@ def build(args):
     sections=[]
     for row in groups:
         topic=str(row.get('topic') or '').strip()
-        if topic not in config['selection']['topics']: continue
+        if not topic_selected(topic, configured_topics): continue
         sections.append({'topic':topic,'article_count':int(row.get('article_count') or 0),'top_titles':[str(v) for v in (row.get('top_titles') or [])]})
     sections.sort(key=lambda x:x['topic'])
     if not sections: raise ValueError('no selected group sections')
