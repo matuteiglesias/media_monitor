@@ -1,0 +1,44 @@
+name: Owned domain readiness
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type CHECK media.matuteiglesias.link"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Require explicit target confirmation
+        env:
+          CONFIRM: ${{ github.event.inputs.confirm }}
+        run: |
+          test "$CONFIRM" = "CHECK media.matuteiglesias.link"
+      - name: Verify DNS HTTPS and snapshot parity
+        run: |
+          python scripts/verify_owned_domain_readiness.py \
+            --owned-url https://media.matuteiglesias.link \
+            --provider-url https://mediamonitor-psi.vercel.app \
+            | tee owned-domain-readiness.json
+      - name: Explain activation boundary
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          ## Owned-domain readiness
+          If the check above is green, set repository Actions variable `CANONICAL_OWNED_DOMAIN_ACTIVE=1`.
+          The next guarded production roll will then build canonical metadata for `media.matuteiglesias.link` and enable 308 redirects from the legacy outlet host.
+          Roll back atomically by setting the variable to `0` and running another production roll.
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: owned-domain-readiness-${{ github.run_id }}
+          path: owned-domain-readiness.json
