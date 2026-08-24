@@ -62,6 +62,7 @@ jobs:
             tests/test_build_site_snapshot.py \
             tests/test_validate_site_snapshot.py \
             tests/test_roll_site.py \
+            tests/test_media_ops.py \
             tests/test_news_site_publish_contract.py
 
   news-site-contracts:
