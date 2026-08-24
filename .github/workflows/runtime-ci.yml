@@ -9,7 +9,9 @@ on:
       - "apps/news_enrich/**"
       - "apps/news_site/**"
       - "artifacts/editorial_c3_rehearsal/**"
+      - "bin/**"
       - "config/**"
+      - "README.md"
       - "OWNED_DOMAIN_CUTOVER.md"
       - "scripts/**"
       - "tests/**"
@@ -27,7 +29,9 @@ on:
       - "apps/news_enrich/**"
       - "apps/news_site/**"
       - "artifacts/editorial_c3_rehearsal/**"
+      - "bin/**"
       - "config/**"
+      - "README.md"
       - "OWNED_DOMAIN_CUTOVER.md"
       - "scripts/**"
       - "tests/**"
@@ -79,6 +83,7 @@ jobs:
             tests/test_verify_crawler_surface.py \
             tests/test_social_metadata.py \
             tests/test_owned_domain_cutover.py \
+            tests/test_adopter_demo.py \
             tests/test_media_ops.py \
             tests/test_news_site_publish_contract.py \
             tests/test_editorial_identity.py \
