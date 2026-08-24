@@ -8,6 +8,7 @@ on:
       - "apps/news_editorial/**"
       - "apps/news_enrich/**"
       - "apps/news_site/**"
+      - "artifacts/editorial_c3_rehearsal/**"
       - "scripts/**"
       - "tests/**"
       - "requirements-sensing.txt"
@@ -22,6 +23,7 @@ on:
       - "apps/news_editorial/**"
       - "apps/news_enrich/**"
       - "apps/news_site/**"
+      - "artifacts/editorial_c3_rehearsal/**"
       - "scripts/**"
       - "tests/**"
       - "requirements-sensing.txt"
@@ -60,6 +62,7 @@ jobs:
             tests/test_build_editorial_access_indexes.py \
             tests/test_publish_last_mile_snapshot.py \
             tests/test_published_article_pipeline.py \
+            tests/test_c3_editorial_rehearsal.py \
             tests/test_validate_publish_surface.py \
             tests/test_build_site_snapshot.py \
             tests/test_validate_site_snapshot.py \
