@@ -272,11 +272,13 @@ def test_minimum_signal_items_fails(tmp_path):
 def test_topic_max_items_and_branding(tmp_path):
     config(tmp_path, topics=["Sports"], max_items=2, minimum_items=1)
     refs = inputs(tmp_path, n=3, topic="Sports")
-    write_selection(tmp_path, refs, selected_count=2)
+    public_refs = sorted(refs, key=lambda item: (item["published_at"], item["index_id"]), reverse=True)[:2]
+    write_selection(tmp_path, public_refs, selected_count=2)
     run(tmp_path)
     snapshot = json.loads((tmp_path / "out.json").read_text())
     assert len(snapshot["signals"]["latest"]) == 2
     assert len(snapshot["signals"]["curated"]) == 2
+    assert {item["index_id"] for item in snapshot["signals"]["curated"]} == {item["index_id"] for item in snapshot["signals"]["latest"]}
     assert snapshot["site"]["name"] == "Test news"
 
 
