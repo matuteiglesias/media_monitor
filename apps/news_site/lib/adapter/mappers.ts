@@ -11,13 +11,19 @@ function canonicalSite(site: any) {
 
 export function loadOutlet() {
   const snapshot = loadSiteSnapshot();
-  if (snapshot?.schema_name === "site_snapshot.v2") {
+  if (["site_snapshot.v2", "site_snapshot.v3"].includes(snapshot?.schema_name)) {
     return {
       ...snapshot,
       site: canonicalSite(snapshot.site),
       publication: snapshot.publication,
       articles: snapshot.articles,
-      signals: snapshot.signals,
+      signals: {
+        ...snapshot.signals,
+        curated:
+          snapshot.schema_name === "site_snapshot.v3" && Array.isArray(snapshot.signals?.curated)
+            ? snapshot.signals.curated
+            : [],
+      },
     };
   }
 
@@ -28,6 +34,7 @@ export function loadOutlet() {
     articles: {},
     signals: {
       hero: snapshot.hero,
+      curated: [],
       latest: snapshot.latest,
       sections: snapshot.sections,
     },
