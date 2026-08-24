@@ -49,7 +49,7 @@ def test_freshness_notice_is_global_and_request_time() -> None:
     assert '"Cache-Control": "no-store"' in route
 
 
-def test_public_identity_is_single_sourced_across_runtime_and_root_readme() -> None:
+def test_public_identity_is_single_sourced_across_runtime_and_public_docs() -> None:
     identity = json.loads(
         (NEWS_SITE_ROOT / "config" / "public_identity.json").read_text(encoding="utf-8")
     )
@@ -58,6 +58,7 @@ def test_public_identity_is_single_sourced_across_runtime_and_root_readme() -> N
     mapper = (NEWS_SITE_ROOT / "lib" / "adapter" / "mappers.ts").read_text(encoding="utf-8")
     health = (NEWS_SITE_ROOT / "app" / "api" / "health" / "route.ts").read_text(encoding="utf-8")
     readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    docs = (REPO_ROOT / "docs" / "README.md").read_text(encoding="utf-8")
 
     assert identity["schema_name"] == "public_identity.v1"
     assert identity["public_outlet_url"] == "https://mediamonitor-psi.vercel.app"
@@ -74,6 +75,7 @@ def test_public_identity_is_single_sourced_across_runtime_and_root_readme() -> N
         identity["owner_url"],
     ):
         assert value in readme
+        assert value in docs
 
 
 def test_v2_outlet_adapter_separates_publication_from_signals() -> None:
