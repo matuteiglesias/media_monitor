@@ -26,6 +26,7 @@ CASES = [
     ("story_context.v1.json", "story_context.example.json"),
     ("site_snapshot.v2.json", "site_snapshot.v2.example.json"),
     ("site_snapshot.v3.json", "site_snapshot.v3.example.json"),
+    ("site_snapshot.v4.json", "site_snapshot.v4.example.json"),
 ]
 
 
