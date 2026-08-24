@@ -1,0 +1,84 @@
+name: Runtime contracts
+
+on:
+  pull_request:
+    paths:
+      - "contracts/**"
+      - "apps/news_acquire/**"
+      - "apps/news_editorial/**"
+      - "apps/news_enrich/**"
+      - "apps/news_site/**"
+      - "scripts/**"
+      - "tests/**"
+      - "requirements-sensing.txt"
+      - "Makefile"
+      - ".github/workflows/runtime-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "contracts/**"
+      - "apps/news_acquire/**"
+      - "apps/news_editorial/**"
+      - "apps/news_enrich/**"
+      - "apps/news_site/**"
+      - "scripts/**"
+      - "tests/**"
+      - "requirements-sensing.txt"
+      - "Makefile"
+      - ".github/workflows/runtime-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  python-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-sensing.txt
+      - name: Install focused runtime test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-sensing.txt pytest jsonschema requests
+      - name: Run contract and bounded runtime suites
+        run: |
+          python -m pytest -q \
+            contracts/tests/test_contracts.py \
+            tests/test_export_pr3a_buses.py \
+            tests/test_build_news_access_indexes.py \
+            tests/test_sensing_run_bundle.py \
+            tests/test_sensing_compactor.py \
+            tests/test_news_editorial_briefs_pipeline.py \
+            tests/test_stage06_piece_briefs_schema.py \
+            tests/test_build_editorial_access_indexes.py \
+            tests/test_publish_last_mile_snapshot.py \
+            tests/test_published_article_pipeline.py \
+            tests/test_validate_publish_surface.py \
+            tests/test_build_site_snapshot.py \
+            tests/test_validate_site_snapshot.py \
+            tests/test_roll_site.py \
+            tests/test_news_site_publish_contract.py
+
+  news-site-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/news_site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/news_site/package-lock.json
+      - run: npm ci
+      - name: Test snapshot refresh and build identity contracts
+        run: |
+          npm run test:refresh-data
+          npm run test:site-snapshot
