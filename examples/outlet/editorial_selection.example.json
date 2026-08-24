@@ -1,0 +1,24 @@
+{
+  "policy_id": "example-general-v1",
+  "policy_version": "1",
+  "max_age_minutes": 240,
+  "future_tolerance_minutes": 5,
+  "minimum_items": 3,
+  "max_items": 6,
+  "high_priority_threshold": 10,
+  "default_topic_weight": 0,
+  "topic_weights": {
+    "Prices": 12,
+    "Labor": 10,
+    "Trade": 8
+  },
+  "freshness_buckets": [
+    {"max_age_minutes": 60, "score": 30, "reason_code": "fresh_under_60m"},
+    {"max_age_minutes": 120, "score": 20, "reason_code": "fresh_under_120m"},
+    {"max_age_minutes": 240, "score": 10, "reason_code": "fresh_under_240m"}
+  ],
+  "first_source_bonus": 6,
+  "first_topic_bonus": 4,
+  "repeat_source_penalty": 5,
+  "repeat_topic_penalty": 2
+}
