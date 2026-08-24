@@ -38,6 +38,7 @@ export function authorMetadata(): Metadata {
       siteName: PUBLIC_IDENTITY.outlet_name,
       locale: "es_AR",
     },
+    twitter: { card: "summary", title, description },
   };
 }
 
@@ -60,6 +61,13 @@ export function articleMetadata(article: any): Metadata {
       modifiedTime: article.updated_at,
       authors: [canonicalUrl(EDITORIAL_IDENTITY.routes.author)],
       tags: [article.topic],
+      images: [{ url: `${pathname}/opengraph-image`, width: 1200, height: 630, alt: article.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: article.summary,
+      images: [`${pathname}/opengraph-image`],
     },
   };
 }
