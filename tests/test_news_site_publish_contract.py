@@ -111,7 +111,7 @@ def test_homepage_makes_editorial_curated_and_chronological_layers_distinct() ->
     assert "No hay análisis editorial aprobado publicado" in home
     assert "href={`/articles/${featured.slug}`}" in home
     assert "href={`/story/${item.index_id}`}" in home
-    assert "reason_codes" in home
+    assert "curationReasonLabel" in home
 
 
 def test_article_route_only_reads_published_article_projection() -> None:
@@ -125,12 +125,37 @@ def test_article_route_only_reads_published_article_projection() -> None:
     assert "article.review_status" in article_route
 
 
-def test_signal_routes_do_not_masquerade_as_editorial_articles() -> None:
+def test_rich_story_page_uses_context_without_masquerading_as_editorial() -> None:
     story = (NEWS_SITE_ROOT / "app" / "story" / "[id]" / "page.tsx").read_text(encoding="utf-8")
-    latest = (NEWS_SITE_ROOT / "app" / "latest" / "page.tsx").read_text(encoding="utf-8")
-    topic = (NEWS_SITE_ROOT / "app" / "topic" / "[topic]" / "page.tsx").read_text(encoding="utf-8")
+    assert "findStoryContext(params.id)" in story
+    assert "Contexto de cobertura" in story
+    assert "coverage_count" in story
+    assert "source_count" in story
+    assert "Cobertura relacionada" in story
+    assert "curationReasonLabel" in story
+    assert "Análisis aprobado relacionado" in story
+    assert "relatedApprovedArticles" in story
+    assert "No hay análisis editorial humanamente aprobado" in story
     assert "Señal monitoreada · fuente externa" in story
     assert "no es" in story and "análisis editorial" in story
+    assert "no constituye aprobación" in story.lower()
+
+
+def test_related_analysis_helper_only_accepts_human_approved_publication() -> None:
+    helper = (NEWS_SITE_ROOT / "lib" / "story_relations.ts").read_text(encoding="utf-8")
+    assert 'article?.schema_name === "published_article.v1"' in helper
+    assert 'article?.status === "published"' in helper
+    assert 'article?.review_status === "human_approved"' in helper
+    assert "source_links.includes(story?.link)" in helper
+    assert "context.group_ids.includes(article?.story_group_id)" in helper
+    assert "article.topic === story?.topic" in helper
+    for forbidden in ("news_article_draft", "editorial_latest", "promptflow"):
+        assert forbidden not in helper.lower()
+
+
+def test_other_signal_routes_remain_explicit_external_monitoring() -> None:
+    latest = (NEWS_SITE_ROOT / "app" / "latest" / "page.tsx").read_text(encoding="utf-8")
+    topic = (NEWS_SITE_ROOT / "app" / "topic" / "[topic]" / "page.tsx").read_text(encoding="utf-8")
     assert "Señales monitoreadas · fuentes externas" in latest
     assert "no análisis editorial propio" in latest
     assert "Señales monitoreadas · fuentes externas" in topic
