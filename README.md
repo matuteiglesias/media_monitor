@@ -19,7 +19,9 @@ La generación asistida nunca equivale a publicación. `published_article.v1` co
 - **Health público:** https://mediamonitor-psi.vercel.app/api/health
 - **Para periodistas:** https://mediamonitor-psi.vercel.app/journalists
 - **Metodología:** https://mediamonitor-psi.vercel.app/methodology
-- **Documentación técnica:** [`docs/README.md`](docs/README.md)
+- **Documentación técnica canónica:** https://github.com/matuteiglesias/media_monitor/tree/main/docs
+- **Repositorio:** https://github.com/matuteiglesias/media_monitor
+- **Owner / portfolio:** https://main.matuteiglesias.link
 
 Existe un cutover preparado hacia `https://media.matuteiglesias.link`, pero el host de Vercel sigue siendo canónico hasta que DNS, HTTPS y paridad de snapshot estén verificados. Ver [`OWNED_DOMAIN_CUTOVER.md`](OWNED_DOMAIN_CUTOVER.md).
 
