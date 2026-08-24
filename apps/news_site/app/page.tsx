@@ -2,6 +2,24 @@ import Link from "next/link";
 import { loadOutlet } from "@/lib/adapter/mappers";
 import { EDITORIAL_IDENTITY } from "@/lib/editorial_identity";
 
+const REASON_LABELS: Record<string, string> = {
+  fresh_under_30m: "muy reciente",
+  fresh_under_60m: "reciente",
+  fresh_under_120m: "últimas 2 h",
+  fresh_under_180m: "últimas 3 h",
+  high_topic_priority: "tema prioritario",
+  standard_topic_priority: "tema relevante",
+  unweighted_topic: "sin prioridad temática extra",
+  new_source_bonus: "diversidad de fuente",
+  new_topic_bonus: "diversidad temática",
+  repeat_source_penalty: "fuente ya representada",
+  repeat_topic_penalty: "tema ya representado",
+};
+
+function reasonLabel(code: string) {
+  return REASON_LABELS[code] ?? code.replaceAll("_", " ");
+}
+
 export default function HomePage() {
   const outlet = loadOutlet();
   const { site, publication, signals } = outlet;
@@ -9,6 +27,7 @@ export default function HomePage() {
   const moreAnalysis = publication.latest.filter(
     (item: any) => item.slug !== featured?.slug,
   );
+  const curated = Array.isArray(signals.curated) ? signals.curated : [];
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
@@ -61,10 +80,7 @@ export default function HomePage() {
                   <div className="mt-3 space-y-4">
                     {moreAnalysis.slice(0, 4).map((item: any) => (
                       <article key={item.article_id} className="border-t pt-3">
-                        <Link
-                          href={`/articles/${item.slug}`}
-                          className="font-medium"
-                        >
+                        <Link href={`/articles/${item.slug}`} className="font-medium">
                           {item.title}
                         </Link>
                         <p className="mt-1 text-xs text-neutral-500">{item.topic}</p>
@@ -86,26 +102,48 @@ export default function HomePage() {
 
       <section className="mt-10 border-b pb-10">
         <div className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
-          Lo que estamos monitoreando
+          Qué importa ahora
         </div>
-        <div className="mt-4 border-l-4 border-neutral-300 pl-5">
-          <div className="text-xs font-medium uppercase tracking-[0.14em] text-neutral-500">
-            Señal monitoreada · fuente externa
+        <h2 className="mt-2 text-2xl font-semibold">Selección del monitoreo</h2>
+        <p className="mt-2 max-w-3xl text-sm text-neutral-500">
+          Shortlist determinística de señales externas según actualidad, prioridad
+          temática y diversidad de fuentes/temas. Estar seleccionado no convierte
+          una señal en análisis editorial de Media Monitor.
+        </p>
+        {curated.length ? (
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {curated.slice(0, 6).map((item: any) => (
+              <article key={item.index_id} className="border p-5">
+                <div className="flex items-center justify-between gap-3 text-xs uppercase tracking-[0.12em] text-neutral-500">
+                  <span>#{item.rank} · señal monitoreada</span>
+                  <span>{item.source}</span>
+                </div>
+                <Link
+                  href={`/story/${item.index_id}`}
+                  className="mt-3 block text-xl font-semibold"
+                >
+                  {item.title}
+                </Link>
+                <p className="mt-2 text-sm text-neutral-500">
+                  {item.topic} · {item.published_at}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {item.reason_codes.map((code: string) => (
+                    <span key={code} className="border px-2 py-1 text-xs text-neutral-600">
+                      {reasonLabel(code)}
+                    </span>
+                  ))}
+                </div>
+              </article>
+            ))}
           </div>
-          <div className="mt-2 text-sm text-neutral-500">{signals.hero.source}</div>
-          <h2 className="mt-2 text-3xl font-semibold">{signals.hero.title}</h2>
-          <p className="mt-2 text-sm text-neutral-600">{signals.hero.published_at}</p>
-          <p className="mt-3 max-w-3xl text-sm text-neutral-500">
-            Titular detectado por el sistema de monitoreo. No constituye análisis
-            editorial de Media Monitor.
-          </p>
-          <Link
-            href={`/story/${signals.hero.index_id}`}
-            className="mt-4 inline-block text-sm underline"
-          >
-            Ver señal y fuente
-          </Link>
-        </div>
+        ) : (
+          <div className="mt-5 max-w-3xl border p-5 text-sm text-neutral-600">
+            Este despliegue todavía no contiene una selección editorial determinística.
+            El cable cronológico sigue disponible debajo sin ser presentado como una
+            shortlist curada.
+          </div>
+        )}
       </section>
 
       <section className="mt-10 grid gap-8 lg:grid-cols-[2fr,1fr]">
@@ -113,9 +151,9 @@ export default function HomePage() {
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
-                Señales recientes
+                Últimas señales
               </div>
-              <h2 className="mt-1 text-xl font-semibold">Monitoreo de fuentes</h2>
+              <h2 className="mt-1 text-xl font-semibold">Cable cronológico de fuentes</h2>
             </div>
             <Link href="/latest" className="text-sm underline">
               Ver todas
