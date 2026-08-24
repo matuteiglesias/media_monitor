@@ -1,0 +1,48 @@
+name: Bug report
+description: Report a reproducible defect in a contract, pipeline, public surface, or adopter path.
+title: "[bug] "
+body:
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+      description: What happened? Include the smallest reproducible symptom.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What contract or behavior did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Commands, fixture, route, digest, or other bounded reproduction.
+      render: shell
+    validations:
+      required: true
+  - type: dropdown
+    id: boundary
+    attributes:
+      label: Primary boundary
+      options:
+        - acquisition / sensing
+        - enrichment
+        - editorial generation
+        - publication gate
+        - deterministic selection / context
+        - public snapshot / site
+        - adopter / example outlet
+        - documentation / CI
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I am not including secrets, private source material, or credentials.
+          required: true
