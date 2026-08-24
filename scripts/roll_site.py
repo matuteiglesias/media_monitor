@@ -140,6 +140,7 @@ def roll(
     stage = "publication-index"
     try:
         call(runner, ["make", "build-published-article-indexes", f"PYTHON={sys.executable}"], root, stage=stage)
+
         stage = "editorial-selection"
         selection_as_of = utcnow().isoformat().replace("+00:00", "Z")
         call(
@@ -155,6 +156,20 @@ def roll(
             root,
             stage=stage,
         )
+
+        stage = "story-contexts"
+        call(
+            runner,
+            [
+                sys.executable,
+                "scripts/build_story_contexts.py",
+                "--digest-at",
+                digest_at,
+            ],
+            root,
+            stage=stage,
+        )
+
         stage = "compile"
         call(runner, ["make", "build-site-snapshot", f"SITE_ID={site_id}", f"DIGEST_AT={digest_at}"], root, stage=stage)
         stage = "validate"
@@ -167,6 +182,7 @@ def roll(
             "section_count": payload["metrics"]["section_count"],
             "published_article_count": payload["metrics"].get("published_article_count", 0),
             "curated_signal_count": payload["metrics"].get("curated_signal_count", 0),
+            "story_context_count": payload["metrics"].get("story_context_count", 0),
         }
         if payload["site"]["site_id"] != site_id or payload["digest_at"] != digest_at:
             raise ValueError("snapshot identity does not match command arguments")
@@ -220,6 +236,7 @@ def roll(
             "section_count": expected["section_count"],
             "published_article_count": expected["published_article_count"],
             "curated_signal_count": expected["curated_signal_count"],
+            "story_context_count": expected["story_context_count"],
         }
         if any(observed.get(key) != value for key, value in required.items()):
             raise RuntimeError("deployed health identity mismatch")
@@ -234,6 +251,7 @@ def roll(
                 "section_count",
                 "published_article_count",
                 "curated_signal_count",
+                "story_context_count",
             )
         }
         if target == "production":
