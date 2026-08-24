@@ -1,0 +1,16 @@
+{
+  "site_id": "example-general",
+  "name": "Example Economic Monitor",
+  "tagline": "Deterministic example outlet built from the same generic Media Monitor compilers.",
+  "locale": "en-US",
+  "selection": {
+    "topics": ["Prices", "Labor", "Trade"],
+    "max_age_hours": 4,
+    "minimum_items": 3,
+    "max_items": 12
+  },
+  "presentation": {
+    "latest_count": 8,
+    "show_sources": true
+  }
+}

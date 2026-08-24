@@ -1,0 +1,20 @@
+[
+  {
+    "digest_at": "20260115T12",
+    "topic": "Prices",
+    "article_count": 2,
+    "top_titles": ["Example price index release", "Example regional price update"]
+  },
+  {
+    "digest_at": "20260115T12",
+    "topic": "Labor",
+    "article_count": 1,
+    "top_titles": ["Example labor market release"]
+  },
+  {
+    "digest_at": "20260115T12",
+    "topic": "Trade",
+    "article_count": 1,
+    "top_titles": ["Example trade balance release"]
+  }
+]
