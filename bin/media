@@ -15,4 +15,9 @@ else
   exit 2
 fi
 
+if [ "${1:-}" = "demo" ]; then
+  shift
+  exec "${PYTHON_BIN}" "${ROOT}/scripts/build_demo_outlet.py" "$@"
+fi
+
 exec "${PYTHON_BIN}" "${ROOT}/scripts/media_ops.py" --repo-root "${ROOT}" "$@"
