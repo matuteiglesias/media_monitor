@@ -21,6 +21,7 @@ def roll_record():
             "item_count": 11,
             "section_count": 3,
             "published_article_count": 2,
+            "curated_signal_count": 6,
         },
     }
 
@@ -42,6 +43,7 @@ def public_health(**publication_overrides):
         "item_count": 11,
         "section_count": 3,
         "published_article_count": 2,
+        "curated_signal_count": 6,
         "publication_health": publication,
     }
 
@@ -52,6 +54,7 @@ def test_public_health_must_match_roll_and_freshness_target():
     assert report["freshness_status"] == "FRESH"
     assert report["within_target"] is True
     assert report["published_article_count"] == 2
+    assert report["curated_signal_count"] == 6
 
 
 def test_public_identity_mismatch_fails():
@@ -64,6 +67,13 @@ def test_public_identity_mismatch_fails():
 def test_publication_count_identity_mismatch_fails():
     bad = public_health()
     bad["published_article_count"] = 1
+    with pytest.raises(ValueError, match="identity mismatch"):
+        validate_health(roll_record(), bad)
+
+
+def test_curated_count_identity_mismatch_fails():
+    bad = public_health()
+    bad["curated_signal_count"] = 5
     with pytest.raises(ValueError, match="identity mismatch"):
         validate_health(roll_record(), bad)
 
@@ -83,6 +93,4 @@ def test_public_stale_state_fails():
 
 def test_public_target_miss_fails_even_if_still_fresh():
     with pytest.raises(ValueError, match="missed target"):
-        validate_health(
-            roll_record(), public_health(within_target=False, age_minutes=150)
-        )
+        validate_health(roll_record(), public_health(within_target=False, age_minutes=150))

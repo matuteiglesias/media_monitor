@@ -25,12 +25,8 @@ class Result:
     stderr: str
 
 
-def subprocess_runner(
-    command: list[str], *, cwd: Path, env: dict[str, str] | None = None
-) -> Result:
-    completed = subprocess.run(
-        command, cwd=cwd, env=env, text=True, capture_output=True
-    )
+def subprocess_runner(command: list[str], *, cwd: Path, env: dict[str, str] | None = None) -> Result:
+    completed = subprocess.run(command, cwd=cwd, env=env, text=True, capture_output=True)
     return Result(command, completed.returncode, completed.stdout, completed.stderr)
 
 
@@ -55,21 +51,13 @@ def sha256(path: Path) -> str:
 
 def git_sha(root: Path) -> str:
     try:
-        return subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=root, text=True
-        ).strip()
+        return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     except Exception:
         return "unknown"
 
 
 def hostname(output: str) -> str:
-    values = set(
-        re.findall(
-            r"(?:https?://)?([a-z0-9][a-z0-9-]*\.vercel\.app)(?:\b|/)",
-            output,
-            re.I,
-        )
-    )
+    values = set(re.findall(r"(?:https?://)?([a-z0-9][a-z0-9-]*\.vercel\.app)(?:\b|/)", output, re.I))
     if len(values) != 1:
         raise ValueError("expected exactly one deployment *.vercel.app hostname")
     return values.pop().lower()
@@ -113,16 +101,9 @@ def record_base(site, target, digest, started, root) -> dict:
 def write_record(root: Path, record: dict) -> None:
     finished = utcnow()
     record["completed_at"] = finished.isoformat().replace("+00:00", "Z")
-    run = (
-        root
-        / "storage/runs"
-        / f"site_roll_{record['site_id']}_{record['digest_at']}_{stamp()}.json"
-    )
+    run = root / "storage/runs" / f"site_roll_{record['site_id']}_{record['digest_at']}_{stamp()}.json"
     atomic_json(run, record)
-    atomic_json(
-        root / "storage/observability" / f"site_roll_latest_{record['site_id']}.json",
-        record,
-    )
+    atomic_json(root / "storage/observability" / f"site_roll_latest_{record['site_id']}.json", record)
 
 
 def _validate_production_freshness(observed: dict) -> dict:
@@ -132,9 +113,7 @@ def _validate_production_freshness(observed: dict) -> dict:
     if publication.get("schema_name") != "publication_health.v1":
         raise RuntimeError("production health has unexpected publication health schema")
     if publication.get("freshness_status") != "FRESH":
-        raise RuntimeError(
-            f"production publication is not fresh: {publication.get('freshness_status')}"
-        )
+        raise RuntimeError(f"production publication is not fresh: {publication.get('freshness_status')}")
     if publication.get("is_current") is not True:
         raise RuntimeError("production publication does not report current state")
     if publication.get("within_target") is not True:
@@ -160,63 +139,42 @@ def roll(
     record = record_base(site_id, target, digest_at, started, root)
     stage = "publication-index"
     try:
-        # The snapshot consumes only this approved publication index, never draft/brief buses.
+        call(runner, ["make", "build-published-article-indexes", f"PYTHON={sys.executable}"], root, stage=stage)
+        stage = "editorial-selection"
+        selection_as_of = utcnow().isoformat().replace("+00:00", "Z")
         call(
             runner,
-            ["make", "build-published-article-indexes", f"PYTHON={sys.executable}"],
+            [
+                sys.executable,
+                "scripts/build_editorial_selection.py",
+                "--digest-at",
+                digest_at,
+                "--as-of",
+                selection_as_of,
+            ],
             root,
             stage=stage,
         )
         stage = "compile"
-        call(
-            runner,
-            [
-                "make",
-                "build-site-snapshot",
-                f"SITE_ID={site_id}",
-                f"DIGEST_AT={digest_at}",
-            ],
-            root,
-            stage=stage,
-        )
+        call(runner, ["make", "build-site-snapshot", f"SITE_ID={site_id}", f"DIGEST_AT={digest_at}"], root, stage=stage)
         stage = "validate"
-        call(
-            runner,
-            [
-                "make",
-                "validate-site-snapshot",
-                f"SITE_ID={site_id}",
-                f"DIGEST_AT={digest_at}",
-            ],
-            root,
-            stage=stage,
-        )
+        call(runner, ["make", "validate-site-snapshot", f"SITE_ID={site_id}", f"DIGEST_AT={digest_at}"], root, stage=stage)
         stage = "identity"
         snapshot = root / "apps/news_site/public/data/site_snapshot.json"
         payload = json.loads(snapshot.read_text())
         expected = {
             "item_count": payload["metrics"]["item_count"],
             "section_count": payload["metrics"]["section_count"],
-            "published_article_count": payload["metrics"].get(
-                "published_article_count", 0
-            ),
+            "published_article_count": payload["metrics"].get("published_article_count", 0),
+            "curated_signal_count": payload["metrics"].get("curated_signal_count", 0),
         }
         if payload["site"]["site_id"] != site_id or payload["digest_at"] != digest_at:
             raise ValueError("snapshot identity does not match command arguments")
-        record.update(
-            snapshot_id=payload["snapshot_id"],
-            snapshot_sha256=sha256(snapshot),
-            expected=expected,
-        )
+        record.update(snapshot_id=payload["snapshot_id"], snapshot_sha256=sha256(snapshot), expected=expected)
 
         stage = "pull"
         environment = "production" if target == "production" else "preview"
-        call(
-            runner,
-            vercel_command("pull", "--yes", f"--environment={environment}"),
-            root,
-            stage=stage,
-        )
+        call(runner, vercel_command("pull", "--yes", f"--environment={environment}"), root, stage=stage)
 
         stage = "build"
         output = root / ".vercel/output"
@@ -232,9 +190,7 @@ def roll(
             raise RuntimeError("source snapshot changed during Vercel build")
 
         stage = "deploy"
-        deploy_args = ["deploy", "--prebuilt"] + (
-            ["--prod"] if target == "production" else []
-        )
+        deploy_args = ["deploy", "--prebuilt"] + (["--prod"] if target == "production" else [])
         deployed = call(runner, vercel_command(*deploy_args), root, stage=stage)
         host = hostname(deployed.stdout)
         record["deployment_host"] = host
@@ -242,11 +198,7 @@ def roll(
         stage = "health"
         observed = None
         for attempt in range(3):
-            health = runner(
-                vercel_command("curl", "/api/health", "--deployment", host),
-                cwd=root,
-                env=None,
-            )
+            health = runner(vercel_command("curl", "/api/health", "--deployment", host), cwd=root, env=None)
             if health.exit_code == 0:
                 try:
                     observed = json.loads(health.stdout)
@@ -267,6 +219,7 @@ def roll(
             "item_count": expected["item_count"],
             "section_count": expected["section_count"],
             "published_article_count": expected["published_article_count"],
+            "curated_signal_count": expected["curated_signal_count"],
         }
         if any(observed.get(key) != value for key, value in required.items()):
             raise RuntimeError("deployed health identity mismatch")
@@ -280,6 +233,7 @@ def roll(
                 "item_count",
                 "section_count",
                 "published_article_count",
+                "curated_signal_count",
             )
         }
         if target == "production":
@@ -290,9 +244,7 @@ def roll(
                 age_minutes=publication.get("age_minutes"),
             )
 
-        record.update(
-            status="ok", observed=observed_record, failed_stage=None, error=None
-        )
+        record.update(status="ok", observed=observed_record, failed_stage=None, error=None)
     except Exception as exc:
         record.update(status="failed", failed_stage=stage, error=str(exc))
         write_record(root, record)
@@ -307,9 +259,7 @@ def main() -> int:
     parser.add_argument("--site-id", required=True)
     parser.add_argument("--digest-at", required=True)
     parser.add_argument("--target", required=True, choices=("preview", "production"))
-    parser.add_argument(
-        "--repo-root", default=Path(__file__).resolve().parents[1], type=Path
-    )
+    parser.add_argument("--repo-root", default=Path(__file__).resolve().parents[1], type=Path)
     args = parser.parse_args()
     result, code = roll(args.site_id, args.digest_at, args.target, args.repo_root)
     print(json.dumps(result, ensure_ascii=False))

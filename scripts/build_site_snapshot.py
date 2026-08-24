@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Compile one digest-scoped public deployment snapshot.
 
-site_snapshot.v2 deliberately separates two public classes:
+site_snapshot.v3 separates three public classes:
 - publication: human-approved published_article.v1 records only
-- signals: monitored external-source news
+- signals.curated: deterministic editorial_selection.v1 over monitored sources
+- signals.latest: chronological monitored external-source news
 
-Runtime freshness remains request-time state and is therefore not frozen into this
-immutable snapshot.
+Selection never confers authorship or publication approval. Runtime freshness remains
+request-time state and is therefore not frozen into this immutable snapshot.
 """
 from __future__ import annotations
 
@@ -130,6 +131,11 @@ def published_validator() -> Draft202012Validator:
     return Draft202012Validator(schema, format_checker=FormatChecker())
 
 
+def editorial_selection_validator() -> Draft202012Validator:
+    schema = read_json(ROOT / "contracts/schemas/editorial_selection.v1.json")
+    return Draft202012Validator(schema, format_checker=FormatChecker())
+
+
 def validate_published_article(
     article: dict[str, Any], label: str, validator: Draft202012Validator
 ) -> None:
@@ -160,12 +166,45 @@ def publication_ref(article: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def canonical_selection_id(payload: dict[str, Any]) -> str:
+    canonical = {key: value for key, value in payload.items() if key != "selection_id"}
+    return hashlib.sha256(
+        json.dumps(
+            canonical,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
+
+
+def validate_editorial_selection(
+    selection: dict[str, Any], *, path: Path, digest_at: str, now: datetime, max_age_hours: int
+) -> None:
+    validator = editorial_selection_validator()
+    errors = sorted(validator.iter_errors(selection), key=lambda error: list(error.path))
+    if errors:
+        raise ValueError(
+            f"{path}: not a valid editorial_selection.v1: "
+            + "; ".join(error.message for error in errors)
+        )
+    if selection.get("schema_name") != "editorial_selection.v1":
+        raise ValueError(f"{path}: unexpected selection schema")
+    if selection.get("digest_at") != digest_at:
+        raise ValueError(f"{path}: selection digest does not match requested digest")
+    if selection.get("selection_id") != canonical_selection_id(selection):
+        raise ValueError(f"{path}: selection_id is not deterministic canonical payload hash")
+    as_of = parse_time(selection.get("as_of"), f"{path}:as_of")
+    if as_of > now + timedelta(minutes=5):
+        raise ValueError(f"{path}: selection as_of is unexpectedly in the future")
+    if now - as_of > timedelta(hours=max_age_hours):
+        raise ValueError(f"{path}: selection artifact is stale for this site snapshot")
+
+
 def validate_schema(payload: dict[str, Any]) -> None:
-    schema = read_json(ROOT / "contracts/schemas/site_snapshot.v2.json")
+    schema = read_json(ROOT / "contracts/schemas/site_snapshot.v3.json")
     errors = sorted(
-        Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(
-            payload
-        ),
+        Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(payload),
         key=lambda error: list(error.path),
     )
     if errors:
@@ -203,10 +242,12 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     refs_path = indexes_dir / "news_recent_refs_latest.jsonl"
     groups_path = indexes_dir / "news_recent_groups_latest.jsonl"
     published_path = indexes_dir / "published_articles_latest.jsonl"
+    editorial_selection_path = Path(args.editorial_selection) if args.editorial_selection else indexes_dir / "editorial_selection_latest.json"
 
     refs = rows(refs_path)
     groups = rows(groups_path)
     published_rows = rows(published_path, allow_empty=True)
+    selection_artifact = read_json(editorial_selection_path)
 
     if (
         digest_set(refs, refs_path) != args.digest_at
@@ -217,6 +258,13 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     now = parse_time(args.now, "--now") if args.now else datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=config["selection"]["max_age_hours"])
     configured_topics = config["selection"]["topics"]
+    validate_editorial_selection(
+        selection_artifact,
+        path=editorial_selection_path,
+        digest_at=args.digest_at,
+        now=now,
+        max_age_hours=config["selection"]["max_age_hours"],
+    )
 
     selected: list[dict[str, str]] = []
     seen_signals: set[str] = set()
@@ -240,6 +288,40 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             f"selected {len(selected)} signals; "
             f"minimum_items={config['selection']['minimum_items']}"
         )
+    selected_by_id = {item["index_id"]: item for item in selected}
+
+    curated: list[dict[str, Any]] = []
+    expected_rank = 1
+    signal_fields = ("index_id", "title", "topic", "published_at", "link", "source")
+    for item in selection_artifact["selected"]:
+        if item["rank"] != expected_rank:
+            raise ValueError("editorial selection ranks must be contiguous and ordered")
+        expected_rank += 1
+        if not topic_selected(str(item["topic"]), configured_topics):
+            raise ValueError("editorial selection contains topic outside site configuration")
+        base = selected_by_id.get(str(item["index_id"]))
+        if base is None:
+            raise ValueError(
+                f"editorial selection references non-public or stale signal {item['index_id']}"
+            )
+        for field in signal_fields:
+            if item[field] != base[field]:
+                raise ValueError(
+                    f"editorial selection signal {item['index_id']} field {field} does not match monitored index"
+                )
+        curated.append(
+            {field: item[field] for field in signal_fields}
+            | {
+                "rank": item["rank"],
+                "score": item["score"],
+                "score_components": item["score_components"],
+                "reason_codes": item["reason_codes"],
+            }
+        )
+    if not curated:
+        raise ValueError("editorial selection produced no public curated signals")
+    if len(curated) != selection_artifact["metrics"]["selected_count"]:
+        raise ValueError("editorial selection selected_count does not match selected rows")
 
     sections: list[dict[str, Any]] = []
     for row in groups:
@@ -263,7 +345,6 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     seen_slugs: set[str] = set()
     for index, article in enumerate(published_rows):
         label = f"{published_path}:{index + 1}"
-        # Fail closed if anything other than an approved public contract reaches this index.
         validate_published_article(article, label, validator)
         if not topic_selected(str(article["topic"]), configured_topics):
             continue
@@ -291,28 +372,28 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     }
 
     payload: dict[str, Any] = {
-        "schema_name": "site_snapshot.v2",
+        "schema_name": "site_snapshot.v3",
         "snapshot_id": "",
         "site": {
             key: config[key] for key in ("site_id", "name", "tagline", "locale")
         },
         "digest_at": args.digest_at,
-        "generated_at": now.replace(microsecond=0)
-        .isoformat()
-        .replace("+00:00", "Z"),
+        "generated_at": now.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "status": "ok",
         "metrics": {
-            # item_count/section_count remain signal counts for P0-A/P0-B compatibility.
             "item_count": len(selected),
             "section_count": len(sections),
             "published_article_count": len(approved),
+            "curated_signal_count": len(curated),
         },
         "publication": {
             "featured": publication_latest[0] if publication_latest else None,
             "latest": publication_latest,
         },
         "signals": {
+            # hero/latest remain chronological monitored-news semantics.
             "hero": selected[0],
+            "curated": curated,
             "latest": selected[: config["presentation"]["latest_count"]],
             "sections": sections,
         },
@@ -324,6 +405,10 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             "groups_sha256": sha(groups_path),
             "published_articles_path": str(published_path),
             "published_articles_sha256": sha(published_path),
+            "editorial_selection_path": str(editorial_selection_path),
+            "editorial_selection_sha256": sha(editorial_selection_path),
+            "editorial_selection_id": selection_artifact["selection_id"],
+            "editorial_selection_policy_sha256": selection_artifact["policy"]["policy_sha256"],
             "git_sha": git_sha(),
         },
     }
@@ -348,6 +433,7 @@ def main() -> int:
     parser.add_argument("--digest-at", required=True)
     parser.add_argument("--sites-dir", default="sites")
     parser.add_argument("--indexes-dir", default="storage/indexes")
+    parser.add_argument("--editorial-selection", default=None)
     parser.add_argument(
         "--output", default="apps/news_site/public/data/site_snapshot.json"
     )

@@ -101,6 +101,12 @@ jobs:
             --digest-at "$DIGEST_AT" \
             --target-minutes "$PUBLICATION_TARGET_MINUTES"
 
+      - name: Build deterministic monitored-signal shortlist
+        run: |
+          python scripts/build_editorial_selection.py \
+            --digest-at "$DIGEST_AT" \
+            --as-of "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
       - name: Compile, deploy and verify immutable production snapshot
         run: |
           python scripts/roll_site.py \
@@ -151,4 +157,5 @@ jobs:
             storage/indexes/pr3a_exports_latest.json
             storage/indexes/news_recent_refs_latest.jsonl
             storage/indexes/news_recent_groups_latest.jsonl
+            storage/indexes/editorial_selection_latest.json
             apps/news_site/public/data/site_snapshot.json

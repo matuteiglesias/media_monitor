@@ -26,9 +26,7 @@ def test_publish_script_npm_commands_are_owned_by_news_site() -> None:
 def test_shell_publisher_only_invokes_declared_news_site_scripts() -> None:
     package = json.loads((NEWS_SITE_ROOT / "package.json").read_text(encoding="utf-8"))
     scripts = package["scripts"]
-    publisher = (REPO_ROOT / "scripts" / "publish_news_site.sh").read_text(
-        encoding="utf-8"
-    )
+    publisher = (REPO_ROOT / "scripts" / "publish_news_site.sh").read_text(encoding="utf-8")
 
     invoked = {"refresh-data", "smoke:public-data"}
     for name in invoked:
@@ -38,21 +36,18 @@ def test_shell_publisher_only_invokes_declared_news_site_scripts() -> None:
 
 def test_freshness_notice_is_global_and_request_time() -> None:
     layout = (NEWS_SITE_ROOT / "app" / "layout.tsx").read_text(encoding="utf-8")
-    route = (NEWS_SITE_ROOT / "app" / "api" / "health" / "route.ts").read_text(
-        encoding="utf-8"
-    )
+    route = (NEWS_SITE_ROOT / "app" / "api" / "health" / "route.ts").read_text(encoding="utf-8")
 
     assert 'export const dynamic = "force-dynamic"' in layout
     assert "<FreshnessNotice />" in layout
     assert "buildPublicationHealth" in route
     assert "published_article_count" in route
+    assert "curated_signal_count" in route
     assert '"Cache-Control": "no-store"' in route
 
 
 def test_public_identity_is_single_sourced_across_runtime_and_public_docs() -> None:
-    identity = json.loads(
-        (NEWS_SITE_ROOT / "config" / "public_identity.json").read_text(encoding="utf-8")
-    )
+    identity = json.loads((NEWS_SITE_ROOT / "config" / "public_identity.json").read_text(encoding="utf-8"))
     site = json.loads((REPO_ROOT / "sites" / "argentina-general.json").read_text(encoding="utf-8"))
     layout = (NEWS_SITE_ROOT / "app" / "layout.tsx").read_text(encoding="utf-8")
     mapper = (NEWS_SITE_ROOT / "lib" / "adapter" / "mappers.ts").read_text(encoding="utf-8")
@@ -68,12 +63,7 @@ def test_public_identity_is_single_sourced_across_runtime_and_public_docs() -> N
     assert "alternates" in layout and "canonical" in layout
     assert "PUBLIC_IDENTITY.outlet_name" in mapper
     assert "canonical_url: PUBLIC_IDENTITY.public_outlet_url" in health
-    for value in (
-        identity["public_outlet_url"],
-        identity["docs_url"],
-        identity["repository_url"],
-        identity["owner_url"],
-    ):
+    for value in (identity["public_outlet_url"], identity["docs_url"], identity["repository_url"], identity["owner_url"]):
         assert value in readme
         assert value in docs
 
@@ -94,37 +84,34 @@ def test_prominent_public_claims_are_calibrated_to_evidence() -> None:
     assert "actual publication approval remains intentionally human" in docs
 
 
-def test_v2_outlet_adapter_separates_publication_from_signals() -> None:
-    mapper = (NEWS_SITE_ROOT / "lib" / "adapter" / "mappers.ts").read_text(
-        encoding="utf-8"
-    )
-    health = (NEWS_SITE_ROOT / "lib" / "publication_health.mjs").read_text(
-        encoding="utf-8"
-    )
-    assert 'snapshot?.schema_name === "site_snapshot.v2"' in mapper
+def test_v3_outlet_adapter_separates_publication_curated_signals_and_wire() -> None:
+    mapper = (NEWS_SITE_ROOT / "lib" / "adapter" / "mappers.ts").read_text(encoding="utf-8")
+    health = (NEWS_SITE_ROOT / "lib" / "publication_health.mjs").read_text(encoding="utf-8")
+    assert "site_snapshot.v3" in mapper
     assert "publication: snapshot.publication" in mapper
     assert "articles: snapshot.articles" in mapper
-    assert "signals: snapshot.signals" in mapper
+    assert "curated:" in mapper
     assert "publication: { featured: null, latest: [] }" in mapper
     assert "findArticle" in mapper
-    assert 'snapshot?.schema_name === "site_snapshot.v2"' in health
-    assert "snapshot?.signals" in health
+    assert "site_snapshot.v3" in health
+    assert "chronological wire" in health
 
 
-def test_homepage_makes_editorial_and_external_layers_visibly_distinct() -> None:
+def test_homepage_makes_editorial_curated_and_chronological_layers_distinct() -> None:
     home = (NEWS_SITE_ROOT / "app" / "page.tsx").read_text(encoding="utf-8")
     assert "Análisis editorial · aprobado" in home
-    assert "Señal monitoreada · fuente externa" in home
+    assert "Qué importa ahora" in home
+    assert "Shortlist determinística de señales externas" in home
+    assert "Estar seleccionado no convierte" in home
+    assert "Cable cronológico de fuentes" in home
     assert "No hay análisis editorial aprobado publicado" in home
-    assert "no se presentan" in home and "contenido propio" in home
     assert "href={`/articles/${featured.slug}`}" in home
-    assert "href={`/story/${signals.hero.index_id}`}" in home
+    assert "href={`/story/${item.index_id}`}" in home
+    assert "reason_codes" in home
 
 
 def test_article_route_only_reads_published_article_projection() -> None:
-    article_route = (
-        NEWS_SITE_ROOT / "app" / "articles" / "[slug]" / "page.tsx"
-    ).read_text(encoding="utf-8")
+    article_route = (NEWS_SITE_ROOT / "app" / "articles" / "[slug]" / "page.tsx").read_text(encoding="utf-8")
     assert "findArticle(params.slug)" in article_route
     assert "Análisis editorial · aprobado" in article_route
     assert "article.summary" in article_route
@@ -135,15 +122,9 @@ def test_article_route_only_reads_published_article_projection() -> None:
 
 
 def test_signal_routes_do_not_masquerade_as_editorial_articles() -> None:
-    story = (NEWS_SITE_ROOT / "app" / "story" / "[id]" / "page.tsx").read_text(
-        encoding="utf-8"
-    )
-    latest = (NEWS_SITE_ROOT / "app" / "latest" / "page.tsx").read_text(
-        encoding="utf-8"
-    )
-    topic = (
-        NEWS_SITE_ROOT / "app" / "topic" / "[topic]" / "page.tsx"
-    ).read_text(encoding="utf-8")
+    story = (NEWS_SITE_ROOT / "app" / "story" / "[id]" / "page.tsx").read_text(encoding="utf-8")
+    latest = (NEWS_SITE_ROOT / "app" / "latest" / "page.tsx").read_text(encoding="utf-8")
+    topic = (NEWS_SITE_ROOT / "app" / "topic" / "[topic]" / "page.tsx").read_text(encoding="utf-8")
     assert "Señal monitoreada · fuente externa" in story
     assert "no es" in story and "análisis editorial" in story
     assert "Señales monitoreadas · fuentes externas" in latest
