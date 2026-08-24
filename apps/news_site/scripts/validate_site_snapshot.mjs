@@ -91,6 +91,39 @@ function validateCurated(item, label, expectedRank) {
   reasons.forEach((reason, index) => requireString(reason, `${label}.reason_codes[${index}]`));
 }
 
+function validateStoryContext(context, label, expectedSignal) {
+  requireObject(context, label);
+  if (context.schema_name !== "story_context.v1") fail(`${label}.schema_name must be story_context.v1`);
+  const contextId = requireString(context.context_id, `${label}.context_id`);
+  if (!/^[a-f0-9]{64}$/.test(contextId)) fail(`${label}.context_id must be a SHA256 digest`);
+  if (requireString(context.index_id, `${label}.index_id`) !== expectedSignal.index_id) fail(`${label}.index_id does not match signal`);
+  if (requireString(context.topic, `${label}.topic`) !== expectedSignal.topic) fail(`${label}.topic does not match signal`);
+  for (const key of ["coverage_first_published_at", "coverage_latest_published_at"]) {
+    if (Number.isNaN(Date.parse(requireString(context[key], `${label}.${key}`)))) fail(`${label}.${key} is invalid`);
+  }
+  const coverageCount = requireInteger(context.coverage_count, `${label}.coverage_count`);
+  const sourceCount = requireInteger(context.source_count, `${label}.source_count`);
+  if (coverageCount < 1 || sourceCount < 1) fail(`${label} coverage/source counts must be positive`);
+  const sources = requireArray(context.sources, `${label}.sources`);
+  if (sources.length !== sourceCount) fail(`${label}.sources length does not match source_count`);
+  sources.forEach((source, index) => requireString(source, `${label}.sources[${index}]`));
+  requireArray(context.group_ids, `${label}.group_ids`).forEach((value, index) => requireString(value, `${label}.group_ids[${index}]`));
+  requireArray(context.window_types, `${label}.window_types`).forEach((value, index) => requireString(value, `${label}.window_types[${index}]`));
+  requireArray(context.related_signals, `${label}.related_signals`).forEach((item, index) => {
+    requireObject(item, `${label}.related_signals[${index}]`);
+    if (item.index_id !== null) requireString(item.index_id, `${label}.related_signals[${index}].index_id`);
+    requireString(item.title, `${label}.related_signals[${index}].title`);
+    requireString(item.source, `${label}.related_signals[${index}].source`);
+    if (Number.isNaN(Date.parse(requireString(item.published_at, `${label}.related_signals[${index}].published_at`)))) fail(`${label}.related_signals[${index}].published_at is invalid`);
+    validateUrl(item.link, `${label}.related_signals[${index}].link`);
+  });
+  const curation = requireObject(context.curation, `${label}.curation`);
+  if (typeof curation.selected !== "boolean") fail(`${label}.curation.selected must be boolean`);
+  if (curation.rank !== null) requireInteger(curation.rank, `${label}.curation.rank`);
+  if (curation.score !== null && !Number.isInteger(curation.score)) fail(`${label}.curation.score must be integer or null`);
+  requireArray(curation.reason_codes, `${label}.curation.reason_codes`).forEach((value, index) => requireString(value, `${label}.curation.reason_codes[${index}]`));
+}
+
 function validatePublishedArticle(article, label, expectedSlug) {
   requireObject(article, label);
   if (article.schema_name !== "published_article.v1") fail(`${label}.schema_name must be published_article.v1`);
@@ -125,9 +158,10 @@ const configPath = path.join(REPO_ROOT, "sites", `${siteId}.json`);
 const snapshot = requireObject(readJson(snapshotPath, "site snapshot"), "site snapshot");
 const config = requireObject(readJson(configPath, "site configuration"), "site configuration");
 const schema = snapshot.schema_name;
+const isV4 = schema === "site_snapshot.v4";
 const isV3 = schema === "site_snapshot.v3";
 const isV2 = schema === "site_snapshot.v2";
-if (!isV3 && !isV2 && schema !== "site_snapshot.v1") fail(`unexpected schema_name: ${schema}`);
+if (!isV4 && !isV3 && !isV2 && schema !== "site_snapshot.v1") fail(`unexpected schema_name: ${schema}`);
 if (snapshot.status !== "ok") fail(`snapshot status must be ok, got: ${snapshot.status}`);
 
 const snapshotSite = requireObject(snapshot.site, "site");
@@ -140,7 +174,7 @@ const presentation = requireObject(config.presentation, "config.presentation");
 const minimumItems = requireInteger(selection.minimum_items, "config.selection.minimum_items");
 const maxItems = requireInteger(selection.max_items, "config.selection.max_items");
 const latestCount = requireInteger(presentation.latest_count, "config.presentation.latest_count");
-const signalProjection = isV2 || isV3 ? requireObject(snapshot.signals, "signals") : snapshot;
+const signalProjection = isV2 || isV3 || isV4 ? requireObject(snapshot.signals, "signals") : snapshot;
 const latest = requireArray(signalProjection.latest, "signals.latest");
 const sections = requireArray(signalProjection.sections, "signals.sections");
 const metrics = requireObject(snapshot.metrics, "metrics");
@@ -160,15 +194,26 @@ sections.forEach((section, index) => {
 });
 
 let curatedSignalCount = 0;
-if (isV3) {
+if (isV3 || isV4) {
   const curated = requireArray(signalProjection.curated, "signals.curated");
   curatedSignalCount = requireInteger(metrics.curated_signal_count, "metrics.curated_signal_count");
   if (!curatedSignalCount || curated.length !== curatedSignalCount) fail("signals.curated length does not match curated_signal_count");
   curated.forEach((item, index) => validateCurated(item, `signals.curated[${index}]`, index + 1));
 }
 
+let storyContextCount = 0;
+if (isV4) {
+  const contexts = requireObject(snapshot.story_contexts, "story_contexts");
+  storyContextCount = requireInteger(metrics.story_context_count, "metrics.story_context_count");
+  const keys = Object.keys(contexts);
+  if (!storyContextCount || keys.length !== storyContextCount) fail("story_contexts count does not match story_context_count");
+  const expectedIds = latest.map((item) => item.index_id).sort();
+  if (JSON.stringify(keys.sort()) !== JSON.stringify(expectedIds)) fail("story_contexts keys must exactly match signals.latest index_ids");
+  latest.forEach((signal) => validateStoryContext(contexts[signal.index_id], `story_contexts.${signal.index_id}`, signal));
+}
+
 let publishedArticleCount = 0;
-if (isV2 || isV3) {
+if (isV2 || isV3 || isV4) {
   const publication = requireObject(snapshot.publication, "publication");
   const publicationLatest = requireArray(publication.latest, "publication.latest");
   const articles = requireObject(snapshot.articles, "articles");
@@ -204,4 +249,5 @@ console.log(JSON.stringify({
   section_count: sectionCount,
   published_article_count: publishedArticleCount,
   curated_signal_count: curatedSignalCount,
+  story_context_count: storyContextCount,
 }, null, 2));
