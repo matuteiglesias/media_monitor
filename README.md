@@ -1,6 +1,7 @@
 # 🗞️ Media Monitor
 
 [![Runtime contracts](https://github.com/matuteiglesias/media_monitor/actions/workflows/runtime-ci.yml/badge.svg)](https://github.com/matuteiglesias/media_monitor/actions/workflows/runtime-ci.yml)
+[![Docs site](https://github.com/matuteiglesias/media_monitor/actions/workflows/docs-site.yml/badge.svg)](https://github.com/matuteiglesias/media_monitor/actions/workflows/docs-site.yml)
 
 `media_monitor` es un **sistema desplegado y gobernado de inteligencia de noticias y publicación editorial**.
 
@@ -101,6 +102,8 @@ Cada transición tiene un contrato o gate explícito.
 | Discoverability | sitemap, robots, feeds separados, metadata y JSON-LD |
 | Operación | scheduled guarded refresh + crawler/social acceptance |
 | Reproducibilidad para adopters | `bin/media demo` |
+| Segunda instancia configurable | [`examples/outlet/`](examples/outlet/) |
+| Evidencia pública y contribución | [`EVIDENCE.md`](EVIDENCE.md) + [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 
 ## Superficies públicas deliberadamente separadas
 
@@ -126,8 +129,9 @@ Sólo objetos `published_article.v1` con estado publicado y aprobación humana p
 
 1. Ejecutar `bin/media demo`.
 2. Leer este README.
-3. Ir al [mapa de documentación](docs/README.md).
-4. Inspeccionar `contracts/schemas/` y `sites/`.
+3. Construir la [segunda instancia de ejemplo](examples/outlet/README.md).
+4. Ir al [mapa de documentación](docs/README.md).
+5. Inspeccionar `contracts/schemas/`, `sites/` y `config/`.
 
 ### Quiero operar este deployment
 
@@ -183,6 +187,8 @@ Ninguna fixture puede presentarse como contenido editorial público real.
 - crawler/social surface;
 - owned-domain cutover;
 - el demo offline reproducible;
+- la segunda instancia configurable;
+- el contributor/evidence front door;
 - typecheck del outlet Next.
 
 Los cambios visuales/documentales del docs-site tienen además su workflow de aislamiento propio.
@@ -194,6 +200,7 @@ apps/                 owners de runtime y sitio
 bin/                  entrypoints humanos
 config/               políticas reutilizables
 contracts/schemas/    contratos de integración
+examples/             adopción/reuso probado
 sites/                 configuración de outlets
 docs/                  arquitectura, runbooks y decisiones
 scripts/               builders/validators/operación
@@ -204,14 +211,19 @@ legacy/                arqueología/compatibilidad explícita
 
 ## Desarrollo y contribución
 
-Por ahora, empezar por:
+Empezar por:
 
 ```bash
-python -m pytest -q tests/test_adopter_demo.py
+python -m pytest -q tests/test_adopter_demo.py tests/test_example_outlet.py
 bin/media demo
 ```
 
-La guía formal de contribución y el ejemplo de “crear otro outlet” se añaden en los siguientes paquetes P1-F2/F3.
+Luego consultar:
+
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — ownership, gates, PR shape y validación.
+- [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md) — cinco tareas acotadas con Definition of Done.
+- [`EVIDENCE.md`](EVIDENCE.md) — qué cuenta como evidencia de producción, aceptación, demo y prueba visual.
+- [`examples/outlet/README.md`](examples/outlet/README.md) — cómo crear otra instancia sin especializar el core.
 
 ## Principios de diseño
 
