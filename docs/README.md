@@ -42,11 +42,11 @@ never inferred from an earlier one.
 | Immutable sensing run bundles | implemented; locally validated | `scripts/run_sensing_bundle.py`, bundle/compactor tests; [acquire runbook](../apps/news_acquire/runbook.md) | local validation is not AWS operation |
 | Deterministic sensing compaction | implemented; locally validated | `scripts/compact_sensing_bundles.py` and compactor tests | AWS compaction is not deployed by the current Terraform packet |
 | AWS manual sensing task substrate | deployment-ready | `Dockerfile.sensing`, task adapters, Terraform, deploy/first-task/teardown scripts; [AWS packet](../infra/aws/sensing/README.md) | no provider evidence in this repository establishes deployed or operated status; no schedule, alarms, Lambda, or deployed compaction |
-| Enrichment owner module | implemented; focused tests locally validated | `apps/news_enrich`; canonical minimal-loop compatibility wrapper delegates to the owner entrypoint; [owner README](../apps/news_enrich/README.md) and [runbook](../apps/news_enrich/runbook.md) | live fetch/queue execution remains environment-specific |
+| Enrichment owner module | implemented; focused tests locally validated | `apps/news_enrich`; [owner README](../apps/news_enrich/README.md) and [runbook](../apps/news_enrich/runbook.md) | the generic minimal-loop enrich branch points to an absent compatibility script; use the owner entrypoint |
 | Editorial brief/draft/index path | implemented; focused tests locally validated | `apps/news_editorial`, editorial/index tests; [owner README](../apps/news_editorial/README.md) and [runbook](../apps/news_editorial/runbook.md) | PromptFlow and live-data execution require external runtime inputs |
 | Human-approved article promotion | implemented; focused tests locally validated | `scripts/promote_draft_to_published.py`, `scripts/build_published_article_indexes.py`, promotion/index tests; [root last-mile route](../README.md#-last-mile-página-simple-de-publicación) | approval is intentionally a human boundary |
 | Generic site snapshot and roll | implemented; focused tests locally validated; deployment tooling present | snapshot builder/validator, `scripts/roll_site.py`, site-roll tests; [source-site roll](runbooks/site-roll.md) | no provider-side deployment or repeated operation is claimed |
-| `publish-news-site` aggregate path | implemented; focused script-contract tests locally validated | `scripts/publish_news_site.sh`, `apps/news_site` `refresh-data` and `smoke:public-data`; [publishing audit](runbooks/news-site-publishing.md) | requires coherent current storage indexes; provider deployment/operation is a separate evidence state |
+| `publish-news-site` aggregate path | implemented but currently not end-to-end runnable | `scripts/publish_news_site.sh`; [publishing audit](runbooks/news-site-publishing.md) | it invokes missing npm scripts `refresh-data` and `smoke:public-data`; do not treat it as validated until package/script drift is fixed |
 | Next.js news site | implemented; focused Node tests locally validated | `apps/news_site`; [newspaper skin guide](runbooks/newspaper_skin_guide.md) | Vercel project root and live production routes are not evidenced here |
 
 ## Current task routes
@@ -100,6 +100,8 @@ explicitly promotes a claim from them.
 - [`docs/runbooks/README.md`](runbooks/README.md) routes through PR-numbered plans
   and links a missing `docs/current_state.md`; use this page as the reader front
   door instead.
+- The aggregate news-site publish script and `apps/news_site/package.json` do
+  not currently agree on npm script names, as recorded in the status matrix.
 
 See the [PR-MD0 inventory](documentation_program/06_inventory_and_canonicality_map_v0_1.md)
 for the complete drift register and proposed ownership map. No historical file
