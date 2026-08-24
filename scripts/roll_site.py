@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -157,8 +158,16 @@ def roll(
     root = repo_root.resolve()
     started = utcnow()
     record = record_base(site_id, target, digest_at, started, root)
-    stage = "identity"
+    stage = "publication-index"
     try:
+        # The snapshot consumes only this approved publication index, never draft/brief buses.
+        call(
+            runner,
+            ["make", "build-published-article-indexes", f"PYTHON={sys.executable}"],
+            root,
+            stage=stage,
+        )
+        stage = "compile"
         call(
             runner,
             [
@@ -168,8 +177,9 @@ def roll(
                 f"DIGEST_AT={digest_at}",
             ],
             root,
-            stage="compile",
+            stage=stage,
         )
+        stage = "validate"
         call(
             runner,
             [
@@ -179,13 +189,17 @@ def roll(
                 f"DIGEST_AT={digest_at}",
             ],
             root,
-            stage="validate",
+            stage=stage,
         )
+        stage = "identity"
         snapshot = root / "apps/news_site/public/data/site_snapshot.json"
         payload = json.loads(snapshot.read_text())
         expected = {
             "item_count": payload["metrics"]["item_count"],
             "section_count": payload["metrics"]["section_count"],
+            "published_article_count": payload["metrics"].get(
+                "published_article_count", 0
+            ),
         }
         if payload["site"]["site_id"] != site_id or payload["digest_at"] != digest_at:
             raise ValueError("snapshot identity does not match command arguments")
@@ -252,13 +266,21 @@ def roll(
             "digest_at": digest_at,
             "item_count": expected["item_count"],
             "section_count": expected["section_count"],
+            "published_article_count": expected["published_article_count"],
         }
-        if any(observed.get(k) != v for k, v in required.items()):
+        if any(observed.get(key) != value for key, value in required.items()):
             raise RuntimeError("deployed health identity mismatch")
 
         observed_record = {
-            k: observed[k]
-            for k in ("site_id", "digest_at", "snapshot_id", "item_count", "section_count")
+            key: observed[key]
+            for key in (
+                "site_id",
+                "digest_at",
+                "snapshot_id",
+                "item_count",
+                "section_count",
+                "published_article_count",
+            )
         }
         if target == "production":
             publication = _validate_production_freshness(observed)
@@ -289,9 +311,7 @@ def main() -> int:
         "--repo-root", default=Path(__file__).resolve().parents[1], type=Path
     )
     args = parser.parse_args()
-    result, code = roll(
-        args.site_id, args.digest_at, args.target, args.repo_root
-    )
+    result, code = roll(args.site_id, args.digest_at, args.target, args.repo_root)
     print(json.dumps(result, ensure_ascii=False))
     return code
 

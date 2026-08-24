@@ -45,4 +45,20 @@ def test_freshness_notice_is_global_and_request_time() -> None:
     assert 'export const dynamic = "force-dynamic"' in layout
     assert "<FreshnessNotice />" in layout
     assert "buildPublicationHealth" in route
+    assert "published_article_count" in route
     assert '"Cache-Control": "no-store"' in route
+
+
+def test_v2_contract_is_adapted_without_premature_ui_redesign() -> None:
+    mapper = (NEWS_SITE_ROOT / "lib" / "adapter" / "mappers.ts").read_text(
+        encoding="utf-8"
+    )
+    health = (NEWS_SITE_ROOT / "lib" / "publication_health.mjs").read_text(
+        encoding="utf-8"
+    )
+    assert 'snapshot?.schema_name === "site_snapshot.v2"' in mapper
+    assert "hero: snapshot.signals.hero" in mapper
+    assert "latest: snapshot.signals.latest" in mapper
+    assert "sections: snapshot.signals.sections" in mapper
+    assert 'snapshot?.schema_name === "site_snapshot.v2"' in health
+    assert "snapshot?.signals" in health

@@ -19,10 +19,19 @@ function requireText(value, label) {
   return value.trim();
 }
 
+function signalProjection(snapshot) {
+  if (snapshot?.schema_name === "site_snapshot.v2") {
+    return snapshot?.signals ?? {};
+  }
+  // Transitional compatibility for already-materialized v1 deployments.
+  return snapshot ?? {};
+}
+
 function newestMonitoredAt(snapshot) {
-  const latest = Array.isArray(snapshot?.latest) ? snapshot.latest : [];
+  const signals = signalProjection(snapshot);
+  const latest = Array.isArray(signals?.latest) ? signals.latest : [];
   const candidates = [...latest];
-  if (snapshot?.hero) candidates.push(snapshot.hero);
+  if (signals?.hero) candidates.push(signals.hero);
   if (!candidates.length) {
     throw new Error("site snapshot has no monitored items");
   }

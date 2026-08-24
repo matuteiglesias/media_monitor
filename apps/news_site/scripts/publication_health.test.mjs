@@ -25,6 +25,19 @@ function snapshot(times) {
   };
 }
 
+function snapshotV2(times) {
+  const legacy = snapshot(times);
+  return {
+    schema_name: "site_snapshot.v2",
+    snapshot_id: legacy.snapshot_id,
+    digest_at: legacy.digest_at,
+    site: legacy.site,
+    signals: { hero: legacy.hero, latest: legacy.latest, sections: [] },
+    publication: { featured: null, latest: [] },
+    articles: {},
+  };
+}
+
 test("fresh publication is current and within target", () => {
   const health = buildPublicationHealth(
     snapshot(["2026-08-24T16:00:00Z"]),
@@ -36,6 +49,18 @@ test("fresh publication is current and within target", () => {
   assert.equal(health.within_target, true);
   assert.equal(health.is_current, true);
   assert.equal(freshnessLead(health), "Actualizado");
+});
+
+test("v2 freshness is derived only from monitored signals", () => {
+  const value = snapshotV2(["2026-08-24T16:30:00Z"]);
+  value.publication = {
+    featured: { published_at: "2025-01-01T00:00:00Z" },
+    latest: [{ published_at: "2025-01-01T00:00:00Z" }],
+  };
+  const health = buildPublicationHealth(value, "2026-08-24T17:00:00Z");
+  assert.equal(health.newest_item_at, "2026-08-24T16:30:00.000Z");
+  assert.equal(health.age_minutes, 30);
+  assert.equal(health.within_target, true);
 });
 
 test("target miss can remain fresh without claiming target compliance", () => {
@@ -89,6 +114,10 @@ test("newest monitored item wins even when latest is unsorted", () => {
 test("missing monitored items fail closed", () => {
   assert.throws(
     () => buildPublicationHealth({ site: { site_id: "x" }, snapshot_id: "s", digest_at: "d", latest: [] }),
+    /no monitored items/,
+  );
+  assert.throws(
+    () => buildPublicationHealth({ schema_name: "site_snapshot.v2", site: { site_id: "x" }, snapshot_id: "s", digest_at: "d", signals: { latest: [] } }),
     /no monitored items/,
   );
 });

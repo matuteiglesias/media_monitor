@@ -17,7 +17,11 @@ def roll_record():
         "digest_at": "20260824T18",
         "snapshot_id": "a" * 64,
         "deployment_host": "roll-abc.vercel.app",
-        "expected": {"item_count": 11, "section_count": 3},
+        "expected": {
+            "item_count": 11,
+            "section_count": 3,
+            "published_article_count": 2,
+        },
     }
 
 
@@ -37,6 +41,7 @@ def public_health(**publication_overrides):
         "snapshot_id": "a" * 64,
         "item_count": 11,
         "section_count": 3,
+        "published_article_count": 2,
         "publication_health": publication,
     }
 
@@ -46,11 +51,19 @@ def test_public_health_must_match_roll_and_freshness_target():
     assert report["status"] == "ok"
     assert report["freshness_status"] == "FRESH"
     assert report["within_target"] is True
+    assert report["published_article_count"] == 2
 
 
 def test_public_identity_mismatch_fails():
     bad = public_health()
     bad["snapshot_id"] = "b" * 64
+    with pytest.raises(ValueError, match="identity mismatch"):
+        validate_health(roll_record(), bad)
+
+
+def test_publication_count_identity_mismatch_fails():
+    bad = public_health()
+    bad["published_article_count"] = 1
     with pytest.raises(ValueError, match="identity mismatch"):
         validate_health(roll_record(), bad)
 
