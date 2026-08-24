@@ -30,9 +30,12 @@ export function SiteFooter() {
         <div>
           <p className="font-semibold">{EDITORIAL_IDENTITY.outlet_name}</p>
           <p className="mt-2 max-w-2xl text-sm text-neutral-600">{EDITORIAL_IDENTITY.endorsement_line}</p>
-          <p className="mt-2 text-sm text-neutral-600">Editor: {editor.name} · {editor.location}</p>
+          <p className="mt-2 text-sm text-neutral-600">
+            Editor: <Link href={routes.author} className="underline">{editor.name}</Link> · {editor.location}
+          </p>
         </div>
         <div className="space-y-2 text-sm">
+          <p><Link href={routes.author} className="underline">Autor: {editor.name}</Link></p>
           <p><Link href={routes.about} className="underline">Quién lo hace</Link></p>
           <p><Link href={routes.methodology} className="underline">Cómo se produce</Link></p>
           <p><Link href={routes.journalists} className="underline">Para periodistas y productores</Link></p>
