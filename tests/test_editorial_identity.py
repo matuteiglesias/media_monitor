@@ -49,3 +49,29 @@ def test_default_editor_attribution_does_not_mutate_published_article_v1() -> No
     assert "editor.name" in article_route
     assert "article.author" not in article_route
     assert "EDITORIAL_IDENTITY.endorsement_line" in homepage
+
+
+def test_editorial_front_door_is_global_and_truthful() -> None:
+    layout = (NEWS_SITE_ROOT / "app" / "layout.tsx").read_text(encoding="utf-8")
+    chrome = (NEWS_SITE_ROOT / "components" / "SiteChrome.tsx").read_text(encoding="utf-8")
+    about = (NEWS_SITE_ROOT / "app" / "about" / "page.tsx").read_text(encoding="utf-8")
+    methodology = (
+        NEWS_SITE_ROOT / "app" / "methodology" / "page.tsx"
+    ).read_text(encoding="utf-8")
+    journalists = (
+        NEWS_SITE_ROOT / "app" / "journalists" / "page.tsx"
+    ).read_text(encoding="utf-8")
+
+    assert "<SiteHeader />" in layout and "<SiteFooter />" in layout
+    for label in ("Quién lo hace", "Metodología", "Para periodistas", "Contacto"):
+        assert label in chrome
+    assert "No es una redacción autónoma" in about
+    assert "no se presenta como análisis de Media Monitor" in about
+    assert "generar un borrador no es aprobarlo" in methodology
+    assert "published_article.v1" in methodology
+    assert "aprobación humana explícita" in methodology
+    assert "pressMailto" in journalists
+    assert "loadOutlet" in journalists
+    assert "latestAnalysis" in journalists
+    assert "No hay análisis editorial human-approved" in journalists
+    assert "Las señales monitoreadas de terceros no se usan como sustituto" in journalists
