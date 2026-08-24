@@ -153,6 +153,26 @@ def test_related_analysis_helper_only_accepts_human_approved_publication() -> No
         assert forbidden not in helper.lower()
 
 
+def test_discovery_surfaces_keep_analysis_and_monitored_signals_separate() -> None:
+    sitemap = (NEWS_SITE_ROOT / "app" / "sitemap.ts").read_text(encoding="utf-8")
+    robots = (NEWS_SITE_ROOT / "app" / "robots.ts").read_text(encoding="utf-8")
+    feeds = (NEWS_SITE_ROOT / "lib" / "feeds.ts").read_text(encoding="utf-8")
+    editorial_feed = (NEWS_SITE_ROOT / "app" / "feed.xml" / "route.ts").read_text(encoding="utf-8")
+    signal_feed = (NEWS_SITE_ROOT / "app" / "signals.xml" / "route.ts").read_text(encoding="utf-8")
+    layout = (NEWS_SITE_ROOT / "app" / "layout.tsx").read_text(encoding="utf-8")
+
+    assert "MetadataRoute.Sitemap" in sitemap
+    assert "outlet.articles" in sitemap and "outlet.signals?.latest" in sitemap
+    assert "MetadataRoute.Robots" in robots and 'disallow: ["/api/"]' in robots
+    assert 'article?.schema_name === "published_article.v1"' in feeds
+    assert 'article?.review_status === "human_approved"' in feeds
+    assert "No incluye titulares monitoreados de terceros" in feeds
+    assert "no representa análisis editorial propio" in feeds.lower()
+    assert "approvedAnalysisRss" in editorial_feed
+    assert "monitoredSignalsRss" in signal_feed
+    assert '"/feed.xml"' in layout and '"/signals.xml"' in layout
+
+
 def test_other_signal_routes_remain_explicit_external_monitoring() -> None:
     latest = (NEWS_SITE_ROOT / "app" / "latest" / "page.tsx").read_text(encoding="utf-8")
     topic = (NEWS_SITE_ROOT / "app" / "topic" / "[topic]" / "page.tsx").read_text(encoding="utf-8")

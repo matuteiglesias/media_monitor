@@ -12,6 +12,12 @@ export const metadata: Metadata = {
   description: PUBLIC_IDENTITY.outlet_tagline,
   alternates: {
     canonical: "/",
+    types: {
+      "application/rss+xml": [
+        { url: "/feed.xml", title: `${PUBLIC_IDENTITY.outlet_name} — análisis aprobado` },
+        { url: "/signals.xml", title: `${PUBLIC_IDENTITY.outlet_name} — señales monitoreadas` },
+      ],
+    },
   },
   openGraph: {
     title: PUBLIC_IDENTITY.outlet_name,
@@ -23,11 +29,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
       <body>
