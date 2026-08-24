@@ -74,7 +74,8 @@ jobs:
             tests/test_media_ops.py \
             tests/test_news_site_publish_contract.py \
             tests/test_editorial_identity.py \
-            tests/test_editorial_selection.py
+            tests/test_editorial_selection.py \
+            tests/test_story_contexts.py
 
   news-site-contracts:
     runs-on: ubuntu-latest
