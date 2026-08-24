@@ -43,6 +43,7 @@ def test_freshness_notice_is_global_and_request_time() -> None:
     assert "buildPublicationHealth" in route
     assert "published_article_count" in route
     assert "curated_signal_count" in route
+    assert "story_context_count" in route
     assert '"Cache-Control": "no-store"' in route
 
 
@@ -84,17 +85,20 @@ def test_prominent_public_claims_are_calibrated_to_evidence() -> None:
     assert "actual publication approval remains intentionally human" in docs
 
 
-def test_v3_outlet_adapter_separates_publication_curated_signals_and_wire() -> None:
+def test_v4_outlet_adapter_separates_publication_curation_wire_and_story_context() -> None:
     mapper = (NEWS_SITE_ROOT / "lib" / "adapter" / "mappers.ts").read_text(encoding="utf-8")
     health = (NEWS_SITE_ROOT / "lib" / "publication_health.mjs").read_text(encoding="utf-8")
-    assert "site_snapshot.v3" in mapper
+    assert "site_snapshot.v4" in mapper
     assert "publication: snapshot.publication" in mapper
     assert "articles: snapshot.articles" in mapper
+    assert "story_contexts:" in mapper
     assert "curated:" in mapper
     assert "publication: { featured: null, latest: [] }" in mapper
     assert "findArticle" in mapper
-    assert "site_snapshot.v3" in health
+    assert "findStoryContext" in mapper
+    assert "site_snapshot.v4" in health
     assert "chronological wire" in health
+    assert "context" in health
 
 
 def test_homepage_makes_editorial_curated_and_chronological_layers_distinct() -> None:
