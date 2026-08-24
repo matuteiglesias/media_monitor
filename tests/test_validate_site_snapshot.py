@@ -4,6 +4,7 @@ import sys
 
 from test_build_site_snapshot import (
     ROOT,
+    canonical_context_id,
     config,
     inputs,
     published_article,
@@ -33,7 +34,7 @@ def validate(tmp_path):
     )
 
 
-def test_validate_snapshot_with_publication_and_signals(tmp_path):
+def test_validate_snapshot_with_publication_signals_and_context(tmp_path):
     config(tmp_path)
     inputs(tmp_path)
     write_jsonl(
@@ -44,6 +45,7 @@ def test_validate_snapshot_with_publication_and_signals(tmp_path):
     assert result.returncode == 0, result.stdout
     payload = json.loads(result.stdout)
     assert payload["published_article_count"] == 1
+    assert payload["story_context_count"] == 5
 
 
 def test_validate_rejects_top_level_tamper(tmp_path):
@@ -70,3 +72,19 @@ def test_validate_rejects_publication_ref_tamper(tmp_path):
     path.write_text(json.dumps(snapshot))
     result = validate(tmp_path)
     assert result.returncode == 1
+
+
+def test_validate_rejects_story_context_projection_tamper(tmp_path):
+    config(tmp_path)
+    inputs(tmp_path)
+    run(tmp_path)
+    path = tmp_path / "out.json"
+    snapshot = json.loads(path.read_text())
+    index_id = snapshot["signals"]["latest"][0]["index_id"]
+    context = snapshot["story_contexts"][index_id]
+    context["coverage_count"] = 2
+    context["context_id"] = canonical_context_id(context)
+    path.write_text(json.dumps(snapshot))
+    result = validate(tmp_path)
+    assert result.returncode == 1
+    assert "provenance artifact" in result.stdout or "snapshot_id" in result.stdout
