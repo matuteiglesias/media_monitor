@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import FreshnessNotice from "@/components/FreshnessNotice";
+import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import { PUBLIC_IDENTITY } from "@/lib/public_identity";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +32,9 @@ export default function RootLayout({
     <html lang="es">
       <body>
         <FreshnessNotice />
+        <SiteHeader />
         {children}
+        <SiteFooter />
       </body>
     </html>
   );
