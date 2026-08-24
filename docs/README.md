@@ -7,14 +7,20 @@ PR-era migration records into canonical operating instructions.
 ## Canonical public surfaces
 
 - **Public outlet:** https://mediamonitor-psi.vercel.app
+- **Public health:** https://mediamonitor-psi.vercel.app/api/health
 - **Documentation:** https://github.com/matuteiglesias/media_monitor/tree/main/docs
 - **Repository:** https://github.com/matuteiglesias/media_monitor
 - **Owner / portfolio:** https://main.matuteiglesias.link
 
-These four surfaces are the public identity boundary for Media Monitor. Preview,
+These surfaces are the public identity boundary for Media Monitor. Preview,
 branch, or older deployment URLs are deployment artifacts rather than alternate
 public identities. Machine-readable ownership lives in
 [`apps/news_site/config/public_identity.json`](../apps/news_site/config/public_identity.json).
+
+The calibrated external claim is **deployed governed news-intelligence and editorial
+publishing system**. “Live/current” is stronger than “deployed”: it should be asserted
+only when `/api/health` reports `freshness_status=FRESH`, `is_current=true`, and
+`within_target=true`.
 
 The short local path remains in the [root README](../README.md). The repository
 does not yet have all of the capability-oriented pages planned by the
@@ -45,21 +51,22 @@ decision is [ADR 0001](architecture/decisions/0001-immutable-runs-single-writer-
 Status terms follow the program evidence ladder: **implemented** means source
 exists; **locally validated** means focused local checks exist and pass;
 **deployment-ready** additionally requires the deployment adapter/IaC/runbook;
-**deployed** and **operated** require provider-side evidence. A later state is
-never inferred from an earlier one.
+**deployed** requires provider-side evidence; **operated repeatedly** requires run/health
+evidence rather than merely a schedule declaration. A later state is never inferred
+from an earlier one.
 
 | Capability | Current status | Evidence and current route | Boundary / known gap |
 |---|---|---|---|
 | Local sensing stages and access indexes | implemented; focused tests locally validated | root `Makefile`, `apps/news_acquire`, `bin/run_minimal_loop_once.sh`; [acquire runbook](../apps/news_acquire/runbook.md) | network, PostgreSQL, and PromptFlow-dependent execution is environment-specific |
 | Immutable sensing run bundles | implemented; locally validated | `scripts/run_sensing_bundle.py`, bundle/compactor tests; [acquire runbook](../apps/news_acquire/runbook.md) | local validation is not AWS operation |
 | Deterministic sensing compaction | implemented; locally validated | `scripts/compact_sensing_bundles.py` and compactor tests | AWS compaction is not deployed by the current Terraform packet |
-| AWS manual sensing task substrate | deployment-ready | `Dockerfile.sensing`, task adapters, Terraform, deploy/first-task/teardown scripts; [AWS packet](../infra/aws/sensing/README.md) | no provider evidence in this repository establishes deployed or operated status; no schedule, alarms, Lambda, or deployed compaction |
+| AWS manual sensing task substrate | deployment-ready | `Dockerfile.sensing`, task adapters, Terraform, deploy/first-task/teardown scripts; [AWS packet](../infra/aws/sensing/README.md) | no provider evidence in this repository establishes deployed or operated AWS status; no AWS schedule, alarms, Lambda, or deployed compaction |
 | Enrichment owner module | implemented; focused tests locally validated | `apps/news_enrich`; canonical minimal-loop compatibility wrapper delegates to the owner entrypoint; [owner README](../apps/news_enrich/README.md) and [runbook](../apps/news_enrich/runbook.md) | live fetch/queue execution remains environment-specific |
 | Editorial brief/draft/index path | implemented; focused tests locally validated | `apps/news_editorial`, editorial/index tests; [owner README](../apps/news_editorial/README.md) and [runbook](../apps/news_editorial/runbook.md) | PromptFlow and live-data execution require external runtime inputs |
-| Human-approved article promotion | implemented; focused tests locally validated | `scripts/promote_draft_to_published.py`, `scripts/build_published_article_indexes.py`, promotion/index tests; [root last-mile route](../README.md#-last-mile-página-simple-de-publicación) | approval is intentionally a human boundary |
-| Generic site snapshot and roll | implemented; focused tests locally validated; deployment tooling present | snapshot builder/validator, `scripts/roll_site.py`, site-roll tests; [source-site roll](runbooks/site-roll.md) | no provider-side deployment or repeated operation is claimed |
-| `publish-news-site` aggregate path | implemented; focused script-contract tests locally validated | `scripts/publish_news_site.sh`, `apps/news_site` `refresh-data` and `smoke:public-data`; [publishing audit](runbooks/news-site-publishing.md) | requires coherent current storage indexes; provider deployment/operation is a separate evidence state |
-| Next.js news site | implemented; focused Node tests locally validated; canonical public identity defined | `apps/news_site`, `apps/news_site/config/public_identity.json`; [newspaper skin guide](runbooks/newspaper_skin_guide.md) | provider materialization and repeated operation remain separately verified |
+| Human-approved article promotion | implemented; focused tests locally validated; C3 rehearsal exercised real promotion/index code in isolation | `scripts/promote_draft_to_published.py`, `scripts/build_published_article_indexes.py`, promotion/index tests; [C3 rehearsal PR](https://github.com/matuteiglesias/media_monitor/pull/64) | actual publication approval remains intentionally human; no representative article is claimed before that decision |
+| Publication-aware snapshot and roll | implemented; focused tests locally validated; canonical Vercel deployment evidenced | `site_snapshot.v2`, snapshot builder/validator, `scripts/roll_site.py`, site-roll tests; [source-site roll](runbooks/site-roll.md) | repeated scheduled production success remains a separate operational-evidence claim |
+| Scheduled public refresh | implemented; contract-tested; production workflow registered | [scheduled workflow](../.github/workflows/scheduled-publication.yml), pre-deploy freshness guard, anonymous post-deploy verifier | schedule presence is not itself proof of repeated successful operation; use Actions evidence and public health |
+| Next.js news site | **deployed**; focused Node tests green; canonical public identity and request-time freshness health defined | `apps/news_site`, `apps/news_site/config/public_identity.json`, `/api/health`; [runtime CI reference](https://github.com/matuteiglesias/media_monitor/actions/runs/32770941754) | current/live status is conditional on the health invariant, not merely URL reachability |
 
 ## Current task routes
 
@@ -108,7 +115,7 @@ explicitly promotes a claim from them.
 - The [acquire runbook](../apps/news_acquire/runbook.md) still says Terraform is
   future PR-A5 work, while [`infra/aws/sensing`](../infra/aws/sensing/) contains
   the deployment packet. Trust the infrastructure/source and retain the exact
-  deployment-ready—not deployed or operated—status.
+  deployment-ready—not deployed or operated—AWS status.
 - [`docs/runbooks/README.md`](runbooks/README.md) routes through PR-numbered plans
   and links a missing `docs/current_state.md`; use this page as the reader front
   door instead.
