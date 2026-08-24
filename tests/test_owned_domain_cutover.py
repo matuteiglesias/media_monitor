@@ -29,16 +29,16 @@ def test_identity_declares_owned_target_without_premature_cutover():
 def test_scheduled_roll_owns_activation_flag_and_readiness_is_manual():
     scheduled = (ROOT / ".github" / "workflows" / "scheduled-publication.yml").read_text(encoding="utf-8")
     readiness = (ROOT / ".github" / "workflows" / "owned-domain-readiness.yml").read_text(encoding="utf-8")
-    docs = (ROOT / "docs" / "OWNED_DOMAIN_CUTOVER.md").read_text(encoding="utf-8")
+    runbook = (ROOT / "OWNED_DOMAIN_CUTOVER.md").read_text(encoding="utf-8")
 
     assert "CANONICAL_OWNED_DOMAIN_ACTIVE" in scheduled
     assert "owned_outlet_url" in scheduled
     assert "workflow_dispatch" in readiness
     assert "verify_owned_domain_readiness.py" in readiness
     assert "CHECK media.matuteiglesias.link" in readiness
-    assert "CANONICAL_OWNED_DOMAIN_ACTIVE=1" in docs
-    assert "CANONICAL_OWNED_DOMAIN_ACTIVE=0" in docs
-    assert "Do **not** change `public_outlet_url` manually" in docs
+    assert "CANONICAL_OWNED_DOMAIN_ACTIVE=1" in runbook
+    assert "CANONICAL_OWNED_DOMAIN_ACTIVE=0" in runbook
+    assert "Do **not** change `public_outlet_url` manually" in runbook
 
 
 def test_readiness_requires_dns_https_and_snapshot_parity():
