@@ -1,0 +1,38 @@
+[
+  {
+    "index_id": "example-prices-1",
+    "digest_at": "20260115T12",
+    "title": "Example price index release",
+    "topic": "Prices",
+    "published_at": "2026-01-15T12:35:00Z",
+    "link": "https://example.com/example-outlet/prices-1",
+    "source": "Example Statistics Office"
+  },
+  {
+    "index_id": "example-labor-1",
+    "digest_at": "20260115T12",
+    "title": "Example labor market release",
+    "topic": "Labor",
+    "published_at": "2026-01-15T12:30:00Z",
+    "link": "https://example.com/example-outlet/labor-1",
+    "source": "Example Labor Office"
+  },
+  {
+    "index_id": "example-trade-1",
+    "digest_at": "20260115T12",
+    "title": "Example trade balance release",
+    "topic": "Trade",
+    "published_at": "2026-01-15T12:25:00Z",
+    "link": "https://example.com/example-outlet/trade-1",
+    "source": "Example Customs Office"
+  },
+  {
+    "index_id": "example-prices-2",
+    "digest_at": "20260115T12",
+    "title": "Example regional price update",
+    "topic": "Prices",
+    "published_at": "2026-01-15T12:20:00Z",
+    "link": "https://example.com/example-outlet/prices-2",
+    "source": "Example Regional Office"
+  }
+]
