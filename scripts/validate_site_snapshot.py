@@ -11,11 +11,14 @@ from build_site_snapshot import (
     parse_time,
     published_validator,
     read_json,
+    rows,
     sha,
+    story_context_validator,
     validate_config,
     validate_editorial_selection,
     validate_published_article,
     validate_schema,
+    validate_story_context,
 )
 
 
@@ -72,7 +75,7 @@ def validate_publication(snapshot: dict, latest_count: int) -> None:
         previous_key = key
 
 
-def validate_curated(snapshot: dict, *, now: datetime, max_age_hours: int) -> None:
+def validate_curated(snapshot: dict, *, now: datetime, max_age_hours: int) -> dict[str, dict]:
     curated = snapshot["signals"]["curated"]
     expected_count = snapshot["metrics"]["curated_signal_count"]
     if len(curated) != expected_count:
@@ -103,6 +106,52 @@ def validate_curated(snapshot: dict, *, now: datetime, max_age_hours: int) -> No
     expected = [{key: item[key] for key in public_fields} for item in selection["selected"]]
     if curated != expected:
         raise ValueError("signals.curated does not match editorial_selection.v1 ordered projection")
+    return {str(item["index_id"]): item for item in curated}
+
+
+def validate_story_contexts(snapshot: dict, curated_by_id: dict[str, dict]) -> None:
+    story_contexts = snapshot["story_contexts"]
+    latest = snapshot["signals"]["latest"]
+    expected_ids = [str(item["index_id"]) for item in latest]
+    if snapshot["metrics"]["story_context_count"] != len(story_contexts):
+        raise ValueError("story_context_count/story_contexts mismatch")
+    if set(story_contexts) != set(expected_ids):
+        raise ValueError("story_contexts keys must exactly match signals.latest index_ids")
+
+    provenance = snapshot["provenance"]
+    contexts_path = Path(provenance["story_contexts_path"])
+    if not contexts_path.exists():
+        raise ValueError("story contexts provenance path does not exist")
+    if sha(contexts_path) != provenance["story_contexts_sha256"]:
+        raise ValueError("story contexts provenance hash mismatch")
+    source_rows = rows(contexts_path)
+    source_by_id = {str(row.get("index_id") or ""): row for row in source_rows}
+
+    validator = story_context_validator()
+    for signal in latest:
+        index_id = str(signal["index_id"])
+        context = story_contexts[index_id]
+        validate_story_context(
+            context,
+            label=f"story_contexts.{index_id}",
+            digest_at=snapshot["digest_at"],
+            validator=validator,
+        )
+        if context != source_by_id.get(index_id):
+            raise ValueError(f"story_contexts.{index_id} does not match provenance artifact")
+        if context["topic"] != signal["topic"]:
+            raise ValueError(f"story_contexts.{index_id} topic does not match signal")
+        curated = curated_by_id.get(index_id)
+        expected_curation = {
+            "selected": curated is not None,
+            "rank": curated["rank"] if curated is not None else None,
+            "score": curated["score"] if curated is not None else None,
+            "reason_codes": curated["reason_codes"] if curated is not None else [],
+        }
+        if context["curation"] != expected_curation:
+            raise ValueError(f"story_contexts.{index_id} curation mismatch")
+        if context["provenance"]["editorial_selection_id"] != provenance["editorial_selection_id"]:
+            raise ValueError(f"story_contexts.{index_id} selection provenance mismatch")
 
 
 def main() -> int:
@@ -119,8 +168,8 @@ def main() -> int:
         validate_config(config)
         snapshot = read_json(Path(args.input))
         validate_schema(snapshot)
-        if snapshot["schema_name"] != "site_snapshot.v3":
-            raise ValueError("expected site_snapshot.v3")
+        if snapshot["schema_name"] != "site_snapshot.v4":
+            raise ValueError("expected site_snapshot.v4")
         if snapshot["site"]["site_id"] != args.site_id or snapshot["digest_at"] != args.digest_at:
             raise ValueError("snapshot site_id or digest_at does not match requested values")
         if snapshot["snapshot_id"] != canonical_id(snapshot):
@@ -147,7 +196,12 @@ def main() -> int:
             if parse_time(item["published_at"], item["index_id"]) < now - timedelta(hours=config["selection"]["max_age_hours"]):
                 raise ValueError("snapshot contains stale monitored signal")
 
-        validate_curated(snapshot, now=now, max_age_hours=config["selection"]["max_age_hours"])
+        curated_by_id = validate_curated(
+            snapshot,
+            now=now,
+            max_age_hours=config["selection"]["max_age_hours"],
+        )
+        validate_story_contexts(snapshot, curated_by_id)
         validate_publication(snapshot, config["presentation"]["latest_count"])
 
         print(json.dumps({
@@ -158,6 +212,7 @@ def main() -> int:
             "section_count": section_count,
             "published_article_count": snapshot["metrics"]["published_article_count"],
             "curated_signal_count": snapshot["metrics"]["curated_signal_count"],
+            "story_context_count": snapshot["metrics"]["story_context_count"],
         }))
         return 0
     except Exception as exc:
