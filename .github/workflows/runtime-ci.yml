@@ -11,6 +11,7 @@ on:
       - "artifacts/editorial_c3_rehearsal/**"
       - "bin/**"
       - "config/**"
+      - "examples/**"
       - "README.md"
       - "OWNED_DOMAIN_CUTOVER.md"
       - "scripts/**"
@@ -31,6 +32,7 @@ on:
       - "artifacts/editorial_c3_rehearsal/**"
       - "bin/**"
       - "config/**"
+      - "examples/**"
       - "README.md"
       - "OWNED_DOMAIN_CUTOVER.md"
       - "scripts/**"
@@ -84,6 +86,7 @@ jobs:
             tests/test_social_metadata.py \
             tests/test_owned_domain_cutover.py \
             tests/test_adopter_demo.py \
+            tests/test_example_outlet.py \
             tests/test_media_ops.py \
             tests/test_news_site_publish_contract.py \
             tests/test_editorial_identity.py \
