@@ -94,6 +94,7 @@ def test_successful_preview_roll_rebuilds_publication_index_first(tmp_path):
     assert code == 0 and record["status"] == "ok"
     commands = [call[0] for call in fake.calls]
     assert commands[0][:2] == ["make", "build-published-article-indexes"]
+    assert any(command[:2] == ["make", "build-editorial-selection"] for command in commands)
     assert ["vercel", "pull", "--yes", "--environment=preview"] in commands
     assert record["expected"]["published_article_count"] == 2
     assert record["expected"]["curated_signal_count"] == 6
@@ -245,7 +246,8 @@ def test_no_ingestion_or_editorial_generation_commands(tmp_path):
     snapshot(tmp_path)
     fake = Fake(tmp_path)
     roll("argentina-general", "20260721T18", "preview", tmp_path, fake, lambda _: None)
+    forbidden = ("s01", "ingestion", "export-pr3a", "draft-article", "s04", "promptflow")
     assert all(
-        not any(word in " ".join(call[0]) for word in ("s01", "editorial", "ingestion", "export-pr3a"))
+        not any(word in " ".join(call[0]).lower() for word in forbidden)
         for call in fake.calls
     )
