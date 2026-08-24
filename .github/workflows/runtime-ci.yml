@@ -70,7 +70,8 @@ jobs:
             tests/test_publication_cycle_guard.py \
             tests/test_verify_public_deployment.py \
             tests/test_media_ops.py \
-            tests/test_news_site_publish_contract.py
+            tests/test_news_site_publish_contract.py \
+            tests/test_editorial_identity.py
 
   news-site-contracts:
     runs-on: ubuntu-latest

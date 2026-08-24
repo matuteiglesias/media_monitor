@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { findArticle, loadOutlet } from "@/lib/adapter/mappers";
+import { EDITORIAL_IDENTITY } from "@/lib/editorial_identity";
 
 function ArticleBody({ body }: { body: string }) {
   const blocks = body.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
@@ -34,6 +35,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
   const article = findArticle(params.slug);
   if (!article) notFound();
   const outlet = loadOutlet();
+  const editor = EDITORIAL_IDENTITY.editor;
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
@@ -47,6 +49,9 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         </p>
         <h1 className="mt-3 text-4xl font-semibold leading-tight">{article.title}</h1>
         <p className="mt-4 text-xl leading-8 text-neutral-700">{article.summary}</p>
+        <p className="mt-5 text-sm text-neutral-700">
+          Por <Link href={EDITORIAL_IDENTITY.routes.about} className="font-medium underline">{editor.name}</Link> · {editor.role}
+        </p>
         <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-y py-4 text-sm text-neutral-600">
           <span>Publicado: {article.published_at}</span>
           <span>Actualizado: {article.updated_at}</span>

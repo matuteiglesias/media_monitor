@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/editorial_identity.v1.json",
+  "title": "editorial_identity.v1",
+  "description": "Static public identity for the editor behind one Media Monitor outlet. This supplies default public attribution without changing published_article.v1.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": { "const": "editorial_identity.v1" },
+    "outlet_name": { "type": "string", "minLength": 1 },
+    "endorsement_line": { "type": "string", "minLength": 1 },
+    "editor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "role": { "type": "string", "minLength": 1 },
+        "bio_short": { "type": "string", "minLength": 1 },
+        "location": { "type": "string", "minLength": 1 },
+        "credentials": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "expertise": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "contact": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "email": { "type": "string", "format": "email" },
+            "website": { "type": "string", "format": "uri" },
+            "linkedin": { "type": "string", "format": "uri" },
+            "github": { "type": "string", "format": "uri" }
+          },
+          "required": ["email", "website", "linkedin", "github"]
+        },
+        "same_as": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": { "type": "string", "format": "uri" }
+        }
+      },
+      "required": [
+        "name",
+        "role",
+        "bio_short",
+        "location",
+        "credentials",
+        "expertise",
+        "contact",
+        "same_as"
+      ]
+    },
+    "routes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "about": { "type": "string", "pattern": "^/" },
+        "methodology": { "type": "string", "pattern": "^/" },
+        "journalists": { "type": "string", "pattern": "^/" }
+      },
+      "required": ["about", "methodology", "journalists"]
+    }
+  },
+  "required": ["schema_name", "outlet_name", "endorsement_line", "editor", "routes"]
+}

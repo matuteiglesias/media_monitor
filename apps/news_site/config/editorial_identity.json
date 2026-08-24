@@ -1,0 +1,39 @@
+{
+  "schema_name": "editorial_identity.v1",
+  "outlet_name": "Media Monitor",
+  "endorsement_line": "Análisis económico de Argentina — por Matías Iglesias",
+  "editor": {
+    "name": "Matías Iglesias",
+    "role": "Editor y autor",
+    "bio_short": "Economista (PhD) e ingeniero de datos e IA. Trabaja en la intersección entre economía argentina, datos públicos, investigación empírica y sistemas reproducibles.",
+    "location": "Buenos Aires, Argentina",
+    "credentials": [
+      "PhD en Economía",
+      "MSc en Física"
+    ],
+    "expertise": [
+      "economía argentina",
+      "inflación y precios",
+      "tipo de cambio y reservas",
+      "actividad y empleo",
+      "datos públicos y métodos reproducibles"
+    ],
+    "contact": {
+      "email": "matuteiglesias@gmail.com",
+      "website": "https://main.matuteiglesias.link",
+      "linkedin": "https://www.linkedin.com/in/matiasiglesias/",
+      "github": "https://github.com/matuteiglesias"
+    },
+    "same_as": [
+      "https://main.matuteiglesias.link",
+      "https://www.linkedin.com/in/matiasiglesias/",
+      "https://github.com/matuteiglesias",
+      "https://thesis.matuteiglesias.link/"
+    ]
+  },
+  "routes": {
+    "about": "/about",
+    "methodology": "/methodology",
+    "journalists": "/journalists"
+  }
+}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { loadOutlet } from "@/lib/adapter/mappers";
+import { EDITORIAL_IDENTITY } from "@/lib/editorial_identity";
 
 export default function HomePage() {
   const outlet = loadOutlet();
@@ -16,6 +17,9 @@ export default function HomePage() {
           {site.locale}
         </div>
         <h1 className="mt-2 text-4xl font-semibold">{site.name}</h1>
+        <p className="mt-2 text-sm font-medium text-neutral-700">
+          {EDITORIAL_IDENTITY.endorsement_line}
+        </p>
         <p className="mt-2 max-w-3xl text-neutral-600">{site.tagline}</p>
         <p className="mt-3 max-w-3xl text-sm text-neutral-500">
           Análisis editorial aprobado y monitoreo de señales de fuentes externas,
