@@ -1,2 +1,26 @@
-import { NextResponse } from "next/server"; import { loadSiteSnapshot } from "@/lib/adapter/loaders";
-export async function GET(){const s=loadSiteSnapshot(); return NextResponse.json({status:s.status,site_id:s.site.site_id,snapshot_id:s.snapshot_id,digest_at:s.digest_at,generated_at:s.generated_at,item_count:s.metrics.item_count,section_count:s.metrics.section_count});}
+import { NextResponse } from "next/server";
+import { loadSiteSnapshot } from "@/lib/adapter/loaders";
+import { buildPublicationHealth } from "@/lib/publication_health.mjs";
+
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  const snapshot = loadSiteSnapshot();
+  const publicationHealth = buildPublicationHealth(snapshot);
+
+  return NextResponse.json(
+    {
+      status: snapshot.status,
+      site_id: snapshot.site.site_id,
+      snapshot_id: snapshot.snapshot_id,
+      digest_at: snapshot.digest_at,
+      generated_at: snapshot.generated_at,
+      item_count: snapshot.metrics.item_count,
+      section_count: snapshot.metrics.section_count,
+      freshness_status: publicationHealth.freshness_status,
+      is_current: publicationHealth.is_current,
+      publication_health: publicationHealth,
+    },
+    { headers: { "Cache-Control": "no-store" } },
+  );
+}

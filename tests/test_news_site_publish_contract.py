@@ -34,3 +34,15 @@ def test_shell_publisher_only_invokes_declared_news_site_scripts() -> None:
     for name in invoked:
         assert f"run {name}" in publisher or f"run --silent {name}" in publisher
         assert name in scripts
+
+
+def test_freshness_notice_is_global_and_request_time() -> None:
+    layout = (NEWS_SITE_ROOT / "app" / "layout.tsx").read_text(encoding="utf-8")
+    route = (NEWS_SITE_ROOT / "app" / "api" / "health" / "route.ts").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'export const dynamic = "force-dynamic"' in layout
+    assert "<FreshnessNotice />" in layout
+    assert "buildPublicationHealth" in route
+    assert '"Cache-Control": "no-store"' in route

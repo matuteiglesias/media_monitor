@@ -79,7 +79,9 @@ jobs:
           cache: npm
           cache-dependency-path: apps/news_site/package-lock.json
       - run: npm ci
-      - name: Test snapshot refresh and build identity contracts
+      - name: Test snapshot, freshness and type contracts
         run: |
           npm run test:refresh-data
           npm run test:site-snapshot
+          npm run test:freshness
+          npm run typecheck

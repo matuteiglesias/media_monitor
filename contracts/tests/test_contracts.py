@@ -21,6 +21,7 @@ CASES = [
     ("news_article_draft.v1.json", "news_article_draft.example.json"),
     ("news_yt_script_draft.v1.json", "news_yt_script_draft.example.json"),
     ("published_article.v1.json", "published_article.example.json"),
+    ("publication_health.v1.json", "publication_health.example.json"),
 ]
 
 
