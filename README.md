@@ -80,6 +80,10 @@ flowchart LR
     L --> M[/api/health + sitemap + feeds + OG/JSON-LD]
 ```
 
+
+
+
+
 Principio de autoridad:
 
 ```text
