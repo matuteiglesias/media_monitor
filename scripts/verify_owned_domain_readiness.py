@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import socket
+from typing import Callable
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
@@ -17,19 +18,29 @@ def fetch_json(url: str, timeout: float = 20.0) -> dict:
     return payload
 
 
-def verify(owned_url: str, provider_url: str) -> dict:
+def resolve_host(host: str) -> list[str]:
+    return sorted({item[4][0] for item in socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)})
+
+
+def verify(
+    owned_url: str,
+    provider_url: str,
+    *,
+    resolver: Callable[[str], list[str]] = resolve_host,
+    fetcher: Callable[[str], dict] = fetch_json,
+) -> dict:
     owned = owned_url.rstrip("/")
     provider = provider_url.rstrip("/")
     owned_host = urlparse(owned).hostname
     if not owned_host:
         raise ValueError("owned URL has no hostname")
 
-    addresses = sorted({item[4][0] for item in socket.getaddrinfo(owned_host, 443, type=socket.SOCK_STREAM)})
+    addresses = resolver(owned_host)
     if not addresses:
         raise ValueError("owned hostname does not resolve")
 
-    owned_health = fetch_json(f"{owned}/api/health")
-    provider_health = fetch_json(f"{provider}/api/health")
+    owned_health = fetcher(f"{owned}/api/health")
+    provider_health = fetcher(f"{provider}/api/health")
     for label, health in (("owned", owned_health), ("provider", provider_health)):
         if health.get("status") != "ok":
             raise ValueError(f"{label} health is not ok")
