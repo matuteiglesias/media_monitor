@@ -140,6 +140,21 @@ def roll(
     stage = "publication-index"
     try:
         call(runner, ["make", "build-published-article-indexes", f"PYTHON={sys.executable}"], root, stage=stage)
+        stage = "editorial-selection"
+        selection_as_of = utcnow().isoformat().replace("+00:00", "Z")
+        call(
+            runner,
+            [
+                sys.executable,
+                "scripts/build_editorial_selection.py",
+                "--digest-at",
+                digest_at,
+                "--as-of",
+                selection_as_of,
+            ],
+            root,
+            stage=stage,
+        )
         stage = "compile"
         call(runner, ["make", "build-site-snapshot", f"SITE_ID={site_id}", f"DIGEST_AT={digest_at}"], root, stage=stage)
         stage = "validate"
