@@ -94,7 +94,7 @@ def test_successful_preview_roll_rebuilds_publication_index_first(tmp_path):
     assert code == 0 and record["status"] == "ok"
     commands = [call[0] for call in fake.calls]
     assert commands[0][:2] == ["make", "build-published-article-indexes"]
-    assert any(command[:2] == ["make", "build-editorial-selection"] for command in commands)
+    assert any("scripts/build_editorial_selection.py" in command for command in commands)
     assert ["vercel", "pull", "--yes", "--environment=preview"] in commands
     assert record["expected"]["published_article_count"] == 2
     assert record["expected"]["curated_signal_count"] == 6
