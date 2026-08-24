@@ -1,202 +1,223 @@
 # 🗞️ Media Monitor
 
-`media_monitor` es un **sistema desplegado y gobernado de inteligencia de noticias y publicación editorial** orientado a una ruta operativa simple:
+[![Runtime contracts](https://github.com/matuteiglesias/media_monitor/actions/workflows/runtime-ci.yml/badge.svg)](https://github.com/matuteiglesias/media_monitor/actions/workflows/runtime-ci.yml)
 
-**fuentes → ingesta → contratos versionados → índices deterministas → briefs/drafts → aprobación humana → publicación → snapshot versionado → health → deploy**.
+`media_monitor` es un **sistema desplegado y gobernado de inteligencia de noticias y publicación editorial**.
 
-El sistema separa explícitamente señales monitoreadas de análisis editorial propio. La generación asistida por IA nunca equivale a aprobación: sólo `published_article.v1` atravesado por el gate humano puede entrar a la capa editorial pública.
+Su objetivo es separar con contratos explícitos cuatro cosas que suelen mezclarse en sistemas de medios asistidos por IA:
 
-## 🌐 Superficies públicas canónicas
+1. **señales externas monitoreadas**;
+2. **selección determinística de qué importa ahora**;
+3. **contexto observado de cobertura**;
+4. **análisis editorial propio**, que sólo existe públicamente después de aprobación humana explícita.
 
-- **Outlet público:** https://mediamonitor-psi.vercel.app
+La generación asistida nunca equivale a publicación. `published_article.v1` continúa detrás de un gate humano.
+
+## Verlo funcionando
+
+- **Outlet canónico actual:** https://mediamonitor-psi.vercel.app
 - **Health público:** https://mediamonitor-psi.vercel.app/api/health
-- **Documentación:** https://github.com/matuteiglesias/media_monitor/tree/main/docs
-- **Repositorio:** https://github.com/matuteiglesias/media_monitor
-- **Owner / portfolio:** https://main.matuteiglesias.link
+- **Para periodistas:** https://mediamonitor-psi.vercel.app/journalists
+- **Metodología:** https://mediamonitor-psi.vercel.app/methodology
+- **Documentación técnica:** [`docs/README.md`](docs/README.md)
 
-La identidad pública de máquina vive en
-[`apps/news_site/config/public_identity.json`](apps/news_site/config/public_identity.json).
-El outlet anterior o cualquier otra URL de preview/deploy no es una identidad pública
-canónica. La aplicación publica `canonical_url` en `/api/health` y usa la misma
-fuente para metadata/canonical HTML.
+Existe un cutover preparado hacia `https://media.matuteiglesias.link`, pero el host de Vercel sigue siendo canónico hasta que DNS, HTTPS y paridad de snapshot estén verificados. Ver [`OWNED_DOMAIN_CUTOVER.md`](OWNED_DOMAIN_CUTOVER.md).
 
-**“Live” no significa simplemente que una URL responda.** La superficie sólo debe describirse como corriente cuando el health público reporta `freshness_status=FRESH`, `is_current=true` y `within_target=true`. La frescura se evalúa en request time sobre las señales monitoreadas, no sobre la edad de un análisis editorial.
+**“Live” no significa simplemente que una URL responda.** La superficie sólo debe describirse como corriente cuando `/api/health` informa `freshness_status=FRESH`, `is_current=true` y `within_target=true`.
 
-## 🔎 Evidencia pública de ingeniería
+No se enlaza todavía un “artículo representativo” como si estuviera human-approved cuando esa aprobación pública no existe. El repositorio sí contiene una tranche de aceptación aislada que ejercita objetos `human_approved` sin convertirlos en decisiones editoriales públicas.
 
-La cadena actualmente inspeccionable es:
+## Prueba local en un comando
 
-1. **Source ingestion / sensing** → `apps/news_acquire` y bundles de corrida inmutables.
-2. **Contratos versionados** → `contracts/schemas/` y buses JSON/JSONL estables.
-3. **Índices deterministas** → builders de access indexes y compaction sin dependencia del frontend.
-4. **Generación editorial** → `apps/news_editorial` produce briefs y drafts, no publicaciones.
-5. **Gate humano explícito** → [`scripts/promote_draft_to_published.py`](scripts/promote_draft_to_published.py) exige aprobación humana para producir `published_article.v1`.
-6. **Snapshot de deployment** → [`site_snapshot.v2`](contracts/schemas/site_snapshot.v2.json) separa `publication` de `signals` y conserva artículos/citas/fuentes aprobados.
-7. **Freshness health** → `/api/health` expone identidad de snapshot, conteos y `publication_health.v1`.
-8. **Operación programada** → [Scheduled public refresh](.github/workflows/scheduled-publication.yml) ejecuta sensing, guard pre-deploy, roll y verificación pública anónima.
-9. **Publicación desplegada** → el proyecto canónico `media-monitor` en Vercel materializa `apps/news_site`; la homepage del repositorio apunta al mismo outlet.
-
-Evidencia concreta:
-
-- [Outlet canónico](https://mediamonitor-psi.vercel.app)
-- [Health público](https://mediamonitor-psi.vercel.app/api/health)
-- [Documentación](https://github.com/matuteiglesias/media_monitor/tree/main/docs)
-- [Runtime contracts — ejecución de referencia](https://github.com/matuteiglesias/media_monitor/actions/runs/32770941754)
-- [P0-C3 — rehearsal del primer tranche editorial y prueba del gate humano](https://github.com/matuteiglesias/media_monitor/pull/64)
-
-No se enlaza todavía un “artículo representativo” como si estuviera human-approved: C3 probó de extremo a extremo la maquinaria de promoción/indexación en un bus aislado, pero preservó deliberadamente la frontera de aprobación real. La primera pieza editorial pública deberá aparecer aquí sólo después de una decisión humana explícita.
-
-**Mapa de documentación:** [`docs/README.md`](docs/README.md) reúne rutas por
-audiencia, capacidad y estado de madurez. Este README conserva solamente la ruta
-operativa corta.
-
----
-
-## ✅ Ruta canónica (operativa)
-
-La ejecución recomendada es por lanes independientes vía `bin/run_minimal_loop_once.sh`:
-
-- **sensing** (obligatoria, cada 60m)
-  - `make s01`
-  - `make s02`
-  - `make s03`
-  - `make export-pr3a`
-  - `make build-news-access-indexes`
-- **editorial** (recomendada, cada 6h)
-  - `make s04`
-  - `make s06`
-  - `make s05`
-  - `make build-editorial-access-indexes`
-- **enrich** (opcional, queue/on-demand)
-  - `bin/run_minimal_loop_once.sh --lane enrich`
-
-Entrypoint único por lane:
+Después de instalar las dependencias Python del repositorio:
 
 ```bash
-bin/run_minimal_loop_once.sh --lane sensing
-bin/run_minimal_loop_once.sh --lane editorial
-bin/run_minimal_loop_once.sh --lane enrich
+python -m pip install -r requirements-sensing.txt jsonschema
+bin/media demo
 ```
 
-> La lane `enrich` conserva el contrato histórico mediante
-> `scripts/06_scrape_enrich.py`, un wrapper fino que delega en el entrypoint del
-> módulo propietario con `MODE=batch`. Para operación especializada siguen
-> disponibles los modos de `apps/news_enrich/entrypoints/run_enrich_owner.sh`.
+El comando construye dos veces el mismo outlet de fixture y exige el mismo `snapshot_id`. No usa red, LLM, base de datos ni credenciales de deployment.
 
-### DoD mínimo del sprint (cierre operacional)
+Salida:
 
-Un sprint se considera **cerrado** solo si se cumple este mínimo:
+```text
+.demo/media-monitor/
+├── demo_manifest.json
+├── site_snapshot.json
+├── README.txt
+└── storage/indexes/
+    ├── news_recent_refs_latest.jsonl
+    ├── news_recent_groups_latest.jsonl
+    ├── editorial_selection_latest.json
+    ├── story_contexts_latest.jsonl
+    └── published_articles_latest.jsonl
+```
 
-- `home` viva (ruta principal visible y utilizable sin arqueología documental).
-- `story` viva (al menos una historia recorre la ruta completa y queda accionable).
-- handoff panel simple vivo (`storage/indexes/editorial_latest.json` como superficie de decisión).
-- README canónico corto actualizado (este archivo como golden path).
+Los datos son deliberadamente ficticios y están marcados `DETERMINISTIC_FIXTURE_NOT_LIVE_NEWS`. El propósito es demostrar la arquitectura, no simular actualidad real.
 
-Criterio de rechazo explícito:
+## Arquitectura en una pantalla
 
-- Si para entender el flujo básico hacen falta múltiples runbooks/scripts en paralelo, el sprint **no** se cierra.
+```mermaid
+flowchart LR
+    A[Fuentes RSS / públicas] --> B[news_acquire]
+    B --> C[news_ref.v1 + digest groups]
+    C --> D[access indexes]
+    D --> E[editorial_selection.v1\nno LLM]
+    D --> F[story_context.v1]
+    E --> F
+    D --> G[news_editorial\nbriefs + drafts]
+    G --> H{aprobación humana}
+    H -->|sí| I[published_article.v1]
+    H -->|no| J[hold / revise]
+    D --> K[site_snapshot.v4]
+    E --> K
+    F --> K
+    I --> K
+    K --> L[Next outlet]
+    L --> M[/api/health + sitemap + feeds + OG/JSON-LD]
+```
 
-Evidencia obligatoria por PR:
+Principio de autoridad:
 
-- Comandos ejecutados (copiables) y resultado observable.
-- Capturas de la superficie afectada cuando el cambio sea visual/operativo.
-- Validación de no duplicación de mapping entre frontend/API/scripts (o `N/A` justificado si una capa no existe en el repo).
+```text
+monitoreado ≠ seleccionado ≠ generado ≠ aprobado ≠ publicado
+```
 
----
+Cada transición tiene un contrato o gate explícito.
 
-## 📰 Last mile (página simple de publicación)
+## Qué demuestra el repositorio
 
-Generar snapshot público hardened para la web:
+| Capacidad | Evidencia principal |
+|---|---|
+| Ingesta y sensing reproducible | `apps/news_acquire/`, run bundles, buses versionados |
+| Contratos interoperables | `contracts/schemas/` |
+| Curation determinística | `editorial_selection.v1`, `scripts/build_editorial_selection.py` |
+| Contexto de cobertura | `story_context.v1`, `scripts/build_story_contexts.py` |
+| Gate editorial humano | `scripts/promote_draft_to_published.py` |
+| Publicación inmutable | `published_article.v1` + `site_snapshot.v4` |
+| Freshness truth | `/api/health`, `publication_health.v1` |
+| Discoverability | sitemap, robots, feeds separados, metadata y JSON-LD |
+| Operación | scheduled guarded refresh + crawler/social acceptance |
+| Reproducibilidad para adopters | `bin/media demo` |
+
+## Superficies públicas deliberadamente separadas
+
+### Análisis propio
+
+Sólo objetos `published_article.v1` con estado publicado y aprobación humana pueden aparecer como análisis de Media Monitor.
+
+### Qué importa ahora
+
+`editorial_selection.v1` prioriza señales externas de forma determinística usando frescura, prioridad temática y diversidad. Selección no implica autoría.
+
+### Cable cronológico
+
+`signals.latest` conserva la secuencia temporal de señales externas monitoreadas.
+
+### Contexto de historia
+
+`story_context.v1` agrega cobertura observada, fuentes relacionadas, ventanas y relación con la shortlist sin generar interpretación editorial.
+
+## Entrypoints para distintos usuarios
+
+### Quiero entender o reutilizar el sistema
+
+1. Ejecutar `bin/media demo`.
+2. Leer este README.
+3. Ir al [mapa de documentación](docs/README.md).
+4. Inspeccionar `contracts/schemas/` y `sites/`.
+
+### Quiero operar este deployment
 
 ```bash
-make build-editorial-access-indexes DIGEST_AT=$(date -u +%Y%m%dT%H)
-make publish-last-mile-snapshot
+bin/media status --target production
+bin/media doctor --target preview
+bin/media publish --target preview --digest-at YYYYMMDDTHH
 ```
 
-Abrir vista local:
+Las lanes de adquisición/enriquecimiento/editorial siguen disponibles mediante `bin/run_minimal_loop_once.sh`, pero ya no son el punto de entrada recomendado para un newcomer.
+
+### Quiero entender el frontend público
+
+```text
+apps/news_site/
+├── app/                 rutas Next
+├── config/              identidad pública/editorial
+├── lib/adapter/         consumo del snapshot
+└── public/data/         snapshot de deployment generado
+```
+
+## Ownership y límites
+
+- `apps/news_acquire` posee adquisición y sensing.
+- `apps/news_enrich` posee scrape/enrichment.
+- `apps/news_editorial` posee briefs/drafts, **no publicación**.
+- promotion + published indexes poseen la frontera de aprobación.
+- snapshot builders poseen el read model público.
+- `apps/news_site` presenta contratos compilados; no debe inventar hechos upstream.
+
+La integración entre owners ocurre por buses, índices y snapshots versionados, no por imports cruzados oportunistas.
+
+## Estado de producción vs. fixtures
+
+El repositorio contiene tres clases de evidencia y las mantiene separadas:
+
+- **producción:** datos/snapshots materializados por el pipeline real;
+- **rehearsal/toy acceptance:** objetos realistas aislados para probar gates y consumidores;
+- **demo:** fixtures completamente determinísticos para adopters.
+
+Ninguna fixture puede presentarse como contenido editorial público real.
+
+## CI como contrato ejecutable
+
+`Runtime contracts` prueba, entre otras cosas:
+
+- schemas y buses;
+- publicación y gate humano;
+- selección determinística;
+- story contexts;
+- snapshot/publication semantics;
+- freshness;
+- crawler/social surface;
+- owned-domain cutover;
+- el demo offline reproducible;
+- typecheck del outlet Next.
+
+Los cambios visuales/documentales del docs-site tienen además su workflow de aislamiento propio.
+
+## Estructura del repositorio
+
+```text
+apps/                 owners de runtime y sitio
+bin/                  entrypoints humanos
+config/               políticas reutilizables
+contracts/schemas/    contratos de integración
+sites/                 configuración de outlets
+docs/                  arquitectura, runbooks y decisiones
+scripts/               builders/validators/operación
+storage/               runtime local generado (gitignored)
+tests/                 contratos y acceptance tests
+legacy/                arqueología/compatibilidad explícita
+```
+
+## Desarrollo y contribución
+
+Por ahora, empezar por:
 
 ```bash
-python -m http.server 8000
-# abrir http://localhost:8000/web/
+python -m pytest -q tests/test_adopter_demo.py
+bin/media demo
 ```
 
-Deploy en Vercel (online):
+La guía formal de contribución y el ejemplo de “crear otro outlet” se añaden en los siguientes paquetes P1-F2/F3.
 
-```bash
-vercel --prod
-```
+## Principios de diseño
 
-Hardening aplicado:
-- La UI consume `web/data/editorial_latest.json` (snapshot público hardened para publicación estática).
-- Snapshot generado por `scripts/publish_last_mile_snapshot.py` con shape mínima y sanitizada para evitar exponer campos no necesarios.
-- `vercel.json` aplica headers de seguridad (`CSP`, `X-Frame-Options`, `nosniff`) y `no-store` para JSON de estado.
+- No agregar un orquestador sin un consumidor real.
+- No confundir selección con autoría.
+- No confundir generación con aprobación.
+- Preferir contratos explícitos y builders determinísticos.
+- Falla cerrada en publicación, identidad y provenance.
+- Mantener el deployment de Argentina como **una instancia** del sistema, no como la definición del sistema.
 
-
-### news_site deploy (golden path)
-
-Source of truth (news_site): **runtime truth = `storage/indexes` → deploy truth = refreshed snapshot in `apps/news_site/public/data`**.
-
-```bash
-# 1) generar índices, validar storage, refrescar public/data, smoke-test y build Next
-make s01 s02 s03 export-pr3a DIGEST_AT=$(date -u +%Y%m%dT%H)
-make publish-news-site DIGEST_AT=$(date -u +%Y%m%dT%H)
-
-# 2) deploy del proyecto Next apps/news_site
-vercel --prod
-```
-
-Notas del refresh:
-- Falla con error si faltan `news_recent_refs_latest.jsonl` o `news_recent_groups_latest.jsonl`, si están vacíos o si no parsean como JSONL.
-- En producción, `storage/indexes/editorial_latest.json` es obligatorio. El fallback editorial sólo se permite para previews locales con `ALLOW_EDITORIAL_FALLBACK=1`.
-- `scripts/publish_news_site.sh` usa los scripts npm `refresh-data` y
-  `smoke:public-data` definidos por `apps/news_site/package.json`; cualquier
-  error en refresh, validación o build interrumpe la publicación antes de escribir
-  el manifest final.
-
----
-
-## 🚀 Quickstart
-
-1. Verificar runtime:
-
-```bash
-make preflight-runtime
-```
-
-2. Ejecutar una corrida de sensing (dry run):
-
-```bash
-make s01 DRY_RUN=1
-make s02 DRY_RUN=1
-make s03 DRY_RUN=1
-```
-
-3. Levantar heartbeat de sensing:
-
-```bash
-make heartbeat-start INTERVAL_SEC=3600
-make heartbeat-status
-```
-
----
-
-## 🧭 Estructura (high-level)
-
-- `bin/` → entrypoints de operación.
-- `Makefile` → wiring de stages.
-- `apps/news_acquire|news_editorial|news_enrich` → ownership por dominio.
-- `legacy/` y algunos `scripts/` → compat wrappers aún activos.
-- `contracts/schemas/` → contratos interoperables.
-- `storage/buses/` y `storage/indexes/` → superficies exportables.
-- `docs/runbooks/` → runbooks de operación, migración y pruning.
-
----
-
-## 📌 Notas de consolidación
-
-- Evitar nuevas capas/orquestadores sin consumidor real.
-- Priorizar claridad de entrypoints sobre expansión de superficies.
-- Tratar artefactos intermedios (`data/pf_out`, `data/drafts`, `data/quarantine`) como internos, no contratos públicos.
-
-Para elegir la guía vigente sin depender de nombres de PR, comenzar en el
-[`mapa de documentación`](docs/README.md).
+Para operación profunda, migraciones, archaeology y runbooks, comenzar en [`docs/README.md`](docs/README.md).
