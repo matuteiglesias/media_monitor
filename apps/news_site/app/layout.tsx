@@ -1,5 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import FreshnessNotice from "@/components/FreshnessNotice";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Media Monitor",
@@ -13,7 +16,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        <FreshnessNotice />
+        {children}
+      </body>
     </html>
   );
 }

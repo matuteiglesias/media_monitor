@@ -1,0 +1,17 @@
+{
+  "schema_name": "publication_health.v1",
+  "site_id": "argentina-general",
+  "snapshot_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "digest_at": "20260824T17",
+  "evaluated_at": "2026-08-24T17:00:00Z",
+  "newest_item_at": "2026-08-24T13:00:00Z",
+  "age_minutes": 240,
+  "freshness_status": "DEGRADED",
+  "within_target": false,
+  "is_current": false,
+  "policy": {
+    "target_minutes": 120,
+    "degraded_after_minutes": 180,
+    "stale_after_minutes": 360
+  }
+}

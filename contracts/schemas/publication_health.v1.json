@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/publication_health.v1.json",
+  "title": "publication_health.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": {"const": "publication_health.v1"},
+    "site_id": {"type": "string", "minLength": 1},
+    "snapshot_id": {"type": "string", "minLength": 1},
+    "digest_at": {"type": "string", "minLength": 1},
+    "evaluated_at": {"type": "string", "format": "date-time"},
+    "newest_item_at": {"type": "string", "format": "date-time"},
+    "age_minutes": {"type": "integer", "minimum": 0},
+    "freshness_status": {"enum": ["FRESH", "DEGRADED", "STALE"]},
+    "within_target": {"type": "boolean"},
+    "is_current": {"type": "boolean"},
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target_minutes": {"type": "integer", "minimum": 1},
+        "degraded_after_minutes": {"type": "integer", "minimum": 1},
+        "stale_after_minutes": {"type": "integer", "minimum": 1}
+      },
+      "required": ["target_minutes", "degraded_after_minutes", "stale_after_minutes"]
+    }
+  },
+  "required": [
+    "schema_name",
+    "site_id",
+    "snapshot_id",
+    "digest_at",
+    "evaluated_at",
+    "newest_item_at",
+    "age_minutes",
+    "freshness_status",
+    "within_target",
+    "is_current",
+    "policy"
+  ]
+}

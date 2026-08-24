@@ -7,10 +7,12 @@
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "refresh-data": "node scripts/refresh_public_data.mjs",
     "smoke:public-data": "node scripts/validate_public_data.mjs",
     "test:refresh-data": "node --test scripts/refresh_public_data.test.mjs",
     "test:site-snapshot": "node --test scripts/site_snapshot_digest.test.mjs",
+    "test:freshness": "node --test scripts/publication_health.test.mjs",
     "prebuild": "node scripts/validate_site_snapshot_for_build.mjs"
   },
   "dependencies": {
