@@ -1,14 +1,15 @@
 # 🗞️ Media Monitor
 
-`media_monitor` es un backend editorial semiautónomo orientado a una ruta operativa simple:
+`media_monitor` es un **sistema desplegado y gobernado de inteligencia de noticias y publicación editorial** orientado a una ruta operativa simple:
 
-**news in → brief → draft → human last mile**.
+**fuentes → ingesta → contratos versionados → índices deterministas → briefs/drafts → aprobación humana → publicación → snapshot versionado → health → deploy**.
 
-Hoy el foco no es agregar capas, sino mantener viva la ruta útil y reducir ambigüedad operacional.
+El sistema separa explícitamente señales monitoreadas de análisis editorial propio. La generación asistida por IA nunca equivale a aprobación: sólo `published_article.v1` atravesado por el gate humano puede entrar a la capa editorial pública.
 
 ## 🌐 Superficies públicas canónicas
 
 - **Outlet público:** https://mediamonitor-psi.vercel.app
+- **Health público:** https://mediamonitor-psi.vercel.app/api/health
 - **Documentación:** https://github.com/matuteiglesias/media_monitor/tree/main/docs
 - **Repositorio:** https://github.com/matuteiglesias/media_monitor
 - **Owner / portfolio:** https://main.matuteiglesias.link
@@ -18,6 +19,32 @@ La identidad pública de máquina vive en
 El outlet anterior o cualquier otra URL de preview/deploy no es una identidad pública
 canónica. La aplicación publica `canonical_url` en `/api/health` y usa la misma
 fuente para metadata/canonical HTML.
+
+**“Live” no significa simplemente que una URL responda.** La superficie sólo debe describirse como corriente cuando el health público reporta `freshness_status=FRESH`, `is_current=true` y `within_target=true`. La frescura se evalúa en request time sobre las señales monitoreadas, no sobre la edad de un análisis editorial.
+
+## 🔎 Evidencia pública de ingeniería
+
+La cadena actualmente inspeccionable es:
+
+1. **Source ingestion / sensing** → `apps/news_acquire` y bundles de corrida inmutables.
+2. **Contratos versionados** → `contracts/schemas/` y buses JSON/JSONL estables.
+3. **Índices deterministas** → builders de access indexes y compaction sin dependencia del frontend.
+4. **Generación editorial** → `apps/news_editorial` produce briefs y drafts, no publicaciones.
+5. **Gate humano explícito** → [`scripts/promote_draft_to_published.py`](scripts/promote_draft_to_published.py) exige aprobación humana para producir `published_article.v1`.
+6. **Snapshot de deployment** → [`site_snapshot.v2`](contracts/schemas/site_snapshot.v2.json) separa `publication` de `signals` y conserva artículos/citas/fuentes aprobados.
+7. **Freshness health** → `/api/health` expone identidad de snapshot, conteos y `publication_health.v1`.
+8. **Operación programada** → [Scheduled public refresh](.github/workflows/scheduled-publication.yml) ejecuta sensing, guard pre-deploy, roll y verificación pública anónima.
+9. **Publicación desplegada** → el proyecto canónico `media-monitor` en Vercel materializa `apps/news_site`; la homepage del repositorio apunta al mismo outlet.
+
+Evidencia concreta:
+
+- [Outlet canónico](https://mediamonitor-psi.vercel.app)
+- [Health público](https://mediamonitor-psi.vercel.app/api/health)
+- [Documentación](https://github.com/matuteiglesias/media_monitor/tree/main/docs)
+- [Runtime contracts — ejecución de referencia](https://github.com/matuteiglesias/media_monitor/actions/runs/32770941754)
+- [P0-C3 — rehearsal del primer tranche editorial y prueba del gate humano](https://github.com/matuteiglesias/media_monitor/pull/64)
+
+No se enlaza todavía un “artículo representativo” como si estuviera human-approved: C3 probó de extremo a extremo la maquinaria de promoción/indexación en un bus aislado, pero preservó deliberadamente la frontera de aprobación real. La primera pieza editorial pública deberá aparecer aquí sólo después de una decisión humana explícita.
 
 **Mapa de documentación:** [`docs/README.md`](docs/README.md) reúne rutas por
 audiencia, capacidad y estado de madurez. Este README conserva solamente la ruta

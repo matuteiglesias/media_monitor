@@ -78,6 +78,22 @@ def test_public_identity_is_single_sourced_across_runtime_and_public_docs() -> N
         assert value in docs
 
 
+def test_prominent_public_claims_are_calibrated_to_evidence() -> None:
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    docs = (REPO_ROOT / "docs" / "README.md").read_text(encoding="utf-8")
+
+    assert "sistema desplegado y gobernado de inteligencia de noticias y publicación editorial" in readme
+    assert "deployed governed news-intelligence and editorial" in docs
+    assert "Working internal/prototype" not in readme
+    assert "backend editorial semiautónomo" not in readme
+    for text in (readme, docs):
+        assert "freshness_status=FRESH" in text
+        assert "is_current=true" in text
+        assert "within_target=true" in text
+    assert "no se enlaza todavía" in readme.lower()
+    assert "actual publication approval remains intentionally human" in docs
+
+
 def test_v2_outlet_adapter_separates_publication_from_signals() -> None:
     mapper = (NEWS_SITE_ROOT / "lib" / "adapter" / "mappers.ts").read_text(
         encoding="utf-8"
