@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Callable
 
 from error_surface import failure_details, latest_failed_stage, wrapped_stage_timeline
+from provider_preflight import vercel_cli_preflight
 from roll_site import Result
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,6 +37,26 @@ def _failed_event(stages: list[dict]) -> dict | None:
     return failed[-1] if failed else None
 
 
+def _provider_stage(preflight: dict, started: datetime, completed: datetime) -> dict:
+    ok = preflight.get("status") == "ok"
+    version = preflight.get("version") or "unknown"
+    minimum = preflight.get("minimum_version") or "unknown"
+    return {
+        "stage": "vercel-cli",
+        "status": "ok" if ok else "failed",
+        "started_at": started.isoformat().replace("+00:00", "Z"),
+        "completed_at": completed.isoformat().replace("+00:00", "Z"),
+        "duration_ms": max(0, round((completed - started).total_seconds() * 1000)),
+        "exit_code": 0 if ok else 1,
+        "log_path": None,
+        "summary": (
+            f"Vercel CLI {version} (minimum {minimum})"
+            if ok
+            else str(preflight.get("error") or "Vercel CLI preflight failed")
+        ),
+    }
+
+
 def refresh(
     *,
     site_id: str,
@@ -52,11 +73,28 @@ def refresh(
         "site_id": site_id,
         "target": target,
         "digest_at": digest,
+        "provider": None,
         "sensing": None,
         "publish": None,
+        "provider_stages": [],
         "sensing_stages": [],
         "publication_stages": [],
     }
+
+    provider_started = datetime.now(timezone.utc)
+    preflight = vercel_cli_preflight(runner, cwd=root)
+    provider_completed = datetime.now(timezone.utc)
+    provider_stage = _provider_stage(preflight, provider_started, provider_completed)
+    base["provider"] = preflight
+    base["provider_stages"] = [provider_stage]
+    if preflight.get("status") != "ok":
+        return base | {
+            "status": "failed",
+            "failed_lane": "provider",
+            "failed_stage": "vercel-cli",
+            "error": preflight.get("error") or "Vercel CLI preflight failed",
+            "diagnostic_log": None,
+        }, 1
 
     env = os.environ.copy()
     env.update(
@@ -180,6 +218,7 @@ def _duration(value: object) -> str:
 
 def _print_timeline(report: dict) -> None:
     rows: list[tuple[str, dict]] = []
+    rows.extend(("provider", row) for row in report.get("provider_stages") or [])
     rows.extend(("sensing", row) for row in report.get("sensing_stages") or [])
     rows.extend(("publication", row) for row in report.get("publication_stages") or [])
     if not rows:
@@ -190,6 +229,8 @@ def _print_timeline(report: dict) -> None:
         icon = "✓" if status in {"ok", "success"} else "✗" if status == "failed" else "·"
         stage = str(row.get("stage") or "unknown")
         print(f"  {icon} {lane}:{stage:<30} {_duration(row.get('duration_ms'))}")
+        if lane == "provider" and status in {"ok", "success"} and row.get("summary"):
+            print(f"      info:  {row['summary']}")
         if status == "failed" and row.get("summary"):
             print(f"      error: {row['summary']}")
         if status == "failed" and row.get("log_path"):
