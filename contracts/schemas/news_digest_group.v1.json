@@ -30,6 +30,7 @@
         "E",
         "F",
         "1h_window",
+        "recent_4h_window",
         "4h_window",
         "8h_window",
         "2day_window",
@@ -37,7 +38,7 @@
         "weekly_window",
         "fortnight_window"
       ],
-      "description": "Producer-native digest window category. Legacy A..F values remain accepted for backward compatibility."
+      "description": "Producer-native digest window category. Legacy A..F values remain accepted for backward compatibility; recent_4h_window is the rolling live-publication horizon."
     },
     "topic": {
       "type": "string",
