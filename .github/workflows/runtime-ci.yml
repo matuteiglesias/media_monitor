@@ -134,7 +134,6 @@ jobs:
           npm run test:freshness
           node --check scripts/validate_site_snapshot.mjs
           npm run typecheck
-          mkdir -p public/data
-          cp ../../contracts/tests/fixtures/site_snapshot.v4.example.json public/data/site_snapshot.json
+          node scripts/prepare_ci_build_fixture.mjs
           node -e 'const fs=require("fs"); const p="../../sites/argentina-general.json"; const c=JSON.parse(fs.readFileSync(p,"utf8")); c.selection.minimum_items=1; fs.writeFileSync(p, JSON.stringify(c));'
           DIGEST_AT=20260824T18 npm run build
