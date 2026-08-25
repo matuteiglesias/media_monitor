@@ -83,6 +83,7 @@ jobs:
             tests/test_build_news_access_indexes.py \
             tests/test_live_sensing_publication_window.py \
             tests/test_operator_stage_telemetry.py \
+            tests/test_vercel_node_runtime.py \
             tests/test_sensing_run_bundle.py \
             tests/test_sensing_compactor.py \
             tests/test_news_editorial_briefs_pipeline.py \
@@ -122,7 +123,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: apps/news_site/package-lock.json
       - run: npm ci
