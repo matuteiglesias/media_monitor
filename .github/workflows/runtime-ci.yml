@@ -127,10 +127,13 @@ jobs:
           cache: npm
           cache-dependency-path: apps/news_site/package-lock.json
       - run: npm ci
-      - name: Test snapshot, freshness and type contracts
+      - name: Test snapshot, freshness, type and production-build contracts
         run: |
           npm run test:refresh-data
           npm run test:site-snapshot
           npm run test:freshness
           node --check scripts/validate_site_snapshot.mjs
           npm run typecheck
+          mkdir -p public/data
+          cp ../../contracts/tests/fixtures/site_snapshot.v4.example.json public/data/site_snapshot.json
+          DIGEST_AT=20260824T18 npm run build
