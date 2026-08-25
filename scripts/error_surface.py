@@ -114,8 +114,14 @@ def _display_path(repo_root: Path, value: object) -> str | None:
         return str(path)
 
 
-def wrapped_stage_timeline(repo_root: Path, *, lane: str, digest_at: str) -> list[dict]:
-    """Return ordered immutable wrapped-stage telemetry for one lane/digest."""
+def wrapped_stage_timeline(
+    repo_root: Path,
+    *,
+    lane: str,
+    digest_at: str,
+    since: datetime | None = None,
+) -> list[dict]:
+    """Return ordered immutable wrapped-stage telemetry for one lane/digest/attempt."""
     manifests_dir = repo_root / "storage/observability/manifests"
     if not manifests_dir.exists():
         return []
@@ -133,6 +139,8 @@ def wrapped_stage_timeline(repo_root: Path, *, lane: str, digest_at: str) -> lis
         if digest_at not in command_text:
             continue
         started = _parse_time(payload.get("started_at"))
+        if since is not None and (started is None or started < since):
+            continue
         ended = _parse_time(payload.get("ended_at"))
         duration_ms = None
         if started is not None and ended is not None:
@@ -153,9 +161,15 @@ def wrapped_stage_timeline(repo_root: Path, *, lane: str, digest_at: str) -> lis
     return rows
 
 
-def latest_failed_stage(repo_root: Path, *, lane: str, digest_at: str) -> FailureDetails | None:
-    """Resolve the newest failed wrapped command for one lane/digest."""
-    timeline = wrapped_stage_timeline(repo_root, lane=lane, digest_at=digest_at)
+def latest_failed_stage(
+    repo_root: Path,
+    *,
+    lane: str,
+    digest_at: str,
+    since: datetime | None = None,
+) -> FailureDetails | None:
+    """Resolve the newest failed wrapped command for one lane/digest/attempt."""
+    timeline = wrapped_stage_timeline(repo_root, lane=lane, digest_at=digest_at, since=since)
     failed = [row for row in timeline if row.get("status") == "failed"]
     if not failed:
         return None
