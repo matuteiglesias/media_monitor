@@ -32,7 +32,9 @@ def test_article_social_metadata_and_image_are_article_specific_and_edge_safe():
 
 def test_runtime_ci_executes_real_next_production_build():
     workflow = (ROOT / ".github" / "workflows" / "runtime-ci.yml").read_text(encoding="utf-8")
-    assert "site_snapshot.v4.example.json" in workflow
+    fixture = (SITE / "scripts" / "prepare_ci_build_fixture.mjs").read_text(encoding="utf-8")
+    assert "prepare_ci_build_fixture.mjs" in workflow
+    assert "site_snapshot.v4.example.json" in fixture
     assert "DIGEST_AT=20260824T18 npm run build" in workflow
 
 
