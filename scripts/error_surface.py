@@ -27,6 +27,16 @@ NOISE_PREFIXES = (
     "make: ***",
     "Traceback (most recent call last):",
 )
+# These messages are more useful than a later generic wrapper such as
+# "Error: Upload aborted" or "Command npm run build exited with 1".
+ACTIONABLE_PATTERNS = (
+    re.compile(r"(?i)vercel cli version is outdated"),
+    re.compile(r"(?i)requires version \d+\.\d+\.\d+ or later"),
+    re.compile(r"(?i)found invalid node\.js version"),
+    re.compile(r"(?i)unhandledschemeerror"),
+    re.compile(r"(?i)module build failed"),
+    re.compile(r"(?i)selected \d+ signals; minimum_items=\d+"),
+)
 SEMANTIC_MARKERS = (
     "] ERROR:",
     "ValueError:",
@@ -70,6 +80,10 @@ def summarize_failure(stdout: str, stderr: str, fallback: str = "command failed"
         marker = RUN_RECORD_RE.search(line)
         if marker:
             return marker.group("summary")[:700]
+    for pattern in ACTIONABLE_PATTERNS:
+        for line in lines:
+            if pattern.search(line):
+                return line[:700]
     for marker_text in SEMANTIC_MARKERS:
         for line in reversed(lines):
             if marker_text in line:
