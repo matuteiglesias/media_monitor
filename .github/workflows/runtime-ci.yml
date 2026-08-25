@@ -16,6 +16,7 @@ on:
       - "CONTRIBUTING.md"
       - "EVIDENCE.md"
       - "GOOD_FIRST_ISSUES.md"
+      - "LIVE_PUBLICATION.md"
       - ".gitattributes"
       - "OWNED_DOMAIN_CUTOVER.md"
       - "scripts/**"
@@ -43,6 +44,7 @@ on:
       - "CONTRIBUTING.md"
       - "EVIDENCE.md"
       - "GOOD_FIRST_ISSUES.md"
+      - "LIVE_PUBLICATION.md"
       - ".gitattributes"
       - "OWNED_DOMAIN_CUTOVER.md"
       - "scripts/**"
@@ -100,6 +102,8 @@ jobs:
             tests/test_adopter_demo.py \
             tests/test_example_outlet.py \
             tests/test_repository_front_door.py \
+            tests/test_media_refresh.py \
+            tests/test_live_publication_docs.py \
             tests/test_media_ops.py \
             tests/test_news_site_publish_contract.py \
             tests/test_editorial_identity.py \
