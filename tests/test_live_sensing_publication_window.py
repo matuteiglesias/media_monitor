@@ -37,6 +37,14 @@ def test_recent_sensing_window_covers_configured_editorial_freshness_horizon():
         assert end > as_of
 
 
+def test_digest_group_contract_accepts_live_recent_window():
+    schema = json.loads(
+        (ROOT / "contracts/schemas/news_digest_group.v1.json").read_text(encoding="utf-8")
+    )
+    allowed = schema["properties"]["window_type"]["enum"]
+    assert "recent_4h_window" in allowed
+
+
 def _raw_row(topic="Inflación y Precios"):
     return {
         "digest_file": "recent_4h_window_20260825T0200",
