@@ -68,6 +68,9 @@ def validate_input_df(df: pd.DataFrame, run_id: str, write_artifacts: bool = Tru
     good = df[~bad_mask].copy()
     good["article_id"] = good["article_id"].astype(str)
     good["index_id"] = good["index_id"].astype(str)
+    if "Topic" not in good.columns:
+        good["Topic"] = "All Topics"
+    good["Topic"] = good["Topic"].fillna("All Topics").astype(str).str.strip().replace("", "All Topics")
     return good, len(bad)
 
 
@@ -116,10 +119,10 @@ def write_digest_map_csv(df_map: pd.DataFrame, digest_id: str, null_sink: bool) 
     out_dir = (DATA_DIR / "_tmp" / "null" / "digest_map") if null_sink else DIGEST_MAP_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / f"{digest_id}.csv"
-    cols = ["digest_file", "article_id", "index_id", "Title", "Source", "Link", "Published", "window_type"]
+    cols = ["digest_file", "article_id", "index_id", "Title", "Source", "Link", "Published", "window_type", "Topic"]
     for c in cols:
         if c not in df_map.columns:
-            df_map[c] = None
+            df_map[c] = "All Topics" if c == "Topic" else None
     df_map = df_map[cols].drop_duplicates(subset=["digest_file", "article_id"], keep="last").sort_values(["digest_file", "article_id"])
     df_map.to_csv(out, index=False)
     return out
@@ -186,7 +189,7 @@ def run() -> int:
         return 1
 
     digest_map = (
-        good[["digest_file", "article_id", "index_id", "Title", "Source", "Link", "Published", "window_type"]]
+        good[["digest_file", "article_id", "index_id", "Title", "Source", "Link", "Published", "window_type", "Topic"]]
         .copy()
     )
     digest_map = digest_map.sort_values(["digest_file", "article_id", "Published"]).drop_duplicates(

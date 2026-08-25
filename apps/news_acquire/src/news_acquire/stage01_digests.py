@@ -72,15 +72,27 @@ def quarantine_path(stage: str, run_id: str) -> Path:
 
 # Slice plan anchored at the hour bucket
 def compute_slices(anchor: datetime) -> List[Tuple[str, datetime, datetime]]:
-    # All ranges are [start, end) in UTC
-    # You can tweak the windows; this mirrors your legacy behavior with clear bounds
+    # All ranges are [start, end) in UTC.
     out: List[Tuple[str, datetime, datetime]] = []
     hour = anchor.replace(minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
 
-    # Always include the deterministic 1-hour window
+    # Always include the deterministic 1-hour window.
     out.append(("1h_window", hour, hour + timedelta(hours=1)))
 
-    # Optional larger windows depending on cadence
+    # The public selector admits signals up to 180 minutes old. A current-hour-only
+    # sensing run can therefore be publication-starved early in the hour even when
+    # good recent coverage exists. This four-hour bucket guarantees the full
+    # selector horizon is materialized at every minute of the current UTC hour;
+    # downstream deterministic selection still applies the exact age cutoff.
+    out.append(
+        (
+            "recent_4h_window",
+            hour - timedelta(hours=3),
+            hour + timedelta(hours=1),
+        )
+    )
+
+    # Optional larger historical windows depending on cadence.
     if hour.hour % 4 == 0:
         out.append(("4h_window", hour - timedelta(hours=8), hour - timedelta(hours=2)))
     if hour.hour % 8 == 0:
@@ -167,7 +179,7 @@ def _serializable_row(r):
     row = r.to_dict()
     for k, v in row.items():
         # pandas Timestamp or datetime
-        if hasattr(v, "isoformat"):
+        if hasattr(v, 'isoformat'):
             row[k] = v.isoformat()
         # numpy types, etc.
         elif isinstance(v, (pd.Int64Dtype().type, )):

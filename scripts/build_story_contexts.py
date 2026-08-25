@@ -37,6 +37,28 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def unique_refs(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Collapse the same monitored signal appearing in overlapping sensing windows.
+
+    Stage 01 intentionally materializes overlapping recent windows. Public identity is
+    the stable index_id (with link as a defensive fallback), so story contexts must be
+    one-per-signal rather than one-per-window-membership.
+    """
+    result: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for row in rows:
+        index_id = str(row.get("index_id") or "").strip()
+        link = str(row.get("link") or "").strip()
+        if not index_id or not link:
+            continue
+        key = ("index_id", index_id) if index_id else ("link", link)
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(row)
+    return result
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -73,12 +95,15 @@ def write_jsonl_atomic(path: Path, rows: list[dict[str, Any]]) -> None:
 def build(storage_dir: Path, digest_at: str, output: Path) -> list[dict[str, Any]]:
     refs_path = storage_dir / "indexes/news_recent_refs_latest.jsonl"
     selection_path = storage_dir / "indexes/editorial_selection_latest.json"
-    refs = read_jsonl(refs_path)
+    raw_refs = read_jsonl(refs_path)
     selection = read_json(selection_path)
 
-    ref_digests = {str(row.get("digest_at") or "") for row in refs}
+    ref_digests = {str(row.get("digest_at") or "") for row in raw_refs}
     if ref_digests != {digest_at}:
         raise ValueError(f"refs digest mismatch: {sorted(ref_digests)} requested={digest_at}")
+    refs = unique_refs(raw_refs)
+    if not refs:
+        raise ValueError("no uniquely identifiable monitored refs")
     if selection.get("schema_name") != "editorial_selection.v1" or selection.get("digest_at") != digest_at:
         raise ValueError("editorial selection is missing or belongs to another digest")
     selection_id = str(selection.get("selection_id") or "")
@@ -107,8 +132,6 @@ def build(storage_dir: Path, digest_at: str, output: Path) -> list[dict[str, Any
     for ref in refs:
         index_id = str(ref.get("index_id") or "").strip()
         link = str(ref.get("link") or "").strip()
-        if not index_id or not link:
-            continue
 
         matching_groups = groups_by_member_link.get(link, [])
         coverage_by_link: dict[str, dict[str, Any]] = {

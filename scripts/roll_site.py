@@ -71,10 +71,18 @@ def vercel_command(*args: str) -> list[str]:
     return command
 
 
-def call(runner, command, root, env=None, stage="command") -> Result:
+def call(runner, command, root, env=None, stage="command", expose_output: bool = False) -> Result:
     result = runner(command, cwd=root, env=env)
     if result.exit_code:
-        raise RuntimeError(f"{stage} failed (exit {result.exit_code})")
+        message = f"{stage} failed (exit {result.exit_code})"
+        if expose_output:
+            # Only enable this for commands whose output is controlled by this
+            # repository. Never expose arbitrary deployment-tool output because it
+            # can contain credentials or provider details.
+            detail = (result.stderr.strip() or result.stdout.strip()).replace("\n", " | ")
+            if detail:
+                message += f": {detail[:1200]}"
+        raise RuntimeError(message)
     return result
 
 
@@ -155,6 +163,7 @@ def roll(
             ],
             root,
             stage=stage,
+            expose_output=True,
         )
 
         stage = "story-contexts"
