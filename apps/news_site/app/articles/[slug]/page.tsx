@@ -54,6 +54,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
             <div className="text-right text-xs leading-5 text-stone-500">
               <div>Publicado {formatPublicDate(article.published_at, outlet.site.locale)}</div>
               {article.updated_at !== article.published_at ? <div>Actualizado {formatPublicDate(article.updated_at, outlet.site.locale)}</div> : null}
+              <div>Estado editorial: {article.review_status}</div>
             </div>
           </div>
 
