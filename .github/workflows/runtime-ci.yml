@@ -127,10 +127,13 @@ jobs:
           cache: npm
           cache-dependency-path: apps/news_site/package-lock.json
       - run: npm ci
-      - name: Test snapshot, freshness and type contracts
+      - name: Test snapshot, freshness, type and production-build contracts
         run: |
           npm run test:refresh-data
           npm run test:site-snapshot
           npm run test:freshness
           node --check scripts/validate_site_snapshot.mjs
           npm run typecheck
+          node scripts/prepare_ci_build_fixture.mjs
+          node -e 'const fs=require("fs"); const p="../../sites/argentina-general.json"; const c=JSON.parse(fs.readFileSync(p,"utf8")); c.selection.minimum_items=1; fs.writeFileSync(p, JSON.stringify(c));'
+          DIGEST_AT=20260824T18 npm run build
