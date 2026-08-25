@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 import sys
 
@@ -72,36 +73,42 @@ def test_refresh_never_publishes_if_live_sensing_fails(tmp_path):
 
 
 def test_refresh_promotes_failed_stage_root_cause_and_log(tmp_path):
-    log = tmp_path / "storage/observability/logs/export-failure.log"
-    log.parent.mkdir(parents=True)
-    log.write_text(
-        "[stdout]\n"
-        "[pr3a-export] ERROR export failed: ValueError: news_digest_group.v1 row 0 invalid: "
-        "['recent_4h_window is not one of the allowed window types']\n"
-        "[stderr]\nmake: *** [Makefile:155: export-pr3a] Error 1\n",
-        encoding="utf-8",
-    )
-    manifest = tmp_path / "storage/observability/manifests/export-failure.json"
-    manifest.parent.mkdir(parents=True)
-    manifest.write_text(
-        json.dumps(
-            {
-                "lane": "sensing",
-                "stage": "export_pr3a",
-                "status": "failed",
-                "command": ["make", "export-pr3a", "DIGEST_AT=20260825T01"],
-                "log_path": "storage/observability/logs/export-failure.log",
-            }
-        ),
-        encoding="utf-8",
-    )
+    class FailingSensingRunner:
+        def __call__(self, command, *, cwd, env=None):
+            log = cwd / "storage/observability/logs/export-failure.log"
+            log.parent.mkdir(parents=True, exist_ok=True)
+            log.write_text(
+                "[stdout]\n"
+                "[pr3a-export] ERROR export failed: ValueError: news_digest_group.v1 row 0 invalid: "
+                "['recent_4h_window is not one of the allowed window types']\n"
+                "[stderr]\nmake: *** [Makefile:155: export-pr3a] Error 1\n",
+                encoding="utf-8",
+            )
+            manifest = cwd / "storage/observability/manifests/export-failure.json"
+            manifest.parent.mkdir(parents=True, exist_ok=True)
+            now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "lane": "sensing",
+                        "stage": "export_pr3a",
+                        "status": "failed",
+                        "started_at": now,
+                        "ended_at": now,
+                        "command": ["make", "export-pr3a", "DIGEST_AT=20260825T01"],
+                        "log_path": "storage/observability/logs/export-failure.log",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            return Result(command, 2, "", "sensing failed")
 
     report, code = refresh(
         site_id="argentina-general",
         target="preview",
         repo_root=tmp_path,
         digest_at="20260825T01",
-        runner=FakeRunner(sensing_code=2),
+        runner=FailingSensingRunner(),
     )
     assert code == 1
     assert report["failed_lane"] == "sensing"
@@ -109,6 +116,7 @@ def test_refresh_promotes_failed_stage_root_cause_and_log(tmp_path):
     assert "recent_4h_window" in report["error"]
     assert "make: ***" not in report["error"]
     assert report["diagnostic_log"] == "storage/observability/logs/export-failure.log"
+    assert report["sensing_stages"][0]["stage"] == "export_pr3a"
 
 
 def test_failure_summary_redacts_secrets_and_prefers_semantic_error():

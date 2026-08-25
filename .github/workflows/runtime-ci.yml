@@ -82,6 +82,7 @@ jobs:
             tests/test_export_pr3a_buses.py \
             tests/test_build_news_access_indexes.py \
             tests/test_live_sensing_publication_window.py \
+            tests/test_operator_stage_telemetry.py \
             tests/test_sensing_run_bundle.py \
             tests/test_sensing_compactor.py \
             tests/test_news_editorial_briefs_pipeline.py \

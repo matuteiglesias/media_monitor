@@ -16,6 +16,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
+from error_surface import redact, summarize_failure
+
 
 @dataclass
 class Result:
@@ -32,6 +34,10 @@ def subprocess_runner(command: list[str], *, cwd: Path, env: dict[str, str] | No
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(microsecond=0)
+
+
+def utciso() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
 def stamp() -> str:
@@ -71,17 +77,113 @@ def vercel_command(*args: str) -> list[str]:
     return command
 
 
-def call(runner, command, root, env=None, stage="command", expose_output: bool = False) -> Result:
+def _safe_stage(value: str) -> str:
+    return re.sub(r"[^a-zA-Z0-9_.-]+", "-", value).strip("-") or "stage"
+
+
+def _write_stage_log(
+    root: Path,
+    *,
+    site_id: str,
+    digest_at: str,
+    stage: str,
+    started_at: str,
+    stdout: str = "",
+    stderr: str = "",
+) -> str:
+    directory = root / "storage/observability/site_roll_logs"
+    directory.mkdir(parents=True, exist_ok=True)
+    tag = re.sub(r"[^0-9]", "", started_at)[:17] or stamp()
+    path = directory / f"{site_id}_{digest_at}_{tag}_{_safe_stage(stage)}.log"
+    chunks: list[str] = []
+    if stdout:
+        chunks.extend(("[stdout]", redact(stdout).rstrip()))
+    if stderr:
+        chunks.extend(("[stderr]", redact(stderr).rstrip()))
+    if not chunks:
+        chunks.append("(no command output)")
+    path.write_text("\n".join(chunks) + "\n", encoding="utf-8")
+    return str(path.relative_to(root))
+
+
+def _append_stage(
+    record: dict,
+    *,
+    stage: str,
+    status: str,
+    started_at: str,
+    completed_at: str,
+    duration_ms: int,
+    log_path: str | None = None,
+    exit_code: int | None = None,
+    summary: str | None = None,
+) -> dict:
+    event = {
+        "stage": stage,
+        "status": status,
+        "started_at": started_at,
+        "completed_at": completed_at,
+        "duration_ms": max(0, int(duration_ms)),
+        "exit_code": exit_code,
+        "log_path": log_path,
+        "summary": summary,
+    }
+    record.setdefault("stages", []).append(event)
+    return event
+
+
+def call(
+    runner,
+    command,
+    root,
+    env=None,
+    stage="command",
+    expose_output: bool = False,
+    *,
+    record: dict | None = None,
+    site_id: str | None = None,
+    digest_at: str | None = None,
+) -> Result:
+    started_at = utciso()
+    started_ns = time.perf_counter_ns()
     result = runner(command, cwd=root, env=env)
+    completed_at = utciso()
+    duration_ms = round((time.perf_counter_ns() - started_ns) / 1_000_000)
+
+    log_path = None
+    summary = None
+    if record is not None and site_id and digest_at:
+        log_path = _write_stage_log(
+            root,
+            site_id=site_id,
+            digest_at=digest_at,
+            stage=stage,
+            started_at=started_at,
+            stdout=result.stdout,
+            stderr=result.stderr,
+        )
+        if result.exit_code:
+            summary = summarize_failure(result.stdout, result.stderr, f"{stage} failed")
+        _append_stage(
+            record,
+            stage=stage,
+            status="failed" if result.exit_code else "ok",
+            started_at=started_at,
+            completed_at=completed_at,
+            duration_ms=duration_ms,
+            exit_code=result.exit_code,
+            log_path=log_path,
+            summary=summary,
+        )
+
     if result.exit_code:
         message = f"{stage} failed (exit {result.exit_code})"
-        if expose_output:
-            # Only enable this for commands whose output is controlled by this
-            # repository. Never expose arbitrary deployment-tool output because it
-            # can contain credentials or provider details.
-            detail = (result.stderr.strip() or result.stdout.strip()).replace("\n", " | ")
+        # Repository-controlled stages and instrumented publication stages may expose
+        # a redacted semantic summary. Full output remains in the local diagnostic log.
+        if expose_output or record is not None:
+            detail = summary or summarize_failure(result.stdout, result.stderr, stage + " failed")
             if detail:
-                message += f": {detail[:1200]}"
+                message += f": {detail[:700]}"
         raise RuntimeError(message)
     return result
 
@@ -103,6 +205,7 @@ def record_base(site, target, digest, started, root) -> dict:
         "completed_at": None,
         "failed_stage": None,
         "error": None,
+        "stages": [],
     }
 
 
@@ -145,14 +248,27 @@ def roll(
     root = repo_root.resolve()
     started = utcnow()
     record = record_base(site_id, target, digest_at, started, root)
+
+    def run(command, *, env=None, stage="command", expose_output=False):
+        return call(
+            runner,
+            command,
+            root,
+            env=env,
+            stage=stage,
+            expose_output=expose_output,
+            record=record,
+            site_id=site_id,
+            digest_at=digest_at,
+        )
+
     stage = "publication-index"
     try:
-        call(runner, ["make", "build-published-article-indexes", f"PYTHON={sys.executable}"], root, stage=stage)
+        run(["make", "build-published-article-indexes", f"PYTHON={sys.executable}"], stage=stage)
 
         stage = "editorial-selection"
         selection_as_of = utcnow().isoformat().replace("+00:00", "Z")
-        call(
-            runner,
+        run(
             [
                 sys.executable,
                 "scripts/build_editorial_selection.py",
@@ -161,29 +277,29 @@ def roll(
                 "--as-of",
                 selection_as_of,
             ],
-            root,
             stage=stage,
             expose_output=True,
         )
 
         stage = "story-contexts"
-        call(
-            runner,
+        run(
             [
                 sys.executable,
                 "scripts/build_story_contexts.py",
                 "--digest-at",
                 digest_at,
             ],
-            root,
             stage=stage,
         )
 
         stage = "compile"
-        call(runner, ["make", "build-site-snapshot", f"SITE_ID={site_id}", f"DIGEST_AT={digest_at}"], root, stage=stage)
+        run(["make", "build-site-snapshot", f"SITE_ID={site_id}", f"DIGEST_AT={digest_at}"], stage=stage)
         stage = "validate"
-        call(runner, ["make", "validate-site-snapshot", f"SITE_ID={site_id}", f"DIGEST_AT={digest_at}"], root, stage=stage)
+        run(["make", "validate-site-snapshot", f"SITE_ID={site_id}", f"DIGEST_AT={digest_at}"], stage=stage)
+
         stage = "identity"
+        identity_started_at = utciso()
+        identity_started_ns = time.perf_counter_ns()
         snapshot = root / "apps/news_site/public/data/site_snapshot.json"
         payload = json.loads(snapshot.read_text())
         expected = {
@@ -196,10 +312,19 @@ def roll(
         if payload["site"]["site_id"] != site_id or payload["digest_at"] != digest_at:
             raise ValueError("snapshot identity does not match command arguments")
         record.update(snapshot_id=payload["snapshot_id"], snapshot_sha256=sha256(snapshot), expected=expected)
+        _append_stage(
+            record,
+            stage=stage,
+            status="ok",
+            started_at=identity_started_at,
+            completed_at=utciso(),
+            duration_ms=round((time.perf_counter_ns() - identity_started_ns) / 1_000_000),
+            summary=f"snapshot={payload['snapshot_id'][:12]} items={expected['item_count']} curated={expected['curated_signal_count']}",
+        )
 
         stage = "pull"
         environment = "production" if target == "production" else "preview"
-        call(runner, vercel_command("pull", "--yes", f"--environment={environment}"), root, stage=stage)
+        run(vercel_command("pull", "--yes", f"--environment={environment}"), stage=stage)
 
         stage = "build"
         output = root / ".vercel/output"
@@ -208,7 +333,7 @@ def roll(
         build_env = os.environ.copy()
         build_env.update({"SITE_ID": site_id, "DIGEST_AT": digest_at})
         build_args = ["build"] + (["--prod"] if target == "production" else [])
-        call(runner, vercel_command(*build_args), root, build_env, stage)
+        run(vercel_command(*build_args), env=build_env, stage=stage)
         if not output.exists() or output.stat().st_mtime_ns < build_started:
             raise RuntimeError("missing or stale .vercel/output")
         if sha256(snapshot) != record["snapshot_sha256"]:
@@ -216,14 +341,18 @@ def roll(
 
         stage = "deploy"
         deploy_args = ["deploy", "--prebuilt"] + (["--prod"] if target == "production" else [])
-        deployed = call(runner, vercel_command(*deploy_args), root, stage=stage)
+        deployed = run(vercel_command(*deploy_args), stage=stage)
         host = hostname(deployed.stdout)
         record["deployment_host"] = host
 
         stage = "health"
+        health_started_at = utciso()
+        health_started_ns = time.perf_counter_ns()
+        health_logs: list[str] = []
         observed = None
         for attempt in range(3):
             health = runner(vercel_command("curl", "/api/health", "--deployment", host), cwd=root, env=None)
+            health_logs.append(f"[attempt {attempt + 1} stdout]\n{health.stdout}\n[attempt {attempt + 1} stderr]\n{health.stderr}")
             if health.exit_code == 0:
                 try:
                     observed = json.loads(health.stdout)
@@ -233,7 +362,25 @@ def roll(
                     break
             if attempt < 2:
                 sleep(5)
+        health_log_path = _write_stage_log(
+            root,
+            site_id=site_id,
+            digest_at=digest_at,
+            stage=stage,
+            started_at=health_started_at,
+            stdout="\n".join(health_logs),
+        )
         if observed is None:
+            _append_stage(
+                record,
+                stage=stage,
+                status="failed",
+                started_at=health_started_at,
+                completed_at=utciso(),
+                duration_ms=round((time.perf_counter_ns() - health_started_ns) / 1_000_000),
+                log_path=health_log_path,
+                summary="health endpoint did not return valid JSON",
+            )
             raise RuntimeError("health endpoint did not return valid JSON")
 
         required = {
@@ -271,9 +418,31 @@ def roll(
                 age_minutes=publication.get("age_minutes"),
             )
 
+        _append_stage(
+            record,
+            stage=stage,
+            status="ok",
+            started_at=health_started_at,
+            completed_at=utciso(),
+            duration_ms=round((time.perf_counter_ns() - health_started_ns) / 1_000_000),
+            log_path=health_log_path,
+            summary=f"host={host} identity=MATCH",
+        )
         record.update(status="ok", observed=observed_record, failed_stage=None, error=None)
     except Exception as exc:
-        record.update(status="failed", failed_stage=stage, error=str(exc))
+        # Pure-Python stages may fail outside `call`; make sure they still appear in
+        # the ledger instead of leaving only a top-level failed_stage.
+        if not any(event.get("stage") == stage and event.get("status") == "failed" for event in record.get("stages", [])):
+            _append_stage(
+                record,
+                stage=stage,
+                status="failed",
+                started_at=utciso(),
+                completed_at=utciso(),
+                duration_ms=0,
+                summary=redact(str(exc))[:700],
+            )
+        record.update(status="failed", failed_stage=stage, error=redact(str(exc))[:1200])
         write_record(root, record)
         return record, 1
 

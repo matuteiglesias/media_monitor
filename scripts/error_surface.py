@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Small, secret-conscious helpers for promoting useful subprocess failures.
+"""Secret-conscious helpers for promoting useful subprocess telemetry.
 
-The pipeline intentionally keeps full stdout/stderr in immutable telemetry logs. This
-module chooses one concise root-cause line for human-facing CLIs without dumping full
-provider output or credentials, and can resolve the latest failed wrapped stage for a
-specific live digest.
+The pipeline keeps detailed stdout/stderr in local telemetry logs. This module chooses
+concise human-facing summaries without dumping credentials and resolves wrapped stage
+history for one live digest.
 """
 from __future__ import annotations
 
 import json
 import re
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
@@ -32,7 +32,9 @@ SEMANTIC_MARKERS = (
     "ValueError:",
     "RuntimeError:",
     "AssertionError:",
+    "Error:",
     "ERROR:",
+    "ERR!",
 )
 
 
@@ -92,51 +94,98 @@ def failure_details(stdout: str, stderr: str, fallback: str = "command failed") 
     return FailureDetails(summary=summarize_failure(stdout, stderr, fallback))
 
 
-def latest_failed_stage(repo_root: Path, *, lane: str, digest_at: str) -> FailureDetails | None:
-    """Resolve the newest failed wrapped command for one lane/digest.
-
-    `run_with_run_record.py` already writes immutable manifests and logs. We reuse
-    those artifacts instead of inventing a parallel diagnostic store.
-    """
-    manifests_dir = repo_root / "storage/observability/manifests"
-    if not manifests_dir.exists():
+def _parse_time(value: object) -> datetime | None:
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
         return None
 
-    matches: list[tuple[float, Path, dict]] = []
+
+def _display_path(repo_root: Path, value: object) -> str | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    path = Path(text)
+    if not path.is_absolute():
+        path = repo_root / path
+    try:
+        return str(path.relative_to(repo_root))
+    except ValueError:
+        return str(path)
+
+
+def wrapped_stage_timeline(
+    repo_root: Path,
+    *,
+    lane: str,
+    digest_at: str,
+    since: datetime | None = None,
+) -> list[dict]:
+    """Return ordered immutable wrapped-stage telemetry for one lane/digest/attempt."""
+    manifests_dir = repo_root / "storage/observability/manifests"
+    if not manifests_dir.exists():
+        return []
+
+    rows: list[dict] = []
     for manifest_path in manifests_dir.glob("*.json"):
         try:
             payload = json.loads(manifest_path.read_text(encoding="utf-8"))
         except Exception:
             continue
-        if payload.get("status") != "failed" or payload.get("lane") != lane:
+        if payload.get("lane") != lane:
             continue
         command = payload.get("command")
         command_text = " ".join(str(value) for value in command) if isinstance(command, list) else str(command or "")
         if digest_at not in command_text:
             continue
-        matches.append((manifest_path.stat().st_mtime, manifest_path, payload))
+        started = _parse_time(payload.get("started_at"))
+        if since is not None and (started is None or started < since):
+            continue
+        ended = _parse_time(payload.get("ended_at"))
+        duration_ms = None
+        if started is not None and ended is not None:
+            duration_ms = max(0, round((ended - started).total_seconds() * 1000))
+        log_path = _display_path(repo_root, payload.get("log_path"))
+        rows.append(
+            {
+                "lane": lane,
+                "stage": str(payload.get("stage") or "unknown"),
+                "status": str(payload.get("status") or "unknown"),
+                "started_at": payload.get("started_at"),
+                "completed_at": payload.get("ended_at"),
+                "duration_ms": duration_ms,
+                "log_path": log_path,
+            }
+        )
+    rows.sort(key=lambda row: (str(row.get("started_at") or ""), str(row.get("stage") or "")))
+    return rows
 
-    if not matches:
+
+def latest_failed_stage(
+    repo_root: Path,
+    *,
+    lane: str,
+    digest_at: str,
+    since: datetime | None = None,
+) -> FailureDetails | None:
+    """Resolve the newest failed wrapped command for one lane/digest/attempt."""
+    timeline = wrapped_stage_timeline(repo_root, lane=lane, digest_at=digest_at, since=since)
+    failed = [row for row in timeline if row.get("status") == "failed"]
+    if not failed:
         return None
-    _, _, payload = max(matches, key=lambda item: item[0])
-    log_value = str(payload.get("log_path") or "").strip()
-    log_path = Path(log_value) if log_value else None
-    if log_path is not None and not log_path.is_absolute():
-        log_path = repo_root / log_path
-
+    row = failed[-1]
+    log_value = row.get("log_path")
+    log_path = repo_root / str(log_value) if log_value else None
     log_text = ""
     if log_path is not None and log_path.exists():
         try:
             log_text = log_path.read_text(encoding="utf-8")
         except Exception:
             log_text = ""
-
-    stage = str(payload.get("stage") or "").strip() or None
-    summary = summarize_failure(log_text, "", fallback=f"{stage or lane} failed")
-    display_log = None
-    if log_path is not None:
-        try:
-            display_log = str(log_path.relative_to(repo_root))
-        except ValueError:
-            display_log = str(log_path)
-    return FailureDetails(summary=summary, lane=lane, stage=stage, log_path=display_log)
+    stage = str(row.get("stage") or "").strip() or None
+    return FailureDetails(
+        summary=summarize_failure(log_text, "", fallback=f"{stage or lane} failed"),
+        lane=lane,
+        stage=stage,
+        log_path=str(log_value) if log_value else None,
+    )

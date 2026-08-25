@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
-from error_surface import failure_details, latest_failed_stage
+from error_surface import failure_details, latest_failed_stage, wrapped_stage_timeline
 from roll_site import Result
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,6 +31,11 @@ def command_runner(command: list[str], *, cwd: Path, env: dict[str, str] | None 
     return Result(command, done.returncode, done.stdout, done.stderr)
 
 
+def _failed_event(stages: list[dict]) -> dict | None:
+    failed = [row for row in stages if row.get("status") == "failed"]
+    return failed[-1] if failed else None
+
+
 def refresh(
     *,
     site_id: str,
@@ -43,12 +48,14 @@ def refresh(
     root = repo_root.resolve()
     digest = digest_at or utc_digest()
     base = {
-        "schema_name": "media_refresh.v1",
+        "schema_name": "media_refresh.v2",
         "site_id": site_id,
         "target": target,
         "digest_at": digest,
         "sensing": None,
         "publish": None,
+        "sensing_stages": [],
+        "publication_stages": [],
     }
 
     env = os.environ.copy()
@@ -64,13 +71,27 @@ def refresh(
             "TRIGGER_TYPE": "manual",
         }
     )
+    sensing_started_at = datetime.now(timezone.utc)
     sensing = runner(["bin/run_minimal_loop_once.sh", "--lane", "sensing"], cwd=root, env=env)
+    sensing_stages = wrapped_stage_timeline(
+        root,
+        lane="sensing",
+        digest_at=digest,
+        since=sensing_started_at,
+    )
+    base["sensing_stages"] = sensing_stages
     base["sensing"] = {
         "status": "ok" if sensing.exit_code == 0 else "failed",
         "exit_code": sensing.exit_code,
+        "stage_count": len(sensing_stages),
     }
     if sensing.exit_code:
-        details = latest_failed_stage(root, lane="sensing", digest_at=digest)
+        details = latest_failed_stage(
+            root,
+            lane="sensing",
+            digest_at=digest,
+            since=sensing_started_at,
+        )
         if details is None:
             details = failure_details(sensing.stdout, sensing.stderr, "live sensing failed")
         return base | {
@@ -104,14 +125,28 @@ def refresh(
     except json.JSONDecodeError:
         publish_payload = {}
     base["publish"] = publish_payload or {"exit_code": publish.exit_code}
+    roll_payload = publish_payload.get("roll") if isinstance(publish_payload, dict) else None
+    publication_stages = list((roll_payload or {}).get("stages") or [])
+    base["publication_stages"] = publication_stages
+
     if publish.exit_code:
+        stage_event = _failed_event(publication_stages)
         details = failure_details(publish.stdout, publish.stderr, "publish failed")
         return base | {
             "status": "failed",
             "failed_lane": "publication",
-            "failed_stage": publish_payload.get("failed_stage") or details.stage or "publish",
-            "error": publish_payload.get("error") or details.summary,
-            "diagnostic_log": details.log_path,
+            "failed_stage": (
+                (stage_event or {}).get("stage")
+                or publish_payload.get("failed_stage")
+                or details.stage
+                or "publish"
+            ),
+            "error": (
+                (stage_event or {}).get("summary")
+                or publish_payload.get("error")
+                or details.summary
+            ),
+            "diagnostic_log": (stage_event or {}).get("log_path") or details.log_path,
         }, 1
 
     return base | {
@@ -133,6 +168,34 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _duration(value: object) -> str:
+    try:
+        ms = int(value)
+    except (TypeError, ValueError):
+        return "   — "
+    if ms < 1000:
+        return f"{ms:>4}ms"
+    return f"{ms / 1000:>4.1f}s"
+
+
+def _print_timeline(report: dict) -> None:
+    rows: list[tuple[str, dict]] = []
+    rows.extend(("sensing", row) for row in report.get("sensing_stages") or [])
+    rows.extend(("publication", row) for row in report.get("publication_stages") or [])
+    if not rows:
+        return
+    print("PIPELINE")
+    for lane, row in rows:
+        status = row.get("status")
+        icon = "✓" if status in {"ok", "success"} else "✗" if status == "failed" else "·"
+        stage = str(row.get("stage") or "unknown")
+        print(f"  {icon} {lane}:{stage:<30} {_duration(row.get('duration_ms'))}")
+        if status == "failed" and row.get("summary"):
+            print(f"      error: {row['summary']}")
+        if status == "failed" and row.get("log_path"):
+            print(f"      log:   {row['log_path']}")
+
+
 def main() -> int:
     args = build_parser().parse_args()
     report, code = refresh(
@@ -143,16 +206,21 @@ def main() -> int:
     )
     if args.json:
         print(json.dumps(report, ensure_ascii=False, indent=2))
-    elif report["status"] == "ok":
+        return code
+
+    if report["status"] == "ok":
         print("MEDIA REFRESH: OK")
-        print(f"site={report['site_id']} target={report['target']} digest={report['digest_at']}")
+    else:
+        print("MEDIA REFRESH: FAILED")
+    print(f"site={report['site_id']} target={report['target']} digest={report['digest_at']}")
+    _print_timeline(report)
+
+    if report["status"] == "ok":
         print(
             f"snapshot={report.get('snapshot_id')} items={report.get('item_count')} "
             f"sections={report.get('section_count')} host={report.get('deployment_host')}"
         )
     else:
-        print("MEDIA REFRESH: FAILED")
-        print(f"site={report['site_id']} target={report['target']} digest={report['digest_at']}")
         print(
             f"failed_lane={report.get('failed_lane')} failed_stage={report.get('failed_stage')} "
             f"error={report.get('error')}"
