@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
+from error_surface import failure_details, latest_failed_stage
 from roll_site import Result
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -69,10 +70,15 @@ def refresh(
         "exit_code": sensing.exit_code,
     }
     if sensing.exit_code:
+        details = latest_failed_stage(root, lane="sensing", digest_at=digest)
+        if details is None:
+            details = failure_details(sensing.stdout, sensing.stderr, "live sensing failed")
         return base | {
             "status": "failed",
-            "failed_stage": "sensing",
-            "error": sensing.stderr.strip() or sensing.stdout.strip() or "live sensing failed",
+            "failed_lane": details.lane or "sensing",
+            "failed_stage": details.stage or "sensing",
+            "error": details.summary,
+            "diagnostic_log": details.log_path,
         }, 1
 
     publish = runner(
@@ -99,10 +105,13 @@ def refresh(
         publish_payload = {}
     base["publish"] = publish_payload or {"exit_code": publish.exit_code}
     if publish.exit_code:
+        details = failure_details(publish.stdout, publish.stderr, "publish failed")
         return base | {
             "status": "failed",
-            "failed_stage": publish_payload.get("failed_stage") or "publish",
-            "error": publish_payload.get("error") or publish.stderr.strip() or "publish failed",
+            "failed_lane": "publication",
+            "failed_stage": publish_payload.get("failed_stage") or details.stage or "publish",
+            "error": publish_payload.get("error") or details.summary,
+            "diagnostic_log": details.log_path,
         }, 1
 
     return base | {
@@ -144,7 +153,12 @@ def main() -> int:
     else:
         print("MEDIA REFRESH: FAILED")
         print(f"site={report['site_id']} target={report['target']} digest={report['digest_at']}")
-        print(f"failed_stage={report.get('failed_stage')} error={report.get('error')}")
+        print(
+            f"failed_lane={report.get('failed_lane')} failed_stage={report.get('failed_stage')} "
+            f"error={report.get('error')}"
+        )
+        if report.get("diagnostic_log"):
+            print(f"diagnostic_log={report['diagnostic_log']}")
     return code
 
 
