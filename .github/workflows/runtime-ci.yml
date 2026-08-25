@@ -83,6 +83,7 @@ jobs:
             tests/test_build_news_access_indexes.py \
             tests/test_live_sensing_publication_window.py \
             tests/test_operator_stage_telemetry.py \
+            tests/test_provider_preflight.py \
             tests/test_vercel_node_runtime.py \
             tests/test_sensing_run_bundle.py \
             tests/test_sensing_compactor.py \
