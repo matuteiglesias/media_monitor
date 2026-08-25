@@ -16,7 +16,7 @@
     "test:refresh-data": "node --test scripts/refresh_public_data.test.mjs",
     "test:site-snapshot": "node --test scripts/site_snapshot_digest.test.mjs",
     "test:freshness": "node --test scripts/publication_health.test.mjs",
-    "prebuild": "node scripts/validate_site_snapshot_for_build.mjs"
+    "prebuild": "node scripts/materialize_article_social_cards.mjs && node scripts/validate_site_snapshot_for_build.mjs"
   },
   "dependencies": {
     "next": "14.2.25",
