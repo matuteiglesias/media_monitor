@@ -27,6 +27,7 @@ NOISE_PREFIXES = (
     "make: ***",
     "Traceback (most recent call last):",
 )
+WARNING_PREFIXES = ("WARN!", "Warning:", "WARNING:", "npm warn ")
 # These messages are more useful than a later generic wrapper such as
 # "Error: Upload aborted" or "Command npm run build exited with 1".
 ACTIONABLE_PATTERNS = (
@@ -72,6 +73,19 @@ def _clean_lines(*chunks: str) -> list[str]:
             if line:
                 lines.append(line)
     return lines
+
+
+def extract_warnings(*chunks: str, limit: int = 4) -> list[str]:
+    """Return distinct redacted warning lines without turning them into failures."""
+    result: list[str] = []
+    for line in _clean_lines(*chunks):
+        if not line.startswith(WARNING_PREFIXES):
+            continue
+        if line not in result:
+            result.append(line[:700])
+        if len(result) >= limit:
+            break
+    return result
 
 
 def summarize_failure(stdout: str, stderr: str, fallback: str = "command failed") -> str:
