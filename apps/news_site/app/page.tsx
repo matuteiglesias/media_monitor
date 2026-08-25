@@ -99,7 +99,8 @@ export default function HomePage() {
             <h2 className="text-3xl font-semibold sm:text-4xl">Selección del monitoreo</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-600">
               Shortlist determinística de señales externas según actualidad, prioridad
-              temática y diversidad. Selección no implica autoría ni aprobación editorial.
+              temática y diversidad. Estar seleccionado no convierte una señal en autoría,
+              aprobación ni análisis editorial de Media Monitor.
             </p>
           </div>
           <Link href="/methodology" className="text-xs font-semibold uppercase tracking-[0.08em] text-[#8d2b2b] underline underline-offset-4">
