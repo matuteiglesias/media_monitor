@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { findArticle } from "@/lib/adapter/mappers";
+import socialCards from "../../../public/data/article_social_cards.json";
 import { EDITORIAL_IDENTITY } from "@/lib/editorial_identity";
 import { PUBLIC_IDENTITY } from "@/lib/public_identity";
 
@@ -8,8 +8,13 @@ export const alt = "Media Monitor — análisis económico de Argentina";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
+type SocialCard = { title: string; topic: string };
+type SocialCardIndex = { schema_name: "article_social_cards.v1"; articles: Record<string, SocialCard> };
+
+const SOCIAL_CARDS = socialCards as SocialCardIndex;
+
 export default function OpenGraphImage({ params }: { params: { slug: string } }) {
-  const article = findArticle(params.slug);
+  const article = SOCIAL_CARDS.articles[params.slug];
   const title = article?.title ?? PUBLIC_IDENTITY.outlet_name;
   const topic = article?.topic ?? "Análisis económico de Argentina";
 
