@@ -71,8 +71,14 @@ def refresh(
             "TRIGGER_TYPE": "manual",
         }
     )
+    sensing_started_at = datetime.now(timezone.utc)
     sensing = runner(["bin/run_minimal_loop_once.sh", "--lane", "sensing"], cwd=root, env=env)
-    sensing_stages = wrapped_stage_timeline(root, lane="sensing", digest_at=digest)
+    sensing_stages = wrapped_stage_timeline(
+        root,
+        lane="sensing",
+        digest_at=digest,
+        since=sensing_started_at,
+    )
     base["sensing_stages"] = sensing_stages
     base["sensing"] = {
         "status": "ok" if sensing.exit_code == 0 else "failed",
@@ -80,7 +86,12 @@ def refresh(
         "stage_count": len(sensing_stages),
     }
     if sensing.exit_code:
-        details = latest_failed_stage(root, lane="sensing", digest_at=digest)
+        details = latest_failed_stage(
+            root,
+            lane="sensing",
+            digest_at=digest,
+            since=sensing_started_at,
+        )
         if details is None:
             details = failure_details(sensing.stdout, sensing.stderr, "live sensing failed")
         return base | {
