@@ -1,14 +1,20 @@
 import json
+import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from apps.news_acquire.src.news_acquire import stage01_digests as stage01
 from apps.news_acquire.src.news_acquire import stage02_master_index_update as stage02
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from build_story_contexts import unique_refs
+from roll_site import Result, call
 
 
 def test_recent_sensing_window_covers_configured_editorial_freshness_horizon():
@@ -64,3 +70,45 @@ def test_stage02_compatibility_defaults_missing_topic_without_dropping_row():
     good, bad = stage02.validate_input_df(raw, "test", write_artifacts=False)
     assert bad == 0
     assert good.loc[0, "Topic"] == "All Topics"
+
+
+def test_overlapping_sensing_windows_create_one_story_context_identity():
+    base = {
+        "digest_at": "20260825T02",
+        "index_id": "IDX1",
+        "title": "IPC: nueva señal",
+        "source": "Fuente",
+        "published_at": "2026-08-25T01:45:00Z",
+        "topic": "Inflación y Precios",
+        "link": "https://example.com/ipc",
+    }
+    rows = [base | {"window_type": "1h_window"}, base | {"window_type": "recent_4h_window"}]
+    assert unique_refs(rows) == [rows[0]]
+
+
+def test_repo_controlled_selector_failure_surfaces_actionable_reason(tmp_path):
+    def runner(command, *, cwd, env=None):
+        return Result(
+            command,
+            1,
+            "[editorial-selection] ERROR: selected 2 signals; minimum_items=5\n",
+            "",
+        )
+
+    with pytest.raises(RuntimeError, match=r"selected 2 signals; minimum_items=5"):
+        call(
+            runner,
+            ["python", "scripts/build_editorial_selection.py"],
+            tmp_path,
+            stage="editorial-selection",
+            expose_output=True,
+        )
+
+
+def test_provider_output_remains_hidden_by_default(tmp_path):
+    def runner(command, *, cwd, env=None):
+        return Result(command, 1, "token=do-not-leak", "")
+
+    with pytest.raises(RuntimeError) as exc:
+        call(runner, ["vercel", "deploy"], tmp_path, stage="deploy")
+    assert "do-not-leak" not in str(exc.value)
