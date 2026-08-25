@@ -111,20 +111,25 @@ def test_wrapped_sensing_timeline_uses_immutable_manifests(tmp_path):
 
 
 class RefreshFailureRunner:
-    def __init__(self):
-        self.calls = 0
-
     def __call__(self, command, *, cwd, env=None):
-        self.calls += 1
-        if self.calls == 1:
+        if command == ["vercel", "--version"]:
+            return Result(command, 0, "Vercel CLI 58.9.5\n", "")
+        if command[:2] == ["bin/run_minimal_loop_once.sh", "--lane"]:
             return Result(command, 0, "sensing ok", "")
+
+        log = cwd / "storage/observability/site_roll_logs/pull.log"
+        log.parent.mkdir(parents=True, exist_ok=True)
+        log.write_text(
+            "[stderr]\nWarning: The vercel.json file should be inside of the provided root directory.\n",
+            encoding="utf-8",
+        )
         payload = {
             "status": "failed",
             "failed_stage": "build",
             "error": "build failed (exit 1)",
             "roll": {
                 "stages": [
-                    {"stage": "pull", "status": "ok", "duration_ms": 220, "log_path": "logs/pull.log", "summary": None},
+                    {"stage": "pull", "status": "ok", "duration_ms": 220, "log_path": "storage/observability/site_roll_logs/pull.log", "summary": None},
                     {
                         "stage": "build",
                         "status": "failed",
@@ -138,7 +143,7 @@ class RefreshFailureRunner:
         return Result(command, 1, json.dumps(payload), "")
 
 
-def test_refresh_promotes_publication_stage_summary_and_log(tmp_path):
+def test_refresh_promotes_publication_stage_summary_log_and_warnings(tmp_path):
     report, code = refresh(
         site_id="argentina-general",
         target="preview",
@@ -148,8 +153,10 @@ def test_refresh_promotes_publication_stage_summary_and_log(tmp_path):
         python_executable="python-test",
     )
     assert code == 1
+    assert report["provider_stages"][0]["status"] == "ok"
     assert report["failed_lane"] == "publication"
     assert report["failed_stage"] == "build"
     assert report["error"] == "Error: Next build failed for a useful reason"
     assert report["diagnostic_log"] == "storage/observability/site_roll_logs/build.log"
     assert [row["stage"] for row in report["publication_stages"]] == ["pull", "build"]
+    assert "vercel.json file should be inside" in report["publication_stages"][0]["warnings"][0]
