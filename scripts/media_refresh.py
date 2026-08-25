@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
-from error_surface import failure_details, latest_failed_stage, wrapped_stage_timeline
+from error_surface import extract_warnings, failure_details, latest_failed_stage, wrapped_stage_timeline
 from provider_preflight import vercel_cli_preflight
 from roll_site import Result
 
@@ -54,7 +54,24 @@ def _provider_stage(preflight: dict, started: datetime, completed: datetime) -> 
             if ok
             else str(preflight.get("error") or "Vercel CLI preflight failed")
         ),
+        "warnings": [],
     }
+
+
+def _hydrate_stage_warnings(root: Path, stages: list[dict]) -> None:
+    for row in stages:
+        row.setdefault("warnings", [])
+        log_value = str(row.get("log_path") or "").strip()
+        if not log_value:
+            continue
+        path = Path(log_value)
+        if not path.is_absolute():
+            path = root / path
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        row["warnings"] = extract_warnings(text)
 
 
 def refresh(
@@ -165,6 +182,7 @@ def refresh(
     base["publish"] = publish_payload or {"exit_code": publish.exit_code}
     roll_payload = publish_payload.get("roll") if isinstance(publish_payload, dict) else None
     publication_stages = list((roll_payload or {}).get("stages") or [])
+    _hydrate_stage_warnings(root, publication_stages)
     base["publication_stages"] = publication_stages
 
     if publish.exit_code:
@@ -231,6 +249,8 @@ def _print_timeline(report: dict) -> None:
         print(f"  {icon} {lane}:{stage:<30} {_duration(row.get('duration_ms'))}")
         if lane == "provider" and status in {"ok", "success"} and row.get("summary"):
             print(f"      info:  {row['summary']}")
+        for warning in row.get("warnings") or []:
+            print(f"      warn:  {warning}")
         if status == "failed" and row.get("summary"):
             print(f"      error: {row['summary']}")
         if status == "failed" and row.get("log_path"):
