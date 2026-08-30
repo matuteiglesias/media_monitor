@@ -78,7 +78,12 @@ class Fake:
             os.utime(out, (time.time() + 1, time.time() + 1))
         if command[:2] == ["vercel", "deploy"]:
             return Result(command, 0, self.deploy, "progress")
-        if command[:2] == ["vercel", "curl"]:
+        if command[:2] == ["vercel", "curl"] or (
+            len(command) >= 4
+            and command[0] == "vercel"
+            and command[1] == "--token"
+            and command[3] == "curl"
+        ):
             self.health_calls += 1
             value = self.health[self.health_calls - 1] if isinstance(self.health, list) else self.health
             return Result(command, 0, value if isinstance(value, str) else json.dumps(value), "")
@@ -129,7 +134,13 @@ def test_ci_token_is_forwarded_without_entering_roll_record(tmp_path, monkeypatc
     assert code == 0
     vercel_calls = [command for command, _ in fake.calls if command[0] == "vercel"]
     assert vercel_calls
-    assert all(command[-2:] == ["--token", "ci-secret-token"] for command in vercel_calls)
+    curl_command = next(command for command in vercel_calls if "curl" in command)
+    assert curl_command[:4] == ["vercel", "--token", "ci-secret-token", "curl"]
+    assert all(
+        command[-2:] == ["--token", "ci-secret-token"]
+        for command in vercel_calls
+        if command is not curl_command
+    )
     build_env = next(env for command, env in fake.calls if command[:2] == ["vercel", "build"])
     assert build_env["CI_MARKER"] == "preserved"
     assert build_env["SITE_ID"] == "argentina-general"
