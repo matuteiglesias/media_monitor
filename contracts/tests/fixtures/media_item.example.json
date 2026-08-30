@@ -1,0 +1,15 @@
+{
+  "schema_name": "media_item.v1",
+  "schema_status": "experimental",
+  "item_uid": "youtube:vidA001",
+  "source_id": "fixture-outlet-a",
+  "platform": "youtube",
+  "native_id": "vidA001",
+  "canonical_url": "https://www.youtube.com/watch?v=vidA001",
+  "title": "Fixture Economist A — deterministic sample",
+  "description": "Synthetic metadata fixture only; not a real video.",
+  "published_at": "2026-08-30T12:00:00Z",
+  "duration_seconds": 3600,
+  "first_seen": "2026-08-30T12:05:00Z",
+  "last_seen": "2026-08-30T12:05:00Z"
+}

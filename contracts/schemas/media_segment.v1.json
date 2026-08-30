@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/media_segment.v1.json",
+  "title": "media_segment.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": {"const": "media_segment.v1"},
+    "schema_status": {"const": "experimental"},
+    "segment_id": {"type": "string", "minLength": 8},
+    "item_uid": {"type": "string", "pattern": "^youtube:[A-Za-z0-9_-]{6,32}$"},
+    "start_seconds": {"type": "number", "minimum": 0},
+    "end_seconds": {"type": "number", "exclusiveMinimum": 0},
+    "boundary_source": {
+      "enum": [
+        "whole_item",
+        "publisher_chapter",
+        "description_timestamp",
+        "transcript_derived",
+        "operator_curated",
+        "model_derived"
+      ]
+    },
+    "label": {"type": ["string", "null"]},
+    "text_asset_id": {"type": ["string", "null"]},
+    "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+  },
+  "required": [
+    "schema_name", "schema_status", "segment_id", "item_uid", "start_seconds", "end_seconds",
+    "boundary_source", "label", "text_asset_id", "confidence"
+  ]
+}

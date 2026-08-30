@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/media_text_asset.v1.json",
+  "title": "media_text_asset.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": {"const": "media_text_asset.v1"},
+    "schema_status": {"const": "experimental"},
+    "text_asset_id": {"type": "string", "minLength": 8},
+    "item_uid": {"type": "string", "pattern": "^youtube:[A-Za-z0-9_-]{6,32}$"},
+    "status": {
+      "enum": [
+        "publisher_transcript",
+        "publisher_caption_authorized",
+        "publisher_article_text",
+        "operator_supplied_transcript",
+        "authorized_asr",
+        "unavailable",
+        "blocked_by_policy",
+        "failed"
+      ]
+    },
+    "acquisition_method": {
+      "enum": [
+        "publisher_page",
+        "authorized_caption_api",
+        "publisher_asset",
+        "operator_input",
+        "authorized_asr",
+        "none"
+      ]
+    },
+    "language": {"type": ["string", "null"]},
+    "timing_available": {"type": "boolean"},
+    "text": {"type": ["string", "null"]},
+    "text_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "generator": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "provider": {"type": "string", "minLength": 1},
+        "model": {"type": "string", "minLength": 1}
+      },
+      "required": ["provider", "model"]
+    }
+  },
+  "required": [
+    "schema_name", "schema_status", "text_asset_id", "item_uid", "status", "acquisition_method",
+    "language", "timing_available", "text", "text_sha256", "observed_at", "generator"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "publisher_transcript",
+              "publisher_caption_authorized",
+              "publisher_article_text",
+              "operator_supplied_transcript",
+              "authorized_asr"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "text": {"type": "string", "minLength": 1},
+          "text_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"enum": ["unavailable", "blocked_by_policy", "failed"]}}},
+      "then": {
+        "properties": {
+          "acquisition_method": {"const": "none"},
+          "text": {"type": "null"},
+          "text_sha256": {"type": "null"},
+          "generator": {"type": "null"}
+        }
+      }
+    }
+  ]
+}

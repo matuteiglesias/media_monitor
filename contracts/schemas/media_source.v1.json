@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/media_source.v1.json",
+  "title": "media_source.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": {"const": "media_source.v1"},
+    "schema_status": {"const": "experimental"},
+    "source_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+    "platform": {"const": "youtube"},
+    "source_kind": {"const": "channel"},
+    "native_source_id": {"type": "string", "minLength": 6},
+    "display_name": {"type": "string", "minLength": 1},
+    "canonical_url": {"type": "string", "format": "uri", "pattern": "^https://"},
+    "discovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {"const": "youtube_uploads"},
+        "method": {"const": "channel_uploads_playlist"}
+      },
+      "required": ["adapter", "method"]
+    },
+    "active": {"type": "boolean"}
+  },
+  "required": [
+    "schema_name", "schema_status", "source_id", "platform", "source_kind", "native_source_id",
+    "display_name", "canonical_url", "discovery", "active"
+  ]
+}

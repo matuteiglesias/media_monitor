@@ -1,0 +1,12 @@
+{
+  "schema_name": "media_appearance.v1",
+  "schema_status": "experimental",
+  "appearance_id": "appearance-fixture-001",
+  "person_id": "fixture-economist-a",
+  "item_uid": "youtube:vidA001",
+  "segment_id": "segment-fixture-001",
+  "evidence_source": "title",
+  "matched_alias": "Fixture Economist A",
+  "confidence": null,
+  "observed_at": "2026-08-30T12:06:00Z"
+}

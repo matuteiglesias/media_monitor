@@ -1,0 +1,16 @@
+{
+  "schema_name": "media_metadata_snapshot.v1",
+  "schema_status": "experimental",
+  "snapshot_id": "metadata-fixture-001",
+  "item_uid": "youtube:vidA001",
+  "observed_at": "2026-08-30T12:05:00Z",
+  "title": "Fixture Economist A — deterministic sample",
+  "description": "Synthetic metadata fixture only; not a real video.",
+  "statistics": {
+    "view_count": 100,
+    "like_count": 10,
+    "comment_count": 2
+  },
+  "availability": "public",
+  "payload_sha256": "7657deb4ac83c5658f67e3dfe33e44d63dc9ebc4bd3e39d08be61a6e00005148"
+}

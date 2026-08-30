@@ -1,0 +1,15 @@
+{
+  "schema_name": "media_source.v1",
+  "schema_status": "experimental",
+  "source_id": "fixture-outlet-a",
+  "platform": "youtube",
+  "source_kind": "channel",
+  "native_source_id": "UCfixtureA001",
+  "display_name": "Fixture Outlet A",
+  "canonical_url": "https://www.youtube.com/channel/UCfixtureA001",
+  "discovery": {
+    "adapter": "youtube_uploads",
+    "method": "channel_uploads_playlist"
+  },
+  "active": true
+}
