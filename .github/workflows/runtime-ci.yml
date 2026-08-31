@@ -74,7 +74,7 @@ jobs:
       - name: Install focused runtime test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements-sensing.txt pytest jsonschema requests
+          python -m pip install -r requirements-sensing.txt pytest jsonschema requests PyYAML
       - name: Run contract and bounded runtime suites
         run: |
           python -m pytest -q \
@@ -112,7 +112,8 @@ jobs:
             tests/test_news_site_publish_contract.py \
             tests/test_editorial_identity.py \
             tests/test_editorial_selection.py \
-            tests/test_story_contexts.py
+            tests/test_story_contexts.py \
+            tests/test_surface_boundaries.py
 
   news-site-contracts:
     if: github.event_name != 'pull_request'
