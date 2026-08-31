@@ -6,7 +6,7 @@ on:
       - "apps/media_watch/**"
       - "apps/channel_monitor/**"
       - "config/media_watch/**"
-      - "tests/test_media_watch_m1.py"
+      - "tests/test_media_watch_m*.py"
       - "bin/channel-monitor-live"
       - ".github/workflows/media-watch.yml"
       - "SYSTEM.yaml"
@@ -16,7 +16,7 @@ on:
       - "apps/media_watch/**"
       - "apps/channel_monitor/**"
       - "config/media_watch/**"
-      - "tests/test_media_watch_m1.py"
+      - "tests/test_media_watch_m*.py"
       - "bin/channel-monitor-live"
       - ".github/workflows/media-watch.yml"
       - "SYSTEM.yaml"
@@ -36,12 +36,12 @@ jobs:
           python-version: "3.12"
       - name: Install minimal media-watch test dependencies
         run: python -m pip install pytest jsonschema requests PyYAML
-      - name: Verify item/snapshot identity, replay and read model
-        run: python -m pytest -q tests/test_media_watch_m1.py
+      - name: Verify monitoring, enrichment, appearances and read models
+        run: python -m pytest -q tests/test_media_watch_m1.py tests/test_media_watch_m2_m4.py
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Typecheck Channel Monitor
+      - name: Typecheck Media Intelligence Workbench
         working-directory: apps/channel_monitor
         run: |
           npm install --no-audit --no-fund
@@ -78,34 +78,34 @@ jobs:
           node-version: "22"
       - name: Install bounded acceptance dependencies
         run: python -m pip install jsonschema requests PyYAML
-      - name: Seed deterministic two-outlet fixture and start read API
+      - name: Seed deterministic governed M2-M4 fixture and start read API
         run: |
-          python -m apps.media_watch.fixture --store-root artifacts/runs/media-watch-m1p-fixture/store
-          python -m apps.media_watch.api --store-root artifacts/runs/media-watch-m1p-fixture/store --port 9100 > artifacts/runs/media-watch-m1p-fixture/api.log 2>&1 &
+          python -m apps.media_watch.enrichment_fixture --store-root artifacts/runs/media-watch-m4-fixture/store
+          python -m apps.media_watch.api --store-root artifacts/runs/media-watch-m4-fixture/store --port 9100 > artifacts/runs/media-watch-m4-fixture/api.log 2>&1 &
           for i in $(seq 1 30); do curl -fsS http://127.0.0.1:9100/healthz && exit 0; sleep 1; done
           exit 1
-      - name: Build and start Channel Monitor
+      - name: Build and start Media Intelligence Workbench
         working-directory: apps/channel_monitor
         env:
           NEXT_PUBLIC_CHANNEL_MONITOR_API_BASE: http://127.0.0.1:9100
         run: |
           npm install --no-audit --no-fund
           npm run build
-          npm run start > ../../artifacts/runs/media-watch-m1p-fixture/frontend.log 2>&1 &
+          npm run start > ../../artifacts/runs/media-watch-m4-fixture/frontend.log 2>&1 &
           for i in $(seq 1 30); do curl -fsS http://127.0.0.1:3010/ >/dev/null && exit 0; sleep 1; done
           exit 1
-      - name: Install Chromium and exercise Latest → Outlets → Item
+      - name: Install Chromium and exercise Latest → People → Search → Item → Outlets
         working-directory: apps/channel_monitor
         run: |
           npx playwright install --with-deps chromium
           npm run test:e2e
-      - name: Upload fixture product proof
+      - name: Upload mature workbench proof
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: channel-monitor-m1p-fixture-proof
+          name: media-intelligence-m4-fixture-proof
           path: |
-            artifacts/runs/media-watch-m1p-fixture
+            artifacts/runs/media-watch-m4-fixture
             apps/channel_monitor/artifacts
             apps/channel_monitor/test-results
           if-no-files-found: warn
