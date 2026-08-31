@@ -6,7 +6,17 @@ watch:
   source_ids:
     - el-destape-youtube
     - futurock-youtube
-  people: []
+  people:
+    - person_id: carlos-melconian
+      display_name: Carlos Melconian
+      aliases:
+        - Carlos Melconian
+        - Melconian
+    - person_id: marina-dal-poggetto
+      display_name: Marina Dal Poggetto
+      aliases:
+        - Marina Dal Poggetto
+        - Dal Poggetto
   cadence: manual
   processing:
     metadata: always
