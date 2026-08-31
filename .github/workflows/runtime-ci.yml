@@ -115,6 +115,7 @@ jobs:
             tests/test_story_contexts.py
 
   news-site-contracts:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
