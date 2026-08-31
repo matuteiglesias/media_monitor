@@ -1,0 +1,20 @@
+import fs from "node:fs";
+import { expect, test } from "@playwright/test";
+test("Latest → Outlets → canonical Item keeps source and monitor evidence distinct", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Channel Monitor" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Latest publisher activity" })).toBeVisible();
+  await expect(page.getByText("El Destape", { exact: false }).first()).toBeVisible();
+  await expect(page.getByText("Futurock", { exact: false }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Outlets" }).click();
+  await expect(page.getByRole("heading", { name: "Outlets" })).toBeVisible();
+  await expect(page.getByText("Last reconciliation").first()).toBeVisible();
+  await page.getByRole("button", { name: "Latest" }).click();
+  await page.getByRole("button", { name: "Open item" }).first().click();
+  await expect(page.getByText("SOURCE", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("MONITOR", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Not attempted in M1.", { exact: false })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Open on YouTube/ })).toHaveAttribute("href", /youtube\.com\/watch\?v=/);
+  fs.mkdirSync("artifacts", { recursive: true });
+  await page.screenshot({ path: "artifacts/m1p-channel-monitor.png", fullPage: true });
+});
