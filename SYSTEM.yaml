@@ -74,13 +74,34 @@ monitored_media_program:
     status: merged
     evidence: contracts-fixtures-and-boundaries
   m1_m1p:
-    status: merged-product-code-live-acceptance-blocked
+    status: live-source-proof-obtained
     capabilities:
       - official YouTube uploads-playlist adapter
       - stable media-item identity and immutable metadata snapshots
       - freshness/read model
       - Latest / Outlets / Item Channel Monitor
-    external_gate: "GitHub Actions YOUTUBE_API_KEY is still absent; official live acceptance must not be claimed until the workflow_dispatch gate succeeds."
+    live_evidence:
+      workflow_run: 33346659786
+      artifact_id: 9743981739
+      artifact_digest: "sha256:12920872ecec201e8a8ecbca928b933d8f90979548a12afcdcbb4dac6af9185a"
+      observed_at: "2026-08-31T02:55:38Z"
+      sources:
+        - source_id: el-destape-youtube
+          channel_title: El Destape
+          observations: 10
+        - source_id: futurock-youtube
+          channel_title: Futurock FM
+          observations: 10
+      first_materialization:
+        new_items: 20
+        new_snapshots: 20
+        failures: 0
+      replay_materialization:
+        new_items: 0
+        new_snapshots: 0
+        unchanged_snapshots: 20
+        failures: 0
+    acceptance_note: "The live monitor itself returned acceptance_green=true; the historical job was marked failed only because tee opened monitor.log before the parent directory existed. The workflow now creates the directory before tee."
   m2:
     status: deterministic-proof-green
     capabilities:
@@ -108,10 +129,10 @@ monitored_media_program:
       - Item
     search_capability: metadata_and_governed_text_literal_match
     product_invariant: source metadata, monitor/corpus state, and derived detection evidence remain visibly distinct
-    pending_acceptance:
-      - production build on main after merge
-      - explicit Playwright browser acceptance via workflow_dispatch
-      - official real-channel acceptance once YOUTUBE_API_KEY is configured in GitHub Actions
+    acceptance:
+      - production build on main is green
+      - explicit Playwright browser acceptance remains available via workflow_dispatch
+      - official YouTube connectivity and 10+10 replay proof are established by the M1 live evidence above
   stopping_rule: "Do not add ASR orchestration, speaker biometrics, semantic search, generic entity resolution, or shared workbench infrastructure before real-use evidence requires them."
 
 interfaces:
