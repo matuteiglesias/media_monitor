@@ -132,6 +132,7 @@ jobs:
         run: python -m pip install jsonschema requests PyYAML
       - name: Reconcile two real channels through official uploads playlists and replay
         run: |
+          mkdir -p artifacts/runs/media-watch-m1-live
           python -m apps.media_watch.monitor --limit 10 --store-root artifacts/runs/media-watch-m1-live/store --evidence-root artifacts/runs/media-watch-m1-live/evidence | tee artifacts/runs/media-watch-m1-live/monitor.log
           python - <<'PY'
           import json
