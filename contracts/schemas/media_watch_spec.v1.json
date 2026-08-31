@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/media_watch_spec.v1.json",
+  "title": "media_watch_spec.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": {"const": "media_watch_spec.v1"},
+    "schema_status": {"const": "experimental"},
+    "monitor_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+    "source_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"}
+    },
+    "people": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "person_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+          "display_name": {"type": "string", "minLength": 1},
+          "aliases": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1}
+          }
+        },
+        "required": ["person_id", "display_name", "aliases"]
+      }
+    },
+    "cadence": {"enum": ["hourly", "daily", "manual"]},
+    "processing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "metadata": {"const": "always"},
+        "text_policy": {"const": "permitted_sources_only"},
+        "publisher_chapters": {"type": "boolean"},
+        "description_timestamps": {"type": "boolean"},
+        "transcript_derived_segments": {"type": "boolean"}
+      },
+      "required": ["metadata", "text_policy", "publisher_chapters", "description_timestamps", "transcript_derived_segments"]
+    }
+  },
+  "required": ["schema_name", "schema_status", "monitor_id", "source_ids", "people", "cadence", "processing"]
+}

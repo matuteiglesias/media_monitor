@@ -1,0 +1,26 @@
+{
+  "schema_name": "media_watch_spec.v1",
+  "schema_status": "experimental",
+  "monitor_id": "fixture-argentina-economists",
+  "source_ids": ["fixture-outlet-a", "fixture-outlet-b"],
+  "people": [
+    {
+      "person_id": "fixture-economist-a",
+      "display_name": "Fixture Economist A",
+      "aliases": ["Fixture Economist A", "Economist A"]
+    },
+    {
+      "person_id": "fixture-economist-b",
+      "display_name": "Fixture Economist B",
+      "aliases": ["Fixture Economist B", "Economist B"]
+    }
+  ],
+  "cadence": "daily",
+  "processing": {
+    "metadata": "always",
+    "text_policy": "permitted_sources_only",
+    "publisher_chapters": true,
+    "description_timestamps": true,
+    "transcript_derived_segments": true
+  }
+}

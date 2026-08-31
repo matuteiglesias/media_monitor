@@ -1,0 +1,12 @@
+{
+  "schema_name": "media_segment.v1",
+  "schema_status": "experimental",
+  "segment_id": "segment-fixture-001",
+  "item_uid": "youtube:vidA001",
+  "start_seconds": 0,
+  "end_seconds": 3600,
+  "boundary_source": "whole_item",
+  "label": "Whole fixture item",
+  "text_asset_id": null,
+  "confidence": null
+}

@@ -1,0 +1,14 @@
+{
+  "schema_name": "media_text_asset.v1",
+  "schema_status": "experimental",
+  "text_asset_id": "text-fixture-publisher-001",
+  "item_uid": "youtube:vidA001",
+  "status": "publisher_transcript",
+  "acquisition_method": "publisher_page",
+  "language": "es",
+  "timing_available": false,
+  "text": "Transcripción determinística de fixture; no representa contenido real.",
+  "text_sha256": "e59dde04a5c957a8ea042b9a9602e596a8cb83e35601068e0f20de1715c3d531",
+  "observed_at": "2026-08-30T12:06:00Z",
+  "generator": null
+}

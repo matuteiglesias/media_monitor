@@ -1,0 +1,14 @@
+{
+  "schema_name": "media_text_asset.v1",
+  "schema_status": "experimental",
+  "text_asset_id": "text-fixture-unavailable-001",
+  "item_uid": "youtube:vidA001",
+  "status": "unavailable",
+  "acquisition_method": "none",
+  "language": null,
+  "timing_available": false,
+  "text": null,
+  "text_sha256": null,
+  "observed_at": "2026-08-30T12:06:00Z",
+  "generator": null
+}

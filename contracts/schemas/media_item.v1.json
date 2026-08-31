@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/media_item.v1.json",
+  "title": "media_item.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": {"const": "media_item.v1"},
+    "schema_status": {"const": "experimental"},
+    "item_uid": {"type": "string", "pattern": "^youtube:[A-Za-z0-9_-]{6,32}$"},
+    "source_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+    "platform": {"const": "youtube"},
+    "native_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]{6,32}$"},
+    "canonical_url": {"type": "string", "format": "uri", "pattern": "^https://"},
+    "title": {"type": "string", "minLength": 1},
+    "description": {"type": "string"},
+    "published_at": {"type": "string", "format": "date-time"},
+    "duration_seconds": {"type": ["integer", "null"], "minimum": 0},
+    "first_seen": {"type": "string", "format": "date-time"},
+    "last_seen": {"type": "string", "format": "date-time"}
+  },
+  "required": [
+    "schema_name", "schema_status", "item_uid", "source_id", "platform", "native_id", "canonical_url",
+    "title", "description", "published_at", "duration_seconds", "first_seen", "last_seen"
+  ]
+}

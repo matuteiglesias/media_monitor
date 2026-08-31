@@ -1,0 +1,51 @@
+schema_version: 1
+id: media.monitor
+repository:
+  id: repo.media-monitor
+  github: matuteiglesias/media_monitor
+domain: media
+system: media-monitor
+role: sensing-editorial-publication-system
+lifecycle: active
+
+authority:
+  status: existing-system-plus-w0-extension
+  owns:
+    - configured external media/news sensing
+    - producer-local stable identities and observation evidence
+    - deterministic selection and coverage context for the existing editorial product
+    - human-gated publication state for the existing editorial product
+    - monitored-media source registry, media-item identity, metadata snapshots, text-asset provenance, segments, and appearance evidence once implemented
+  does_not_own:
+    - platform content rights or permission to transcribe arbitrary third-party video
+    - universal transcription or ASR architecture
+    - speaker biometrics or voice identification
+    - cross-platform person/entity resolution
+    - generic semantic embeddings, retrieval, reranking, or clustering
+    - shared knowledge interoperability schema authority
+    - interpretation of an appearance as endorsement or political/economic belief
+
+monitored_media_w0:
+  status: contracts-fixtures-and-boundaries
+  contracts:
+    - media_watch_spec.v1
+    - media_source.v1
+    - media_item.v1
+    - media_metadata_snapshot.v1
+    - media_text_asset.v1
+    - media_segment.v1
+    - media_appearance.v1
+  invariants:
+    - media item identity is platform-native and separate from mutable metadata snapshots
+    - transcript absence is a valid explicit state and does not invalidate monitoring
+    - segment identity is separate from whole-video identity
+    - appearance evidence records how the match was obtained
+    - model-derived matches never become source metadata
+  next_gate: M1 real YouTube discovery proof over two configured channels using the official channel uploads surface
+  stopping_rule: do not add ASR orchestration, speaker biometrics, semantic search, or a generic media platform before real M1/M2 consumer pressure.
+
+interfaces:
+  expected_downstream_after_real_text_exists:
+    - repo.knowledge-inspect
+    - repo.knowledge-experiences
+  shared_contract_promotion: deferred until speech and media producers prove a genuinely common artifact shape

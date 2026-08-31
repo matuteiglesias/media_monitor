@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/media_metadata_snapshot.v1.json",
+  "title": "media_metadata_snapshot.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": {"const": "media_metadata_snapshot.v1"},
+    "schema_status": {"const": "experimental"},
+    "snapshot_id": {"type": "string", "minLength": 8},
+    "item_uid": {"type": "string", "pattern": "^youtube:[A-Za-z0-9_-]{6,32}$"},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "title": {"type": "string", "minLength": 1},
+    "description": {"type": "string"},
+    "statistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "view_count": {"type": ["integer", "null"], "minimum": 0},
+        "like_count": {"type": ["integer", "null"], "minimum": 0},
+        "comment_count": {"type": ["integer", "null"], "minimum": 0}
+      },
+      "required": ["view_count", "like_count", "comment_count"]
+    },
+    "availability": {"enum": ["public", "unavailable", "deleted", "private", "unknown"]},
+    "payload_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "required": [
+    "schema_name", "schema_status", "snapshot_id", "item_uid", "observed_at", "title",
+    "description", "statistics", "availability", "payload_sha256"
+  ]
+}
