@@ -27,14 +27,15 @@ def test_system_declares_distinct_media_monitor_surfaces() -> None:
     ids = [surface["surface_id"] for surface in surfaces.values()]
     assert len(ids) == len(set(ids))
     assert surfaces["argentina_outlet"]["status"] == "incubated-in-repository"
+    assert surfaces["argentina_outlet"]["instance_config"] == "sites/argentina-general.json"
 
 
-def test_docs_and_argentina_outlet_disable_feature_branch_vercel_deploys() -> None:
-    expected = {"*": False, "main": True}
-    for path in ("docs-site/vercel.json", "apps/news_site/vercel.json"):
-        config = _json(path)
-        assert config["git"]["deploymentEnabled"] == expected
-        assert config["github"]["silent"] is True
+def test_declared_surface_roots_exist_and_are_not_collapsed() -> None:
+    system = yaml.safe_load((REPO / "SYSTEM.yaml").read_text(encoding="utf-8"))
+    paths = [surface["path"] for surface in system["surfaces"].values()]
+    assert len(paths) == len(set(paths))
+    for path in paths:
+        assert (REPO / path).exists(), path
 
 
 def test_root_vercel_surface_is_operator_last_mile_not_the_outlet() -> None:
