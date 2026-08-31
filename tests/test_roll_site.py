@@ -78,12 +78,7 @@ class Fake:
             os.utime(out, (time.time() + 1, time.time() + 1))
         if command[:2] == ["vercel", "deploy"]:
             return Result(command, 0, self.deploy, "progress")
-        if command[:2] == ["vercel", "curl"] or (
-            len(command) >= 4
-            and command[0] == "vercel"
-            and command[1] == "--token"
-            and command[3] == "curl"
-        ):
+        if command[:2] == ["vercel", "curl"]:
             self.health_calls += 1
             value = self.health[self.health_calls - 1] if isinstance(self.health, list) else self.health
             return Result(command, 0, value if isinstance(value, str) else json.dumps(value), "")
@@ -125,7 +120,7 @@ def test_production_command_construction_and_freshness_record(tmp_path):
     assert record["observed"]["story_context_count"] == 11
 
 
-def test_ci_token_is_forwarded_without_entering_roll_record(tmp_path, monkeypatch):
+def test_ci_token_uses_environment_for_curl_without_entering_roll_record(tmp_path, monkeypatch):
     monkeypatch.setenv("VERCEL_TOKEN", "ci-secret-token")
     monkeypatch.setenv("CI_MARKER", "preserved")
     snapshot(tmp_path)
@@ -135,7 +130,8 @@ def test_ci_token_is_forwarded_without_entering_roll_record(tmp_path, monkeypatc
     vercel_calls = [command for command, _ in fake.calls if command[0] == "vercel"]
     assert vercel_calls
     curl_command = next(command for command in vercel_calls if "curl" in command)
-    assert curl_command[:4] == ["vercel", "--token", "ci-secret-token", "curl"]
+    assert curl_command[:2] == ["vercel", "curl"]
+    assert "ci-secret-token" not in curl_command
     assert all(
         command[-2:] == ["--token", "ci-secret-token"]
         for command in vercel_calls
