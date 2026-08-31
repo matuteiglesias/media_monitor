@@ -43,7 +43,7 @@ surfaces:
     surface_id: media-channel-monitor
     path: apps/channel_monitor
     kind: monitored-video-workbench
-    status: internal-product-surface
+    status: m4-deterministic-product-proof
 
 surface_invariants:
   - docs-site is presentation for canonical system documentation and must not own publication runtime routes
@@ -53,13 +53,13 @@ surface_invariants:
   - each deployable surface must be linked to an explicitly named deployment project/root; project names that differ only by '-' versus '_' are forbidden for new links
 
 authority:
-  status: existing-system-plus-w0-extension
+  status: existing-system-plus-monitored-media-product
   owns:
     - configured external media/news sensing
     - producer-local stable identities and observation evidence
     - deterministic selection and coverage context for the existing editorial product
     - human-gated publication state for the existing editorial product
-    - monitored-media source registry, media-item identity, metadata snapshots, text-asset provenance, segments, and appearance evidence once implemented
+    - monitored-media source registry, media-item identity, metadata snapshots, text-asset provenance, segments, appearance evidence, and deterministic operational indexes
   does_not_own:
     - platform content rights or permission to transcribe arbitrary third-party video
     - universal transcription or ASR architecture
@@ -69,24 +69,50 @@ authority:
     - shared knowledge interoperability schema authority
     - interpretation of an appearance as endorsement or political/economic belief
 
-monitored_media_w0:
-  status: contracts-fixtures-and-boundaries
-  contracts:
-    - media_watch_spec.v1
-    - media_source.v1
-    - media_item.v1
-    - media_metadata_snapshot.v1
-    - media_text_asset.v1
-    - media_segment.v1
-    - media_appearance.v1
-  invariants:
-    - media item identity is platform-native and separate from mutable metadata snapshots
-    - transcript absence is a valid explicit state and does not invalidate monitoring
-    - segment identity is separate from whole-video identity
-    - appearance evidence records how the match was obtained
-    - model-derived matches never become source metadata
-  next_gate: M1 real YouTube discovery proof over two configured channels using the official channel uploads surface
-  stopping_rule: do not add ASR orchestration, speaker biometrics, semantic search, or a generic media platform before real M1/M2 consumer pressure.
+monitored_media_program:
+  w0:
+    status: merged
+    evidence: contracts-fixtures-and-boundaries
+  m1_m1p:
+    status: merged-product-code-live-acceptance-blocked
+    capabilities:
+      - official YouTube uploads-playlist adapter
+      - stable media-item identity and immutable metadata snapshots
+      - freshness/read model
+      - Latest / Outlets / Item Channel Monitor
+    external_gate: "GitHub Actions YOUTUBE_API_KEY is still absent; official live acceptance must not be claimed until the workflow_dispatch gate succeeds."
+  m2:
+    status: deterministic-proof-green
+    capabilities:
+      - explicit governed text provenance states
+      - replay-idempotent text assets
+      - whole-item segments
+      - publisher-description timestamp segments
+      - unavailable and blocked states treated as valid monitoring outcomes
+  m3:
+    status: deterministic-proof-green
+    configured_people:
+      - carlos-melconian
+      - marina-dal-poggetto
+    capabilities:
+      - title then description then governed-text appearance matching
+      - evidence source and matched alias retained
+      - regenerable latest/outlet/people/appearance/text-status/health indexes
+  m4:
+    status: deterministic-product-proof-green
+    tabs:
+      - Latest
+      - People
+      - Outlets
+      - Search
+      - Item
+    search_capability: metadata_and_governed_text_literal_match
+    product_invariant: source metadata, monitor/corpus state, and derived detection evidence remain visibly distinct
+    pending_acceptance:
+      - production build on main after merge
+      - explicit Playwright browser acceptance via workflow_dispatch
+      - official real-channel acceptance once YOUTUBE_API_KEY is configured in GitHub Actions
+  stopping_rule: "Do not add ASR orchestration, speaker biometrics, semantic search, generic entity resolution, or shared workbench infrastructure before real-use evidence requires them."
 
 interfaces:
   expected_downstream_after_real_text_exists:
