@@ -71,8 +71,8 @@ def hostname(output: str) -> str:
 
 def vercel_command(*args: str) -> list[str]:
     token = os.getenv("VERCEL_TOKEN", "").strip()
-    if token and args and args[0] == "curl":
-        return ["vercel", "--token", token, *args]
+    if args and args[0] == "curl":
+        return ["vercel", *args]
     command = ["vercel", *args]
     if token:
         command.extend(["--token", token])
