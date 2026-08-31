@@ -8,6 +8,50 @@ system: media-monitor
 role: sensing-editorial-publication-system
 lifecycle: active
 
+naming:
+  repository_slug: media_monitor
+  system_id: media-monitor
+  rule: "Keep the existing GitHub/path slug media_monitor where physically required; use hyphenated semantic/deployment surface IDs. Never treat '-' and '_' variants as interchangeable project identities."
+
+surfaces:
+  system_documentation:
+    surface_id: media-monitor-docs
+    path: docs-site
+    kind: documentation-frontend
+    content_authority: docs
+    deployment_shape: separate-vercel-project
+    recommended_vercel_project: media-monitor-docs
+    instance_specific: false
+  argentina_outlet:
+    surface_id: media-monitor-argentina
+    path: apps/news_site
+    kind: configured-outlet-instance
+    instance_config: sites/argentina-general.json
+    public_identity: apps/news_site/config/public_identity.json
+    deployment_shape: separate-vercel-project
+    recommended_vercel_project: media-monitor-argentina
+    status: incubated-in-repository
+    extraction_policy: "May move to an instance repository later; do not make its Argentina-specific content or branding core system semantics."
+  operator_last_mile:
+    surface_id: media-monitor-last-mile
+    path: web
+    kind: operator-handoff-ui
+    deployment_config: vercel.json
+    status: retained-separate-surface
+    note: "The root Vercel surface serves web/index.html and is neither the docs frontend nor the Argentina outlet."
+  channel_monitor:
+    surface_id: media-channel-monitor
+    path: apps/channel_monitor
+    kind: monitored-video-workbench
+    status: internal-product-surface
+
+surface_invariants:
+  - docs-site is presentation for canonical system documentation and must not own publication runtime routes
+  - apps/news_site is one configured Argentina outlet instance, not the definition of Media Monitor
+  - web is an operator last-mile surface and must not be confused with the public outlet
+  - apps/channel_monitor is a separate monitored-video product surface
+  - each deployable surface must be linked to an explicitly named deployment project/root; project names that differ only by '-' versus '_' are forbidden for new links
+
 authority:
   status: existing-system-plus-w0-extension
   owns:
