@@ -1,0 +1,41 @@
+schema_version: 1
+watch:
+  schema_name: media_watch_spec.v1
+  schema_status: experimental
+  monitor_id: argentina-public-affairs-youtube
+  source_ids:
+    - el-destape-youtube
+    - futurock-youtube
+  people: []
+  cadence: manual
+  processing:
+    metadata: always
+    text_policy: permitted_sources_only
+    publisher_chapters: true
+    description_timestamps: true
+    transcript_derived_segments: false
+sources:
+  - schema_name: media_source.v1
+    schema_status: experimental
+    source_id: el-destape-youtube
+    platform: youtube
+    source_kind: channel
+    native_source_id: UC5wAqJ9NF0fpGH9dVf3h6HA
+    display_name: El Destape
+    canonical_url: https://www.youtube.com/@ElDestapeTV
+    discovery:
+      adapter: youtube_uploads
+      method: channel_uploads_playlist
+    active: true
+  - schema_name: media_source.v1
+    schema_status: experimental
+    source_id: futurock-youtube
+    platform: youtube
+    source_kind: channel
+    native_source_id: UCgn6r0aGRBnEQm02tE_jzbw
+    display_name: Futurock
+    canonical_url: https://www.youtube.com/@FuturockOk
+    discovery:
+      adapter: youtube_uploads
+      method: channel_uploads_playlist
+    active: true

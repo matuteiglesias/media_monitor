@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+limit="${1:-${MEDIA_WATCH_LIMIT:-20}}"
+exec python -m apps.media_watch.monitor \
+  --limit "$limit" \
+  --store-root "${MEDIA_WATCH_STORE:-data/canonical/media_watch}" \
+  --evidence-root "${MEDIA_WATCH_EVIDENCE:-artifacts/runs/media-watch-m1}"
