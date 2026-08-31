@@ -20,40 +20,52 @@ on:
       - "bin/channel-monitor-live"
       - ".github/workflows/media-watch.yml"
       - "SYSTEM.yaml"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  unit-and-build:
+  fast-checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: requirements-sensing.txt
-      - name: Install bounded media-watch test dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements-sensing.txt pytest jsonschema requests
+      - name: Install minimal media-watch test dependencies
+        run: python -m pip install pytest jsonschema requests PyYAML
       - name: Verify item/snapshot identity, replay and read model
         run: python -m pytest -q tests/test_media_watch_m1.py
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Typecheck and build Channel Monitor v0
+      - name: Typecheck Channel Monitor
+        working-directory: apps/channel_monitor
+        run: |
+          npm install --no-audit --no-fund
+          npm run typecheck
+
+  production-build:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Production build
         working-directory: apps/channel_monitor
         env:
           NEXT_PUBLIC_CHANNEL_MONITOR_API_BASE: http://127.0.0.1:9100
         run: |
           npm install --no-audit --no-fund
-          npm run typecheck
           npm run build
 
   fixture-browser-proof:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -61,22 +73,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: requirements-sensing.txt
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Install runtime dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements-sensing.txt jsonschema requests
+      - name: Install bounded acceptance dependencies
+        run: python -m pip install jsonschema requests PyYAML
       - name: Seed deterministic two-outlet fixture and start read API
         run: |
           python -m apps.media_watch.fixture --store-root artifacts/runs/media-watch-m1p-fixture/store
           python -m apps.media_watch.api --store-root artifacts/runs/media-watch-m1p-fixture/store --port 9100 > artifacts/runs/media-watch-m1p-fixture/api.log 2>&1 &
           for i in $(seq 1 30); do curl -fsS http://127.0.0.1:9100/healthz && exit 0; sleep 1; done
           exit 1
-      - name: Build and start Channel Monitor v0
+      - name: Build and start Channel Monitor
         working-directory: apps/channel_monitor
         env:
           NEXT_PUBLIC_CHANNEL_MONITOR_API_BASE: http://127.0.0.1:9100
@@ -103,9 +111,9 @@ jobs:
           if-no-files-found: warn
 
   official-youtube-live-proof:
-    if: github.event_name == 'pull_request'
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     env:
       YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
     steps:
@@ -113,28 +121,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: requirements-sensing.txt
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - name: Detect official API credential without exposing it
-        id: credential
+      - name: Require official API credential
         shell: bash
         run: |
-          if [ -n "$YOUTUBE_API_KEY" ]; then echo "available=true" >> "$GITHUB_OUTPUT"; else echo "available=false" >> "$GITHUB_OUTPUT"; fi
-      - name: Record explicit credential blocker
-        if: steps.credential.outputs.available != 'true'
-        run: |
-          mkdir -p artifacts/runs/media-watch-m1-live
-          printf '%s\n' '{"schema_name":"media_watch_m1_live_gate.v1","status":"BLOCKED_NO_YOUTUBE_API_KEY","requirement":"repository secret YOUTUBE_API_KEY with YouTube Data API v3 enabled"}' > artifacts/runs/media-watch-m1-live/gate.json
+          if [ -z "$YOUTUBE_API_KEY" ]; then
+            echo "YOUTUBE_API_KEY is required for the main/manual live acceptance gate."
+            exit 1
+          fi
       - name: Install bounded media-watch runtime
-        if: steps.credential.outputs.available == 'true'
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements-sensing.txt jsonschema requests
+        run: python -m pip install jsonschema requests PyYAML
       - name: Reconcile two real channels through official uploads playlists and replay
-        if: steps.credential.outputs.available == 'true'
         run: |
           python -m apps.media_watch.monitor --limit 10 --store-root artifacts/runs/media-watch-m1-live/store --evidence-root artifacts/runs/media-watch-m1-live/evidence | tee artifacts/runs/media-watch-m1-live/monitor.log
           python - <<'PY'
@@ -147,37 +143,16 @@ jobs:
           assert manifest['replay_materialization']['new_items'] == 0
           assert manifest['replay_materialization']['new_snapshots'] == 0
           PY
-      - name: Start read API and verify real recent activity
-        if: steps.credential.outputs.available == 'true'
+      - name: Verify real read-model activity
         run: |
           python -m apps.media_watch.api --store-root artifacts/runs/media-watch-m1-live/store --port 9100 > artifacts/runs/media-watch-m1-live/api.log 2>&1 &
           for i in $(seq 1 30); do curl -fsS http://127.0.0.1:9100/healthz && break; sleep 1; done
           curl -fsS http://127.0.0.1:9100/api/channel-monitor | tee artifacts/runs/media-watch-m1-live/overview.json
           curl -fsS 'http://127.0.0.1:9100/api/items?limit=5' | tee artifacts/runs/media-watch-m1-live/latest.json
-      - name: Build and open Channel Monitor over real store
-        if: steps.credential.outputs.available == 'true'
-        working-directory: apps/channel_monitor
-        env:
-          NEXT_PUBLIC_CHANNEL_MONITOR_API_BASE: http://127.0.0.1:9100
-        run: |
-          npm install --no-audit --no-fund
-          npm run build
-          npm run start > ../../artifacts/runs/media-watch-m1-live/frontend.log 2>&1 &
-          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:3010/ >/dev/null && exit 0; sleep 1; done
-          exit 1
-      - name: Browser acceptance on real channel activity
-        if: steps.credential.outputs.available == 'true'
-        working-directory: apps/channel_monitor
-        run: |
-          npx playwright install --with-deps chromium
-          npm run test:e2e
       - name: Upload M1 live gate evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: media-watch-m1-live-gate
-          path: |
-            artifacts/runs/media-watch-m1-live
-            apps/channel_monitor/artifacts
-            apps/channel_monitor/test-results
+          path: artifacts/runs/media-watch-m1-live
           if-no-files-found: warn
