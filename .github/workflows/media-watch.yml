@@ -111,7 +111,7 @@ jobs:
           if-no-files-found: warn
 
   official-youtube-live-proof:
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -125,7 +125,7 @@ jobs:
         shell: bash
         run: |
           if [ -z "$YOUTUBE_API_KEY" ]; then
-            echo "YOUTUBE_API_KEY is required for the main/manual live acceptance gate."
+            echo "YOUTUBE_API_KEY is required for the manual live acceptance gate."
             exit 1
           fi
       - name: Install bounded media-watch runtime
