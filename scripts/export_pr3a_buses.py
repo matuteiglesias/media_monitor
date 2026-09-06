@@ -10,11 +10,20 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from bounded_storage import (
+    atomic_write_bytes,
+    atomic_write_json,
+    identity_change_counts,
+    read_jsonl,
+    serialize_jsonl,
+    sha256_bytes,
+    sha256_file,
+)
+
 try:
     from jsonschema import Draft202012Validator  # type: ignore
 except Exception:  # pragma: no cover - runtime fallback when dependency is absent
     Draft202012Validator = None
-
 
 
 @dataclass
@@ -54,18 +63,18 @@ def _iter_jsonl(path: Path):
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        for r in rows:
-            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    atomic_write_bytes(path, serialize_jsonl(rows))
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    atomic_write_json(path, payload)
 
 
 def _load_previous_export_output(storage_dir: Path, digest_at: str, export_name: str) -> str | None:
+    """Resolve prior immutable output for buses that still retain per-digest payloads.
+
+    news_ref.v1 no longer uses this path: it is a bounded current-state materialization.
+    """
     idx_dir = storage_dir / "indexes"
     latest = idx_dir / "pr3a_exports_latest.json"
     candidates: list[Path] = []
@@ -93,10 +102,7 @@ def _load_previous_export_output(storage_dir: Path, digest_at: str, export_name:
             if output and Path(output).exists():
                 return output
 
-    manifest_glob: str
-    if export_name == "news_ref.v1":
-        manifest_glob = "buses/news_ref/v1/manifest_*.json"
-    elif export_name == "news_digest_group.v1":
+    if export_name == "news_digest_group.v1":
         manifest_glob = "buses/news_digest_group/v1/manifest_*.json"
     else:
         return None
@@ -213,7 +219,13 @@ def _latest_digest_map_by_index(data_dir: Path) -> dict[str, dict[str, str]]:
     return out
 
 
-def export_news_ref(data_dir: Path, storage_dir: Path, contracts_dir: Path, digest_at: str, export_at: str) -> ExportResult:
+def export_news_ref(
+    data_dir: Path,
+    storage_dir: Path,
+    contracts_dir: Path,
+    digest_at: str,
+    export_at: str,
+) -> ExportResult:
     source_path, source_rows = _select_ref_source(data_dir)
     if not source_rows:
         return ExportResult("news_ref.v1", "noop", 0, None, None, None, "missing master_ref/master_index input")
@@ -258,42 +270,46 @@ def export_news_ref(data_dir: Path, storage_dir: Path, contracts_dir: Path, dige
     _validate_rows(out_rows, schema)
 
     out_dir = storage_dir / "buses" / "news_ref" / "v1"
-    out_file = out_dir / f"news_ref_{export_at}.jsonl"
+    current = out_dir / "news_ref_current.jsonl"
     manifest = out_dir / f"manifest_{export_at}.json"
-    previous_output = _load_previous_export_output(storage_dir, digest_at, "news_ref.v1")
-    if _rows_match_previous_output(out_rows, previous_output):
-        _write_json(
-            manifest,
-            {
-                "schema": "news_ref.v1",
-                "status": "skipped_duplicate",
-                "export_at": export_at,
-                "digest_at": digest_at,
-                "row_count": len(out_rows),
-                "source_file": source_path,
-                "duplicate_of": previous_output,
-            },
-        )
-        return ExportResult(
-            "news_ref.v1",
-            "skipped_duplicate",
-            len(out_rows),
-            source_path,
-            previous_output,
-            str(manifest),
-            "content identical to latest successful export for digest_at",
-        )
 
-    _write_jsonl(out_file, out_rows)
+    previous_sha = sha256_file(current)
+    previous_rows = read_jsonl(current) if previous_sha else []
+    payload = serialize_jsonl(out_rows)
+    content_sha = sha256_bytes(payload)
+    unchanged = previous_sha == content_sha
+
+    if unchanged:
+        added_count = changed_count = removed_count = 0
+        result_status = "skipped_duplicate"
+        manifest_status = "unchanged"
+        reason = "content identical to current materialization across digest boundaries"
+    else:
+        added_count, changed_count, removed_count = identity_change_counts(previous_rows, out_rows, "index_id")
+        atomic_write_bytes(current, payload)
+        result_status = "exported"
+        manifest_status = "changed"
+        reason = None
+
     _write_json(
         manifest,
         {
             "schema": "news_ref.v1",
-            "status": "exported",
+            "storage_mode": "bounded_current",
+            "status": manifest_status,
+            "export_result_status": result_status,
             "export_at": export_at,
             "digest_at": digest_at,
             "row_count": len(out_rows),
             "source_file": source_path,
+            "current_path": str(current),
+            "output_file": str(current),
+            "content_sha256": content_sha,
+            "previous_content_sha256": previous_sha,
+            "payload_bytes": len(payload),
+            "added_count": added_count,
+            "changed_count": changed_count,
+            "removed_count": removed_count,
             "source_fields": ["index_id", "source", "link", "first_seen", "last_seen", "topics", "meta"],
             "contract_fields": [
                 "schema_name",
@@ -317,10 +333,18 @@ def export_news_ref(data_dir: Path, storage_dir: Path, contracts_dir: Path, dige
             "fallback_behavior": "use master_index when master_ref is missing/empty",
             "no_op_behavior": "noop when neither master_ref nor master_index has rows",
             "quarantine_behavior": "fail-fast on schema validation errors",
-            "output_file": str(out_file),
         },
     )
-    return ExportResult("news_ref.v1", "exported", len(out_rows), source_path, str(out_file), str(manifest))
+
+    return ExportResult(
+        "news_ref.v1",
+        result_status,
+        len(out_rows),
+        source_path,
+        str(current),
+        str(manifest),
+        reason,
+    )
 
 
 def _digest_rows_from_digest_jsonl(digest_jsonl: Path) -> list[dict[str, Any]]:
@@ -497,8 +521,6 @@ def write_run_record(storage_dir: Path, digest_at: str, export_at: str, results:
     return run_path
 
 
-
-
 def _build_compact_summary(
     previous: dict[str, Any],
     digest_at: str,
@@ -557,6 +579,7 @@ def write_compact_summary(
     run_file = idx_dir / f"pr3a_export_compact_{digest_at}_{export_at}.json"
     _write_json(run_file, payload)
     return latest
+
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="PR3a real exports from legacy outputs to storage buses/indexes")
