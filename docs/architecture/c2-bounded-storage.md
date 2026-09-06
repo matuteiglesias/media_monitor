@@ -1,6 +1,6 @@
 # C2 bounded storage semantics
 
-> **Status:** proposed production architecture · implementation on `hardening/c2-bounded-storage`
+> **Status:** accepted by real-data host canary · implementation on `hardening/c2-bounded-storage` · pending merge
 
 ## Decision
 
@@ -50,22 +50,43 @@ The observed failure was primarily full-state multiplication, not a demonstrated
 
 SQLite, Parquet or another physical encoding may be evaluated later if keyed mutation, analytical scans, compression or multi-consumer access creates an evidenced requirement. They are not prerequisites for boundedness.
 
-## Physical-encoding note
+## Physical-encoding evidence
 
-JSONL repeats property names per row, including constant contract metadata. This is intentionally not redesigned in C2 because:
+JSONL repeats property names per row, including constant contract metadata. C2 intentionally keeps the logical JSONL row contract stable while fixing the much larger multiplication problem first.
 
-- the logical contract stays stable;
-- JSON text compresses well;
-- once only one current payload exists, row-key repetition is no longer multiplied by thousands of retained snapshots.
+The 2026-09-06 host study measured five historical payloads spread across the corpus. Gzip level 6 reduced them to roughly 40.7–42.7% of plain JSONL size, with a sample mean ratio of about 0.422. This confirms that cold compression is potentially useful, but it is a separate retention decision from C2 boundedness.
 
-A host-side measurement should compare the representative current payload as plain JSONL and gzip-compressed JSONL before any later encoding decision.
+## Real-data host acceptance — 2026-09-06
 
-## Acceptance evidence
+The C2 branch was tested from a disposable clone against the real host `master_ref.csv` while all writes went to isolated `/tmp` state. The original checkout and historical storage remained read-only.
 
-Regression coverage must demonstrate:
+Observed acceptance evidence:
 
-- identical content across different digests retains one payload;
-- a one-identity change replaces that payload and records proportional change metadata;
-- interrupted atomic replacement preserves the previous current file;
-- repeated access-index rebuilds retain only the two `*_latest` read models;
-- existing downstream publication/selection/story-context/site-snapshot tests remain green.
+- real source rows: 32,278;
+- first synthetic-digest cycle: one `news_ref_current.jsonl`, 24,188,331 bytes;
+- second synthetic-digest cycle with identical source state: `skipped_duplicate` / unchanged;
+- second-cycle persistent growth: 3,493 bytes total, all small control/audit records;
+- second cycle retained zero additional `news_ref` payload bytes;
+- manifest change counts on the unchanged cycle: added 0, changed 0, removed 0;
+- storage regression suite: 11 focused tests passed;
+- GitHub runtime-contract and docs-site CI also passed on the branch.
+
+This proves the primary C2 invariant on real data: an unchanged cycle is O(1) metadata growth rather than O(N) full-state growth.
+
+## Historical semantic recovery rehearsal
+
+A representative historical materialization at digest `20260825T05` was reconstructed in isolated state from the then-current host `master_ref.csv` plus `data/digest_map/20260825T05.csv`, without reading the historical `news_ref` snapshot as an input.
+
+Results:
+
+- historical rows: 32,278;
+- reconstructed rows: 32,278;
+- ordered parsed JSON rows: exactly equal;
+- changed common rows: 0;
+- byte hashes differed only because the C2 serializer emits different JSON formatting.
+
+This is evidence that `news_ref` is a complete materialized reference state and that at least the selected latest historical payload is semantically reconstructible.
+
+It is **not** proof of arbitrary historical replay. The host did not contain immutable old sensing run bundles / compacted generations, no explicit replay-retention horizon was defined, and historical code/config/feed identity needed for arbitrary-old reconstruction was not demonstrated.
+
+Therefore C2 is accepted for future bounded storage, while historical-retention policy remains a separate C3/replay-governance decision.
