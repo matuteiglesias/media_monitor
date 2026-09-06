@@ -1,6 +1,6 @@
 # C3 cleanup eligibility manifest
 
-Status: proposal only. **C2 does not delete anything.**
+> **Status:** proposal only · **C2 does not delete anything**
 
 Evidence basis: host C1 census captured 2026-09-06 from `/home/matias/repos/media_monitor` plus the canonical artifact/state architecture and C2 producer/consumer trace.
 
