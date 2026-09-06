@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from bounded_storage import atomic_write_bytes, serialize_jsonl
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -22,14 +23,7 @@ def _iter_jsonl(path: Path):
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        for row in rows:
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
-
-
-def _utc_now_compact() -> str:
-    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    atomic_write_bytes(path, serialize_jsonl(rows))
 
 
 def _to_rfc3339(value: Any) -> str:
@@ -70,7 +64,15 @@ def _digest_matches(found: str | None, requested: str | None) -> bool:
     return (found or "").strip() == requested.strip()
 
 
-def _resolve_from_indexes(storage_dir: Path, export_name: str, requested_digest: str | None = None) -> tuple[str | None, str | None]:
+def _is_mutable_current(output: str) -> bool:
+    return Path(output).name == "news_ref_current.jsonl"
+
+
+def _resolve_from_indexes(
+    storage_dir: Path,
+    export_name: str,
+    requested_digest: str | None = None,
+) -> tuple[str | None, str | None]:
     idx_dir = storage_dir / "indexes"
     run_files = sorted(idx_dir.glob("pr3a_exports_*.json"), reverse=True)
     for idx in run_files:
@@ -88,16 +90,27 @@ def _resolve_from_indexes(storage_dir: Path, export_name: str, requested_digest:
             if status not in {"exported", "skipped_duplicate"}:
                 continue
             out = str(result.get("output_path") or "").strip()
+            # New C2 news_ref run records intentionally point to mutable current
+            # state. They are audit evidence, not historical payload snapshots.
+            # Never use one to satisfy an older explicit digest replay.
+            if requested_digest and export_name == "news_ref.v1" and _is_mutable_current(out):
+                continue
             if _safe_exists_jsonl(out):
                 return digest_at, out
     return None, None
 
 
-def _resolve_from_manifests(storage_dir: Path, export_name: str, requested_digest: str | None = None) -> tuple[str | None, str | None]:
+def _resolve_from_manifests(
+    storage_dir: Path,
+    export_name: str,
+    requested_digest: str | None = None,
+) -> tuple[str | None, str | None]:
     if export_name == "news_ref.v1":
         manifest_glob = "buses/news_ref/v1/manifest_*.json"
+        allowed_statuses = {"changed", "unchanged", "exported", "skipped_duplicate"}
     elif export_name == "news_digest_group.v1":
         manifest_glob = "buses/news_digest_group/v1/manifest_*.json"
+        allowed_statuses = {"exported", "skipped_duplicate"}
     else:
         return None, None
 
@@ -110,15 +123,27 @@ def _resolve_from_manifests(storage_dir: Path, export_name: str, requested_diges
         if not _digest_matches(digest_at, requested_digest):
             continue
         status = str(payload.get("status") or "")
-        if status not in {"exported", "skipped_duplicate"}:
+        if status not in allowed_statuses:
             continue
-        out = str(payload.get("output_file") or payload.get("duplicate_of") or "").strip()
+        out = str(
+            payload.get("current_path")
+            or payload.get("output_file")
+            or payload.get("duplicate_of")
+            or ""
+        ).strip()
+        if requested_digest and export_name == "news_ref.v1" and _is_mutable_current(out):
+            continue
         if _safe_exists_jsonl(out):
             return digest_at, out
     return None, None
 
 
-def _resolve_output(storage_dir: Path, export_name: str, requested_digest: str | None = None, allow_stale_fallback: bool = False) -> tuple[str | None, str | None]:
+def _resolve_output(
+    storage_dir: Path,
+    export_name: str,
+    requested_digest: str | None = None,
+    allow_stale_fallback: bool = False,
+) -> tuple[str | None, str | None]:
     latest = _latest_payload(storage_dir)
     digest_at_latest = str(latest.get("digest_at") or "").strip() or None
     if _digest_matches(digest_at_latest, requested_digest):
@@ -153,65 +178,21 @@ def _title_from_meta(meta: Any) -> str:
     return ""
 
 
-def _build_group_index(group_rows: list[dict[str, Any]]) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]]]:
-    by_link: dict[str, dict[str, Any]] = {}
-    groups: list[dict[str, Any]] = []
-
-    for row in group_rows:
-        digest_at = str(row.get("digest_id_hour") or "").strip()
-        window_type = str(row.get("window_type") or "").strip() or "unknown"
-        topic = str(row.get("topic") or "").strip() or "unknown"
-        group_number = int(row.get("group_number") or 0)
-
-        content = row.get("content")
-        if not isinstance(content, list):
-            content = []
-
-        titles: list[str] = []
-        for article in content:
-            if not isinstance(article, dict):
-                continue
-            link = str(article.get("link") or "").strip()
-            title = str(article.get("title") or "").strip()
-            published_at = _to_rfc3339(article.get("published"))
-            source = str(article.get("source") or "").strip()
-
-            if title:
-                titles.append(title)
-            if link and link not in by_link:
-                by_link[link] = {
-                    "digest_at": digest_at,
-                    "title": title,
-                    "published_at": published_at,
-                    "topic": topic,
-                    "source": source,
-                }
-
-        groups.append(
-            {
-                "digest_at": digest_at,
-                "window_type": window_type,
-                "topic": topic,
-                "group_number": group_number,
-                "article_count": len(content),
-                "top_titles": titles[:3],
-            }
-        )
-
-    groups.sort(key=lambda g: (g["digest_at"], g["window_type"], g["topic"], g["group_number"]))
-    return by_link, groups
-
-
-
 def _count_jsonl(path: Path | None) -> int:
     if path is None or not path.exists() or not path.is_file() or path.stat().st_size == 0:
         return 0
     return sum(1 for _ in _iter_jsonl(path))
 
 
-def diagnose_inputs(storage_dir: Path, requested_digest: str | None = None, allow_stale_fallback: bool = False) -> dict[str, Any]:
+def diagnose_inputs(
+    storage_dir: Path,
+    requested_digest: str | None = None,
+    allow_stale_fallback: bool = False,
+) -> dict[str, Any]:
     digest_ref, ref_output = _resolve_output(storage_dir, "news_ref.v1", requested_digest, allow_stale_fallback)
-    digest_group, group_output = _resolve_output(storage_dir, "news_digest_group.v1", requested_digest, allow_stale_fallback)
+    digest_group, group_output = _resolve_output(
+        storage_dir, "news_digest_group.v1", requested_digest, allow_stale_fallback
+    )
     latest = _latest_payload(storage_dir)
 
     def entry(export_name: str, digest_at: str | None, output: str | None) -> dict[str, Any]:
@@ -237,6 +218,7 @@ def diagnose_inputs(storage_dir: Path, requested_digest: str | None = None, allo
         ],
     }
 
+
 def build_access_indexes(
     storage_dir: Path,
     digest_at: str | None = None,
@@ -244,20 +226,36 @@ def build_access_indexes(
     allow_empty: bool = False,
 ) -> tuple[Path, Path, int, int]:
     digest_ref, ref_output = _resolve_output(storage_dir, "news_ref.v1", digest_at, allow_stale_fallback)
-    digest_group, group_output = _resolve_output(storage_dir, "news_digest_group.v1", digest_at, allow_stale_fallback)
+    digest_group, group_output = _resolve_output(
+        storage_dir, "news_digest_group.v1", digest_at, allow_stale_fallback
+    )
 
     if digest_at and not ref_output and not allow_empty:
-        raise RuntimeError(f"no news_ref.v1 export found for digest_at={digest_at}; run acquisition/export for that digest or set --allow-stale-fallback explicitly")
+        raise RuntimeError(
+            f"no news_ref.v1 export found for digest_at={digest_at}; "
+            "run acquisition/export for that digest or set --allow-stale-fallback explicitly"
+        )
     if digest_at and not group_output and not allow_empty:
-        raise RuntimeError(f"no news_digest_group.v1 export found for digest_at={digest_at}; run acquisition/export for that digest or set --allow-stale-fallback explicitly")
+        raise RuntimeError(
+            f"no news_digest_group.v1 export found for digest_at={digest_at}; "
+            "run acquisition/export for that digest or set --allow-stale-fallback explicitly"
+        )
 
     ref_rows = list(_iter_jsonl(Path(ref_output))) if ref_output else []
     group_rows = list(_iter_jsonl(Path(group_output))) if group_output else []
 
     if not ref_rows:
-        print("[news-access] WARN no news_ref.v1 rows resolved; run `make s01 s02 s03 export-pr3a` for the target DIGEST_AT if acquisition data is missing", flush=True)
+        print(
+            "[news-access] WARN no news_ref.v1 rows resolved; run `make s01 s02 s03 export-pr3a` "
+            "for the target DIGEST_AT if acquisition data is missing",
+            flush=True,
+        )
     if not group_rows:
-        print("[news-access] WARN no news_digest_group.v1 rows resolved; run `make s01 s02 s03 export-pr3a` for the target DIGEST_AT if digest groups are missing", flush=True)
+        print(
+            "[news-access] WARN no news_digest_group.v1 rows resolved; run `make s01 s02 s03 export-pr3a` "
+            "for the target DIGEST_AT if digest groups are missing",
+            flush=True,
+        )
 
     # Prefer semantic article content from digest groups.
     # Use refs only to enrich index_id by link when available.
@@ -287,7 +285,7 @@ def build_access_indexes(
     groups: list[dict[str, Any]] = []
     refs_from_groups: list[dict[str, Any]] = []
     for row in group_rows:
-        digest_at = str(row.get("digest_id_hour") or digest_group or digest_ref or "unknown").strip() or "unknown"
+        group_digest_at = str(row.get("digest_id_hour") or digest_group or digest_ref or "unknown").strip() or "unknown"
         window_type = str(row.get("window_type") or "").strip() or "unknown"
         topic = str(row.get("topic") or "").strip() or "unknown"
         group_number = int(row.get("group_number") or 0)
@@ -307,7 +305,7 @@ def build_access_indexes(
                 continue
             refs_from_groups.append(
                 {
-                    "digest_at": digest_at,
+                    "digest_at": group_digest_at,
                     "index_id": index_id_by_link.get(link, ""),
                     "title": title,
                     "source": source,
@@ -319,7 +317,7 @@ def build_access_indexes(
 
         groups.append(
             {
-                "digest_at": digest_at,
+                "digest_at": group_digest_at,
                 "window_type": window_type,
                 "topic": topic,
                 "group_number": group_number,
@@ -332,25 +330,35 @@ def build_access_indexes(
     refs.sort(key=lambda r: (r.get("published_at") or "", r.get("link") or ""), reverse=True)
     groups.sort(key=lambda g: (g["digest_at"], g["window_type"], g["topic"], g["group_number"]))
 
-    digest_at = digest_group or digest_ref or digest_at or "unknown"
-    built_at = _utc_now_compact()
     idx_dir = storage_dir / "indexes"
     latest_refs = idx_dir / "news_recent_refs_latest.jsonl"
     latest_groups = idx_dir / "news_recent_groups_latest.jsonl"
     _write_jsonl(latest_refs, refs)
     _write_jsonl(latest_groups, groups)
 
-    _write_jsonl(idx_dir / f"news_recent_refs_{digest_at}_{built_at}.jsonl", refs)
-    _write_jsonl(idx_dir / f"news_recent_groups_{digest_at}_{built_at}.jsonl", groups)
+    # C2: these are replaceable read models. Do not emit an unbounded timestamped
+    # copy on every rebuild; provenance lives in the PR3A/run evidence records.
     return latest_refs, latest_groups, len(refs), len(groups)
 
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Build compact, human-readable latest news indexes from exported seams")
     p.add_argument("--storage-dir", default="storage")
-    p.add_argument("--digest-at", default=None, help="Require inputs for this digest hour (YYYYMMDDTHH); fail instead of publishing stale fallback data")
-    p.add_argument("--allow-stale-fallback", action="store_true", help="When --digest-at is set, explicitly allow falling back to the latest available export")
-    p.add_argument("--allow-empty", action="store_true", help="Publish empty candidate indexes when the requested digest exported no rows")
+    p.add_argument(
+        "--digest-at",
+        default=None,
+        help="Require inputs for this digest hour (YYYYMMDDTHH); fail instead of publishing stale fallback data",
+    )
+    p.add_argument(
+        "--allow-stale-fallback",
+        action="store_true",
+        help="When --digest-at is set, explicitly allow falling back to the latest available export",
+    )
+    p.add_argument(
+        "--allow-empty",
+        action="store_true",
+        help="Publish empty candidate indexes when the requested digest exported no rows",
+    )
     p.add_argument("--diagnose", action="store_true", help="Print input resolution diagnostics without writing latest indexes")
     return p.parse_args()
 
@@ -358,7 +366,13 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     if args.diagnose:
-        print(json.dumps(diagnose_inputs(Path(args.storage_dir), args.digest_at, args.allow_stale_fallback), ensure_ascii=False, indent=2))
+        print(
+            json.dumps(
+                diagnose_inputs(Path(args.storage_dir), args.digest_at, args.allow_stale_fallback),
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
         return 0
 
     try:
