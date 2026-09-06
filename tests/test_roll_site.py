@@ -135,11 +135,10 @@ def test_ci_token_is_forwarded_without_entering_roll_record(tmp_path, monkeypatc
     vercel_calls = [command for command, _ in fake.calls if command[0] == "vercel"]
     assert vercel_calls
     curl_command = next(command for command in vercel_calls if "curl" in command)
-    assert curl_command[:4] == ["vercel", "--token", "ci-secret-token", "curl"]
+    assert curl_command[:2] == ["vercel", "curl"]
     assert all(
         command[-2:] == ["--token", "ci-secret-token"]
         for command in vercel_calls
-        if command is not curl_command
     )
     build_env = next(env for command, env in fake.calls if command[:2] == ["vercel", "build"])
     assert build_env["CI_MARKER"] == "preserved"
