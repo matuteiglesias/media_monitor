@@ -1,6 +1,6 @@
 # C2 bounded storage semantics
 
-Status: proposed production architecture; implementation on `hardening/c2-bounded-storage`.
+> **Status:** proposed production architecture · implementation on `hardening/c2-bounded-storage`
 
 ## Decision
 
