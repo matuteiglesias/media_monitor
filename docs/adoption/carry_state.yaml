@@ -1,6 +1,6 @@
 program: media_monitor_adoption_loop
-version: 0.6-ap4
-status: ap4_minimal_reviewer_operation_implemented_l1
+version: 0.7-ap5
+status: ap5_recipient_delivery_surface_implemented_l1
 seed_base_commit: f5590546ea478de2b787b6fd1be92cd35f1b25fb
 
 purpose: >-
@@ -9,17 +9,17 @@ purpose: >-
   executable commercial/transfer decision without turning Media Monitor into
   generic SaaS infrastructure prematurely.
 
-current_packet: AP4
-current_packet_name: minimal_analyst_reviewer_operation
+current_packet: AP5
+current_packet_name: client_boss_deliverable
 current_packet_state: implemented_internal_evidence_L1
-next_packet: AP5
-next_packet_name: client_boss_deliverable
+next_packet: AP6
+next_packet_name: procurement_and_trust_packet
 next_packet_reason: >-
-  AP4 now exposes a bounded review queue and explicit governed decisions while
-  preserving the existing human publication gate. The representative intake
-  already names an HTML/email briefing as the recipient artifact, so the next
-  reusable gap is deterministic recipient packaging and delivery evidence, not
-  another operator UI.
+  AP5 now turns already-human-approved published content into a branded
+  recipient-ready HTML/text artifact and provides explicit authorization and
+  delivery-evidence seams without sending anything. The next closure gap is
+  making diligence answerable without repository archaeology while preserving
+  unresolved license legal privacy support and SLA choices as human decisions.
 activation_requires_human: true
 
 baseline_estimates_percent:
@@ -38,7 +38,7 @@ current_provisional_estimates_percent:
   requirements_intake: 60
   live_preview_without_archaeology: 60
   analyst_operator_comfort: 55
-  recipient_deliverable: 30
+  recipient_deliverable: 55
   procurement_clarity: 15
   transaction_closure:
     low: 10
@@ -49,7 +49,7 @@ current_evidence_levels:
   requirements_intake: L1
   live_preview_without_archaeology: L1
   analyst_operator_comfort: L1
-  recipient_deliverable: L0
+  recipient_deliverable: L1
   procurement_clarity: L0
   transaction_closure: L0
 
@@ -95,6 +95,14 @@ ap4_outputs:
   - tests/test_adopter_review.py
   - docs/adoption/closures/AP4.md
 
+ap5_outputs:
+  - scripts/adopter_delivery.py
+  - tests/test_adopter_delivery.py
+  - docs/adoption/recipient_delivery.md
+  - docs/adoption/closures/AP5.md
+  - recipient-ready brief.html and brief.txt package contract
+  - delivery manifest authorization and receipt evidence seams
+
 ap0_remaining_acceptance:
   - outsider evaluator can select an engagement path without architecture archaeology
   - outsider can distinguish proven surfaces from pilot-stage gaps
@@ -124,6 +132,15 @@ ap4_remaining_acceptance:
   - safe representative approval is exercised into an isolated bus when appropriate
   - one deliberate validation/refusal case is recovered without storage or database surgery
   - record L2 evidence before claiming analyst_operator_comfort target band
+
+ap5_remaining_acceptance:
+  - choose real recipient channel and address under adopter privacy rules
+  - prepare a package meeting real item-count and freshness requirements
+  - explicitly authorize exact package bytes for delivery
+  - external sender/provider performs the send
+  - record provider or human delivery evidence bound to the manifest
+  - recipient confirms usability
+  - repeated cycles support any cadence or reliability claim
 
 seed_decisions:
   - adoption program lives under docs/adoption and owns no runtime
@@ -166,14 +183,26 @@ ap4_decisions:
   - adopter rehearsal approval also requires an explicit isolated published-bus target
   - preserve the canonical promoter default for normal repository operation while making isolation injectable
 
+ap5_decisions:
+  - implement only the html_email_brief requested by the representative intake
+  - build recipient content only from human-approved published_article.v1 records
+  - make target item count an executable acceptance constraint
+  - use adopter identity rather than source-site brand for recipient packaging
+  - do not invent or persist recipient email addresses in seed tooling
+  - separate prepare authorize and record authorities
+  - no AP5 code path sends email or calls a provider
+  - authorization binds exact manifest and brief hashes
+  - later sent or delivered evidence requires an external provider reference
+
 known_blockers:
   - no real external adopter instance evidenced
   - no live adopter preview URL evidenced
   - no outsider/provider L2 validation of external import boundary
   - no non-developer L2 exercise of reviewer operation
-  - no agreed real-recipient delivery exercise evidenced
+  - no real-recipient L2 delivery evidence
   - no repository-level LICENSE file on seed baseline
   - no human-approved pricing support or transaction terms
+  - no human-approved SLA warranty privacy or support commitments
 
 human_decisions_reserved:
   - pricing and invoicing
@@ -185,6 +214,7 @@ human_decisions_reserved:
   - confirmation of rights/permissions for real third-party source data
   - actual delivery to a real recipient when it communicates externally
   - explicit approval of real adopter editorial content
+  - explicit authorization of a real recipient delivery
 
 non_goals:
   - generic_multi_tenant_saas
@@ -208,7 +238,9 @@ source_evidence:
   - docs/adoption/external_signal_boundary.md
   - scripts/adopter_review.py
   - scripts/promote_draft_to_published.py
-  - docs/adoption/closures/AP4.md
+  - scripts/adopter_delivery.py
+  - docs/adoption/recipient_delivery.md
+  - docs/adoption/closures/AP5.md
   - docs/README.md
   - docs/architecture/artifact-ladder-and-state.md
   - AGENTS.md
