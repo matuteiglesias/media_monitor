@@ -1,6 +1,6 @@
 program: media_monitor_adoption_loop
-version: 0.3-ap1
-status: ap1_implemented_l1_outsider_validation_pending
+version: 0.4-ap2-bootstrap
+status: ap2_bootstrap_implemented_l1_live_preview_pending
 seed_base_commit: f5590546ea478de2b787b6fd1be92cd35f1b25fb
 
 purpose: >-
@@ -9,11 +9,16 @@ purpose: >-
   executable commercial/transfer decision without turning Media Monitor into
   generic SaaS infrastructure prematurely.
 
-current_packet: AP1
-current_packet_name: adopter_intake_and_manifest
-current_packet_state: implemented_internal_evidence_L1
-next_packet: AP2
-next_packet_name: real_adopter_bootstrap
+current_packet: AP2
+current_packet_name: real_adopter_bootstrap
+current_packet_state: representative_preview_bootstrap_internal_evidence_L1
+next_packet: AP3
+next_packet_name: bring_your_own_signal_boundary
+next_packet_reason: >-
+  The representative AP1 intake requests an adopter-provided feed. AP2 can now
+  compile a deterministic branded preview package, but live/representative-real
+  input requires an explicit external signal boundary before a credible provider
+  preview can be exercised.
 activation_requires_human: true
 
 baseline_estimates_percent:
@@ -30,7 +35,7 @@ baseline_estimates_percent:
 current_provisional_estimates_percent:
   offer_clarity: 65
   requirements_intake: 60
-  live_preview_without_archaeology: 35
+  live_preview_without_archaeology: 50
   analyst_operator_comfort: 25
   recipient_deliverable: 30
   procurement_clarity: 15
@@ -68,6 +73,12 @@ ap1_outputs:
   - tests/test_adopter_intake.py
   - docs/adoption/closures/AP1.md
 
+ap2_outputs:
+  - scripts/bootstrap_adopter_preview.py
+  - tests/test_adopter_preview_bootstrap.py
+  - docs/adoption/closures/AP2.md
+  - representative preview manifest/package contract
+
 ap0_remaining_acceptance:
   - outsider evaluator can select an engagement path without architecture archaeology
   - outsider can distinguish proven surfaces from pilot-stage gaps
@@ -77,6 +88,14 @@ ap1_remaining_acceptance:
   - outsider completes intake without repository knowledge
   - deterministic plan is actionable with at most one clarification round
   - record L2 evidence before claiming requirements_intake target band
+
+ap2_remaining_acceptance:
+  - choose one real or representative adopter intake
+  - supply live or representative-real input through a governed boundary
+  - create isolated provider preview URL without changing canonical Argentina deployment
+  - independently verify adopter identity and no owner leakage
+  - record commit intake hash config/source identity and preview URL/status
+  - prove no adopter-specific generic-core edits
 
 seed_decisions:
   - adoption program lives under docs/adoption and owns no runtime
@@ -100,9 +119,17 @@ ap1_decisions:
   - reject auto-publication of generated text at schema validation time
   - keep pricing and licensing structurally reserved for human decision
 
+ap2_decisions:
+  - generate an isolated representative preview package rather than provisioning tenants
+  - use synthetic intake-derived signals so bootstrap proof cannot masquerade as live news
+  - exercise the real generic selection context and site-snapshot builders
+  - bind preview identity to the intake SHA and snapshot ID
+  - fail on known Media Monitor owner/editor identity leakage
+  - leave provider deployment and live source status explicitly not_attempted
+
 known_blockers:
   - no real external adopter instance evidenced
-  - no live adopter preview URL or deployment bootstrap evidenced
+  - no live adopter preview URL evidenced
   - no generic external signal import front door
   - no adopter-oriented minimal reviewer surface evidenced
   - no agreed recurring client deliverable evidenced
@@ -115,6 +142,7 @@ human_decisions_reserved:
   - legal privacy warranty and support commitments
   - prospect outreach and sends
   - acceptance of any real pilot or commercial terms
+  - provider/account mutation for a real adopter preview unless explicitly delegated
 
 non_goals:
   - generic multi_tenant_saas
@@ -132,6 +160,8 @@ source_evidence:
   - examples/outlet/README.md
   - docs/adoption/04_adopter_intake_contract.md
   - docs/adoption/adopter_intake.schema.json
+  - scripts/bootstrap_adopter_preview.py
+  - docs/adoption/closures/AP2.md
   - docs/README.md
   - docs/architecture/artifact-ladder-and-state.md
   - AGENTS.md
