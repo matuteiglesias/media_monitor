@@ -1,6 +1,6 @@
 program: media_monitor_adoption_loop
-version: 0.7-ap5
-status: ap5_recipient_delivery_surface_implemented_l1
+version: 0.8-ap6
+status: ap6_procurement_trust_packet_implemented_l1
 seed_base_commit: f5590546ea478de2b787b6fd1be92cd35f1b25fb
 
 purpose: >-
@@ -9,17 +9,17 @@ purpose: >-
   executable commercial/transfer decision without turning Media Monitor into
   generic SaaS infrastructure prematurely.
 
-current_packet: AP5
-current_packet_name: client_boss_deliverable
-current_packet_state: implemented_internal_evidence_L1
-next_packet: AP6
-next_packet_name: procurement_and_trust_packet
+current_packet: AP6
+current_packet_name: procurement_and_trust_packet
+current_packet_state: implemented_internal_diligence_evidence_L1
+next_packet: AP7
+next_packet_name: transaction_and_transfer_closure
 next_packet_reason: >-
-  AP5 now turns already-human-approved published content into a branded
-  recipient-ready HTML/text artifact and provides explicit authorization and
-  delivery-evidence seams without sending anything. The next closure gap is
-  making diligence answerable without repository archaeology while preserving
-  unresolved license legal privacy support and SLA choices as human decisions.
+  AP6 now consolidates repository-backed diligence facts and turns unresolved
+  licensing privacy support SLA warranty durability and commercial matters into
+  explicit human decision fields. The next reusable gap is a concrete
+  proceed-to-scope mechanism for the candidate commercial forms without choosing
+  price rights legal terms or signatures on the owner's behalf.
 activation_requires_human: true
 
 baseline_estimates_percent:
@@ -39,7 +39,7 @@ current_provisional_estimates_percent:
   live_preview_without_archaeology: 60
   analyst_operator_comfort: 55
   recipient_deliverable: 55
-  procurement_clarity: 15
+  procurement_clarity: 55
   transaction_closure:
     low: 10
     high: 20
@@ -50,7 +50,7 @@ current_evidence_levels:
   live_preview_without_archaeology: L1
   analyst_operator_comfort: L1
   recipient_deliverable: L1
-  procurement_clarity: L0
+  procurement_clarity: L1
   transaction_closure: L0
 
 target_bands_percent:
@@ -103,6 +103,13 @@ ap5_outputs:
   - recipient-ready brief.html and brief.txt package contract
   - delivery manifest authorization and receipt evidence seams
 
+ap6_outputs:
+  - docs/adoption/procurement_trust_state.yaml
+  - docs/adoption/procurement_trust.md
+  - scripts/validate_procurement_trust.py
+  - tests/test_procurement_trust_packet.py
+  - docs/adoption/closures/AP6.md
+
 ap0_remaining_acceptance:
   - outsider evaluator can select an engagement path without architecture archaeology
   - outsider can distinguish proven surfaces from pilot-stage gaps
@@ -141,6 +148,13 @@ ap5_remaining_acceptance:
   - record provider or human delivery evidence bound to the manifest
   - recipient confirms usability
   - repeated cycles support any cadence or reliability claim
+
+ap6_remaining_acceptance:
+  - real evaluator uses packet without repository archaeology
+  - owner resolves only the licensing legal privacy support SLA or commercial fields that actually block the selected path
+  - dependency license review completed before contractual software delivery if code rights are part of the deal
+  - runtime Node mismatch and unpinned scheduled jsonschema are either fixed or explicitly accepted before stronger reproducibility claims
+  - durability/recovery position resolved before any backup or arbitrary-replay promise
 
 seed_decisions:
   - adoption program lives under docs/adoption and owns no runtime
@@ -194,6 +208,18 @@ ap5_decisions:
   - authorization binds exact manifest and brief hashes
   - later sent or delivered evidence requires an external provider reference
 
+ap6_decisions:
+  - make procurement state machine-readable and drift-validated rather than sales prose only
+  - public repository visibility is not treated as a software license grant
+  - preserve repository and commercial licensing as human decisions
+  - surface scheduled Node 20 versus site Node 22.x as an open mismatch
+  - treat the 120-minute freshness value as an implementation target not an SLA
+  - state 14-day GitHub publication-evidence retention without implying historical durable backup
+  - claim no certification penetration test or formal security audit without evidence
+  - keep private authentication unproductized until a buyer earns the requirement
+  - keep historical durability and replay promises outside this adoption packet until storage hardening closes
+  - require all legal privacy support warranty liability pricing and transfer obligations to remain explicit human fields
+
 known_blockers:
   - no real external adopter instance evidenced
   - no live adopter preview URL evidenced
@@ -201,13 +227,16 @@ known_blockers:
   - no non-developer L2 exercise of reviewer operation
   - no real-recipient L2 delivery evidence
   - no repository-level LICENSE file on seed baseline
-  - no human-approved pricing support or transaction terms
-  - no human-approved SLA warranty privacy or support commitments
+  - no completed dependency license review for contractual software delivery
+  - scheduled Node 20 versus site Node 22.x mismatch remains open
+  - scheduled extra jsonschema remains unpinned
+  - no human-approved pricing support SLA privacy warranty liability or transaction terms
+  - historical durability/recovery promise remains outside adoption closure
 
 human_decisions_reserved:
   - pricing and invoicing
   - repository/software licensing
-  - legal privacy warranty and support commitments
+  - legal privacy warranty liability and support commitments
   - prospect outreach and sends
   - acceptance of any real pilot or commercial terms
   - provider/account mutation for a real adopter preview unless explicitly delegated
@@ -215,6 +244,7 @@ human_decisions_reserved:
   - actual delivery to a real recipient when it communicates externally
   - explicit approval of real adopter editorial content
   - explicit authorization of a real recipient delivery
+  - any signature contract or transfer of software source deployment or data rights
 
 non_goals:
   - generic_multi_tenant_saas
@@ -224,6 +254,7 @@ non_goals:
   - connector_marketplace
   - generic_dashboard_suite
   - omnichannel_notifications_before_demand
+  - fabricated_enterprise_certifications
 
 source_evidence:
   - README.md
@@ -240,7 +271,13 @@ source_evidence:
   - scripts/promote_draft_to_published.py
   - scripts/adopter_delivery.py
   - docs/adoption/recipient_delivery.md
-  - docs/adoption/closures/AP5.md
-  - docs/README.md
-  - docs/architecture/artifact-ladder-and-state.md
+  - docs/adoption/procurement_trust_state.yaml
+  - docs/adoption/procurement_trust.md
+  - scripts/validate_procurement_trust.py
+  - docs/adoption/closures/AP6.md
+  - .github/workflows/scheduled-publication.yml
+  - requirements-sensing.txt
+  - apps/news_site/package.json
+  - docs/architecture/trust-boundaries.md
+  - docs/architecture/identity-provenance-and-replay.md
   - AGENTS.md
