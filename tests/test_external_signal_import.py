@@ -14,10 +14,12 @@ def _fixture() -> dict:
 
 
 def _write_jsonl(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
 
 
 def _run(tmp_path: Path, rows: list[dict]):
+    tmp_path.mkdir(parents=True, exist_ok=True)
     source = tmp_path / "external.jsonl"
     output = tmp_path / "normalized.jsonl"
     quarantine = tmp_path / "quarantine.jsonl"
