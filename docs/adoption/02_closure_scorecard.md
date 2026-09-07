@@ -22,6 +22,14 @@ Scores should move only when new evidence reduces outsider friction.
 
 Targets are deliberately below 100%. The goal is to make a first real transaction/adoption possible, not to pre-build enterprise procurement for every future buyer.
 
+## Current packet evidence
+
+AP0 has now implemented [`ADOPT_MEDIA_MONITOR.md`](../../ADOPT_MEDIA_MONITOR.md) plus a restrained root-README route. This moves **offer clarity** from prose scattered across architecture/product context to one explicit evaluator decision surface.
+
+Current evidence remains **L1 — internally exercised** until a first-time outsider uses the page successfully. A provisional internal estimate of approximately **65%** is recorded in `carry_state.yaml`; the 80%+ target is explicitly not earned until L2 outsider evidence exists. Other dimensions remain at their seed estimates because AP0 did not attempt to change them.
+
+See [`closures/AP0.md`](closures/AP0.md) for packet evidence and rejected overbuilds.
+
 ## Evidence ladder
 
 Use the following evidence levels for each dimension:
