@@ -1,0 +1,77 @@
+program: media_monitor_adoption_loop
+version: 0.1-seed
+status: seeded_not_activated
+seed_base_commit: f5590546ea478de2b787b6fd1be92cd35f1b25fb
+
+purpose: >-
+  Close the path from outsider interest to requirements, adopter preview,
+  operator use, recipient deliverable, procurement understanding and an
+  executable commercial/transfer decision without turning Media Monitor into
+  generic SaaS infrastructure prematurely.
+
+next_packet: AP0
+next_packet_name: offer_and_evaluator_front_door
+activation_requires_human: true
+
+baseline_estimates_percent:
+  offer_clarity: 35
+  requirements_intake: 20
+  live_preview_without_archaeology: 35
+  analyst_operator_comfort: 25
+  recipient_deliverable: 30
+  procurement_clarity: 15
+  transaction_closure:
+    low: 10
+    high: 20
+
+target_bands_percent:
+  offer_clarity: [80, 90]
+  requirements_intake: [75, 85]
+  live_preview_without_archaeology: [70, 80]
+  analyst_operator_comfort: [60, 70]
+  recipient_deliverable: [65, 75]
+  procurement_clarity: [55, 70]
+  transaction_closure: [50, 65]
+
+seed_decisions:
+  - adoption program lives under docs/adoption and owns no runtime
+  - named prospects stay out of the public repo program
+  - preserve multiple commercial forms until real evidence selects one
+  - concierge onboarding and isolated deployments are acceptable
+  - no generic multi_tenancy billing enterprise_sso or full_cms without demand
+  - public claims remain evidence-calibrated
+
+known_blockers:
+  - no real external adopter instance evidenced
+  - adopter example stops before live acquisition and production deployment
+  - no validated adopter intake runtime schema
+  - no generic external signal import front door
+  - no adopter-oriented minimal reviewer surface evidenced
+  - no agreed recurring client deliverable evidenced
+  - no repository-level LICENSE file on seed baseline
+  - no human-approved pricing support or transaction templates
+
+human_decisions_reserved:
+  - commercial paths to actively offer
+  - pricing and invoicing
+  - repository/software licensing
+  - legal privacy warranty and support commitments
+  - public marketing claims
+  - prospect outreach and sends
+
+non_goals:
+  - generic multi_tenant_saas
+  - billing_platform
+  - enterprise_sso_without_buyer
+  - full_newsroom_cms
+  - connector_marketplace
+  - generic_dashboard_suite
+  - omnichannel_notifications_before_demand
+
+source_evidence:
+  - README.md
+  - EVIDENCE.md
+  - examples/outlet/README.md
+  - docs/README.md
+  - docs/architecture/artifact-ladder-and-state.md
+  - AGENTS.md
