@@ -1,6 +1,6 @@
 program: media_monitor_adoption_loop
-version: 0.5-ap3
-status: ap3_external_signal_boundary_implemented_l1
+version: 0.6-ap4
+status: ap4_minimal_reviewer_operation_implemented_l1
 seed_base_commit: f5590546ea478de2b787b6fd1be92cd35f1b25fb
 
 purpose: >-
@@ -9,15 +9,17 @@ purpose: >-
   executable commercial/transfer decision without turning Media Monitor into
   generic SaaS infrastructure prematurely.
 
-current_packet: AP3
-current_packet_name: bring_your_own_signal_boundary
-current_packet_state: implemented_file_boundary_internal_evidence_L1
-next_packet: AP4
-next_packet_name: minimal_analyst_reviewer_operation
+current_packet: AP4
+current_packet_name: minimal_analyst_reviewer_operation
+current_packet_state: implemented_internal_evidence_L1
+next_packet: AP5
+next_packet_name: client_boss_deliverable
 next_packet_reason: >-
-  The representative intake is private and explicitly requires human review and
-  approval. AP3 now provides the external input seam; the next adoption blocker
-  is making existing human authority usable by a non-developer operator.
+  AP4 now exposes a bounded review queue and explicit governed decisions while
+  preserving the existing human publication gate. The representative intake
+  already names an HTML/email briefing as the recipient artifact, so the next
+  reusable gap is deterministic recipient packaging and delivery evidence, not
+  another operator UI.
 activation_requires_human: true
 
 baseline_estimates_percent:
@@ -35,7 +37,7 @@ current_provisional_estimates_percent:
   offer_clarity: 65
   requirements_intake: 60
   live_preview_without_archaeology: 60
-  analyst_operator_comfort: 25
+  analyst_operator_comfort: 55
   recipient_deliverable: 30
   procurement_clarity: 15
   transaction_closure:
@@ -46,7 +48,7 @@ current_evidence_levels:
   offer_clarity: L1
   requirements_intake: L1
   live_preview_without_archaeology: L1
-  analyst_operator_comfort: L0
+  analyst_operator_comfort: L1
   recipient_deliverable: L0
   procurement_clarity: L0
   transaction_closure: L0
@@ -87,6 +89,12 @@ ap3_outputs:
   - docs/adoption/closures/AP3.md
   - AP2 preview support for normalized external signal files
 
+ap4_outputs:
+  - scripts/adopter_review.py
+  - scripts/promote_draft_to_published.py explicit published-bus seam
+  - tests/test_adopter_review.py
+  - docs/adoption/closures/AP4.md
+
 ap0_remaining_acceptance:
   - outsider evaluator can select an engagement path without architecture archaeology
   - outsider can distinguish proven surfaces from pilot-stage gaps
@@ -110,6 +118,13 @@ ap3_remaining_acceptance:
   - provider/data-rights and retention assumptions are explicitly confirmed by the relevant human parties
   - repeated cycles required before any live-source claim
 
+ap4_remaining_acceptance:
+  - non-developer receives prepared queue without repository archaeology
+  - non-developer records at least one hold revise or reject decision
+  - safe representative approval is exercised into an isolated bus when appropriate
+  - one deliberate validation/refusal case is recovered without storage or database surgery
+  - record L2 evidence before claiming analyst_operator_comfort target band
+
 seed_decisions:
   - adoption program lives under docs/adoption and owns no runtime
   - named prospects stay out of the public repo program
@@ -129,7 +144,7 @@ ap2_decisions:
   - generate an isolated representative preview package rather than provisioning tenants
   - use synthetic intake-derived signals so bootstrap proof cannot masquerade as live news
   - exercise the real generic selection context and site-snapshot builders
-  - bind preview identity to the intake SHA and snapshot ID
+  - bind preview identity to the intake SHA and snapshot provenance contract
   - fail on known Media Monitor owner/editor identity leakage
   - leave provider deployment status explicitly not_attempted
 
@@ -142,14 +157,23 @@ ap3_decisions:
   - allow normalized external files to feed the same generic AP2 downstream compiler
   - do not claim a continuously operating live source from a one-file import
 
+ap4_decisions:
+  - reuse the existing editorial publication gate rather than create a parallel CMS authority
+  - materialize source citations fact-check flags revision notes draft identity and SHA at review time
+  - journal hold revise reject and approve decisions explicitly
+  - non-approval decisions have no publication effect
+  - approval continues to require explicit --approve-human
+  - adopter rehearsal approval also requires an explicit isolated published-bus target
+  - preserve the canonical promoter default for normal repository operation while making isolation injectable
+
 known_blockers:
   - no real external adopter instance evidenced
   - no live adopter preview URL evidenced
   - no outsider/provider L2 validation of external import boundary
-  - no adopter-oriented minimal reviewer surface evidenced
-  - no agreed recurring client deliverable evidenced
+  - no non-developer L2 exercise of reviewer operation
+  - no agreed real-recipient delivery exercise evidenced
   - no repository-level LICENSE file on seed baseline
-  - no human-approved pricing support or transaction templates
+  - no human-approved pricing support or transaction terms
 
 human_decisions_reserved:
   - pricing and invoicing
@@ -159,9 +183,11 @@ human_decisions_reserved:
   - acceptance of any real pilot or commercial terms
   - provider/account mutation for a real adopter preview unless explicitly delegated
   - confirmation of rights/permissions for real third-party source data
+  - actual delivery to a real recipient when it communicates externally
+  - explicit approval of real adopter editorial content
 
 non_goals:
-  - generic multi_tenant_saas
+  - generic_multi_tenant_saas
   - billing_platform
   - enterprise_sso_without_buyer
   - full_newsroom_cms
@@ -180,7 +206,9 @@ source_evidence:
   - contracts/schemas/external_monitored_signal.v1.json
   - scripts/import_external_signals.py
   - docs/adoption/external_signal_boundary.md
-  - docs/adoption/closures/AP3.md
+  - scripts/adopter_review.py
+  - scripts/promote_draft_to_published.py
+  - docs/adoption/closures/AP4.md
   - docs/README.md
   - docs/architecture/artifact-ladder-and-state.md
   - AGENTS.md
