@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/matuteiglesias/media_monitor/docs/adoption/adopter_acceptance.schema.json",
+  "title": "Media Monitor adopter acceptance evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "evidence_class",
+    "adopter",
+    "intake",
+    "preview",
+    "source",
+    "operator",
+    "delivery",
+    "procurement",
+    "transaction",
+    "deviations",
+    "acceptance"
+  ],
+  "properties": {
+    "schema": {"const": "media_monitor_adopter_acceptance.v1"},
+    "status": {"enum": ["pending", "accepted", "not_accepted"]},
+    "evidence_class": {"enum": ["pending_unclassified", "representative_test", "real_external"]},
+    "adopter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["organization", "adopter_ref"],
+      "properties": {
+        "organization": {"type": "string", "minLength": 1},
+        "adopter_ref": {"type": "string", "minLength": 1}
+      }
+    },
+    "intake": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "completed"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "minLength": 1},
+        "completed": {"type": "boolean"}
+      }
+    },
+    "preview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "status", "site_id", "commit_sha", "identity_verified", "owner_identity_leakage_absent", "evidence_ref"],
+      "properties": {
+        "url": {"type": "string", "minLength": 1},
+        "status": {"enum": ["pending", "verified", "failed"]},
+        "site_id": {"type": "string", "minLength": 1},
+        "commit_sha": {"type": "string", "minLength": 1},
+        "identity_verified": {"type": "boolean"},
+        "owner_identity_leakage_absent": {"type": "boolean"},
+        "evidence_ref": {"type": "string", "minLength": 1}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "evidence_ref", "repeated_successful_cycles", "provider_rights_confirmed_by_human"],
+      "properties": {
+        "mode": {"type": "string", "minLength": 1},
+        "evidence_ref": {"type": "string", "minLength": 1},
+        "repeated_successful_cycles": {"type": "integer", "minimum": 0},
+        "provider_rights_confirmed_by_human": {"type": "boolean"}
+      }
+    },
+    "operator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["non_developer_operator", "review_cycle_exercised", "no_storage_database_surgery", "evidence_ref"],
+      "properties": {
+        "non_developer_operator": {"type": "boolean"},
+        "review_cycle_exercised": {"type": "boolean"},
+        "no_storage_database_surgery": {"type": "boolean"},
+        "evidence_ref": {"type": "string", "minLength": 1}
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deliverable_type", "artifact_sha256", "status", "provider_message_ref", "recipient_confirmed_useful", "evidence_ref"],
+      "properties": {
+        "deliverable_type": {"type": "string", "minLength": 1},
+        "artifact_sha256": {"type": "string", "minLength": 1},
+        "status": {"enum": ["pending", "sent", "delivered", "failed"]},
+        "provider_message_ref": {"type": "string", "minLength": 1},
+        "recipient_confirmed_useful": {"type": "boolean"},
+        "evidence_ref": {"type": "string", "minLength": 1}
+      }
+    },
+    "procurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packet_reviewed_by_external_evaluator", "unresolved_blockers", "evidence_ref"],
+      "properties": {
+        "packet_reviewed_by_external_evaluator": {"type": "boolean"},
+        "unresolved_blockers": {"type": "array", "items": {"type": "string"}},
+        "evidence_ref": {"type": "string", "minLength": 1}
+      }
+    },
+    "transaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commercial_path", "accepted_scope_or_contract", "external_document_ref", "owner_acceptance_ref", "counterparty_acceptance_ref"],
+      "properties": {
+        "commercial_path": {"type": "string", "minLength": 1},
+        "accepted_scope_or_contract": {"type": "boolean"},
+        "external_document_ref": {"type": "string", "minLength": 1},
+        "owner_acceptance_ref": {"type": "string", "minLength": 1},
+        "counterparty_acceptance_ref": {"type": "string", "minLength": 1}
+      }
+    },
+    "deviations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["summary", "classification", "status", "evidence_ref"],
+        "properties": {
+          "summary": {"type": "string", "minLength": 1},
+          "classification": {"enum": ["reusable_core", "adopter_specific"]},
+          "status": {"enum": ["documented", "resolved", "unresolved_blocking"]},
+          "evidence_ref": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["human_acceptance_recorded", "accepted_by", "accepted_at", "note"],
+      "properties": {
+        "human_acceptance_recorded": {"type": "boolean"},
+        "accepted_by": {"type": "string", "minLength": 1},
+        "accepted_at": {"type": "string", "minLength": 1},
+        "note": {"type": "string", "minLength": 1}
+      }
+    },
+    "observed_closure_scores_percent": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "offer_clarity": {"type": "integer", "minimum": 0, "maximum": 100},
+        "requirements_intake": {"type": "integer", "minimum": 0, "maximum": 100},
+        "live_preview_without_archaeology": {"type": "integer", "minimum": 0, "maximum": 100},
+        "analyst_operator_comfort": {"type": "integer", "minimum": 0, "maximum": 100},
+        "recipient_deliverable": {"type": "integer", "minimum": 0, "maximum": 100},
+        "procurement_clarity": {"type": "integer", "minimum": 0, "maximum": 100},
+        "transaction_closure": {"type": "integer", "minimum": 0, "maximum": 100}
+      }
+    }
+  }
+}

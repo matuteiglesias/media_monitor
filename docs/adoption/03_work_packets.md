@@ -1,33 +1,36 @@
 # Adoption-loop work packets
 
-> **Status:** seed execution plan · each packet requires explicit human activation before implementation
+> **Status:** AP0–AP8 engineering surfaces implemented at internal evidence level; real-adopter acceptance remains pending.
 
 ## Packet discipline
 
-One packet should fit one reviewable objective. Do not bundle commercial-front copy, runtime adapters, operator UX and legal decisions into one giant PR.
+One packet owns one reviewable objective. Commercial copy, runtime adapters, operator UX, recipient delivery, procurement facts and legal/commercial decisions must not collapse into one authority.
 
-A packet may end with documentation/configuration only. Code is justified only when it removes demonstrated adopter friction through a reusable seam.
+Code is justified only when it removes demonstrated adopter friction through a reusable seam. Internal implementation is not external adoption evidence.
+
+## Current program map
+
+| Packet | Engineering status | Evidence boundary | Remaining external/human gate |
+| --- | --- | --- | --- |
+| AP0 offer/front door | implemented | L1 | outsider understands offer and gaps |
+| AP1 intake/manifest | implemented | L1 | outsider completes intake with ≤1 clarification round |
+| AP2 adopter bootstrap | implemented | L1 representative | isolated real/representative preview deployed and identity-verified |
+| AP3 external signals | implemented | L1 | provider maps representative-real input, rights confirmed, repeated cycles |
+| AP4 reviewer operation | implemented | L1 | non-developer completes governed review cycle |
+| AP5 recipient deliverable | implemented | L1 | real recipient receives exact authorized artifact and confirms usefulness |
+| AP6 procurement/trust | implemented | L1 | external evaluator uses packet; selected-path blockers resolved by humans |
+| AP7 transaction/transfer | implemented | L1 | real counterparty + human-approved terms/external acceptance mechanism |
+| AP8 adopter acceptance | harness implemented | harness L1; adopter acceptance L0/pending | real_external evidence passes strict evaluator + human confirmation |
 
 ## AP0 — Offer and evaluator front door
 
-**Implementation status:** implemented on `program/adoption-loop-seed`; internal evidence **L1**; outsider validation **L2 pending**. See [`closures/AP0.md`](closures/AP0.md) and [`ADOPT_MEDIA_MONITOR.md`](../../ADOPT_MEDIA_MONITOR.md).
+**Goal:** make the offer intelligible without unsupported commercial claims.
 
-**Goal:** raise offer clarity without making unsupported commercial claims.
+**Implemented:** `ADOPT_MEDIA_MONITOR.md`, root README routing, four engagement paths, evidence-calibrated current/provisional capability boundary, AP0 closure record.
 
-**Seed inputs:** [commercial-front seed](05_commercial_front_seed.md), root README, `EVIDENCE.md`, public deployment and second-outlet example.
+**Non-goals:** pricing page, checkout, CRM, inflated customer claims.
 
-**Candidate outputs:**
-
-- concise adopter-facing page such as `ADOPT_MEDIA_MONITOR.md` or an equivalent docs/public route;
-- one restrained link from the existing evaluator front door after review;
-- explicit distinction among pilot, managed white-label, technology/license partnership and strategic transfer;
-- evidence-backed "what exists now" and "what a first adopter pilot would prove" sections.
-
-**Non-goals:** pricing page, checkout, CRM, lead forms, inflated customer claims.
-
-**Done when:** a first-time evaluator can explain the offer and choose the relevant conversation path without architecture archaeology.
-
-**Expected score movement:** offer clarity.
+**External done condition:** a first-time evaluator can explain the offer, distinguish proven capabilities from pilot-stage gaps, and choose the relevant engagement path without architecture archaeology.
 
 ---
 
@@ -35,63 +38,37 @@ A packet may end with documentation/configuration only. Code is justified only w
 
 **Goal:** convert fuzzy interest into bounded implementation inputs.
 
-**Seed inputs:** [adopter intake contract](04_adopter_intake_contract.md) and example YAML.
-
-**Candidate outputs:**
-
-- validated intake schema or strongly documented manifest;
-- human-friendly questionnaire;
-- conversion from intake to an implementation/acceptance plan;
-- explicit distinction between adopter configuration and reusable-platform requirement.
+**Implemented:** validated `media_monitor_adopter_intake.v1`, YAML example, deterministic validator/plan compiler, five engineering/decision buckets.
 
 **Non-goals:** self-service onboarding UI, customer database.
 
-**Done when:** one realistic adopter scenario can be specified without oral archaeology and produces a deterministic list of required adapters/configuration/unknowns.
-
-**Expected score movement:** requirements intake; preview readiness.
+**External done condition:** an outsider completes the intake without repository knowledge and the resulting plan is actionable with at most one clarification round.
 
 ---
 
 ## AP2 — Real adopter bootstrap
 
-**Goal:** make "give me one for X" operationally boring.
+**Goal:** make “give me one for X” operationally boring without tenant infrastructure.
 
-**Prerequisite:** AP1 has a stable enough intake/config boundary.
+**Implemented:** validated intake → isolated adopter-branded representative preview package using the generic editorial-selection, story-context and site-snapshot builders; owner/editor leakage checks; explicit fixture/not-live caveats.
 
-**Candidate outputs:**
+**Hard rule:** no adopter-name/topic conditionals inside generic builders.
 
-- a command or documented builder that materializes a new outlet workspace/config from an adopter manifest;
-- isolated preview deployment path;
-- identity/branding leakage tests;
-- acceptance manifest recording commit/config/source identity and preview URL/status.
+**Non-goals:** multi-tenant runtime, dynamic tenant provisioning.
 
-**Hard rule:** a new outlet must not require adopter-name/topic conditions inside generic selection/context/site builders.
-
-**Non-goals:** multi-tenant runtime, dynamic tenant provisioning service.
-
-**Done when:** a second real or representative adopter reaches preview with documented seams and no outlet-specific core edits.
-
-**Expected score movement:** live preview; requirements intake.
+**External done condition:** a real or representative external adopter reaches an isolated provider preview with verified identity and no generic-core edits.
 
 ---
 
 ## AP3 — Bring-your-own signal boundary
 
-**Goal:** let an adopter keep its own acquisition/monitoring system.
+**Goal:** let an adopter retain its acquisition/monitoring system.
 
-**Candidate outputs:**
+**Implemented:** `external_monitored_signal.v1`, deterministic file import, validation, quarantine, duplicate accounting, fail-closed identity conflicts, provenance preservation, normalized external input → AP2 compiler.
 
-- explicit external monitored-signal import contract;
-- file/API adapter with validation and quarantine semantics;
-- identity/provenance requirements;
-- fixture proving another producer can feed the generic downstream compiler;
-- trust-boundary documentation.
+**Non-goals:** connector marketplace, vendor-specific hard-coded adapters, live HTTP ingestion service.
 
-**Non-goals:** replacing every source vendor, generic connector marketplace, scraping every medium.
-
-**Done when:** an external signal producer can satisfy the boundary without importing `apps/news_acquire` internals.
-
-**Expected score movement:** preview readiness; strategic partner fit.
+**External done condition:** an external producer maps a representative-real export without repository archaeology, provider/data-rights assumptions are confirmed, and repeated successful cycles support the live-source claim.
 
 ---
 
@@ -99,37 +76,25 @@ A packet may end with documentation/configuration only. Code is justified only w
 
 **Goal:** make existing human authority usable by an adopter operator.
 
-**Candidate outputs:**
+**Implemented:** readable review queue with draft/source/citation/fact-check/revision evidence; hold/revise/reject/approve decision journal; explicit isolated published-bus seam; existing `--approve-human` publication authority preserved.
 
-- smallest review queue or operator route necessary to inspect evidence/draft state;
-- approve / reject / revise-or-hold actions through governed commands or UI;
-- provenance visible at decision time;
-- failure/recovery instructions;
-- role boundary documented.
+**Non-goals:** newsroom CMS, collaborative editor, generic RBAC/SSO.
 
-**Non-goals:** full newsroom CMS, collaborative document editor, enterprise RBAC unless demanded.
-
-**Done when:** a non-developer can perform the standard review cycle without direct storage/database surgery.
-
-**Expected score movement:** analyst/operator comfort.
+**External done condition:** a non-developer performs the ordinary review cycle, including a refusal/recovery case, without direct storage/database surgery.
 
 ---
 
 ## AP5 — Client/boss deliverable
 
-**Goal:** close the gap between internal intelligence state and the artifact the adopter's recipient actually consumes.
+**Goal:** produce the artifact the adopter's recipient actually consumes.
 
-**Candidate first deliverables:**
+**Implemented first surface:** `html_email_brief` only. Validated intake + `site_snapshot.v4` → branded HTML/text brief from human-approved `published_article.v1` content, exact hashes, delivery manifest, separate human authorization, and external delivery-evidence recording.
 
-- scheduled HTML/email briefing;
-- branded downloadable report;
-- stable feed/API/webhook output where the adopter already owns presentation.
+**Authority rule:** prepare ≠ authorize ≠ external send ≠ receipt. AP5 itself sends nothing.
 
-Choose the smallest deliverable validated by a real adopter. PDF, WhatsApp, Slack and other channels are follow-on requirements, not seed assumptions.
+**Non-goals:** SMTP/provider choice before adopter demand; WhatsApp/Slack/PDF suite; recipient-address database.
 
-**Done when:** a real recipient receives an agreed artifact on the agreed cadence and the system records freshness/provenance/delivery evidence.
-
-**Expected score movement:** client/boss deliverable; transaction confidence.
+**External done condition:** a real recipient receives the agreed exact artifact on the agreed cadence, delivery evidence is recorded, and the recipient confirms usefulness.
 
 ---
 
@@ -137,54 +102,27 @@ Choose the smallest deliverable validated by a real adopter. PDF, WhatsApp, Slac
 
 **Goal:** make technical/commercial diligence answerable without repository archaeology.
 
-**Required decision surfaces:**
+**Implemented:** machine-readable diligence state, evaluator-facing summary, repository-fact drift validator, and explicit `human_decision_required` fields.
 
-- repository/code licensing status and intended commercial licensing model;
-- third-party dependency/license inventory;
-- data-source responsibility boundary;
-- secrets and deployment-account ownership;
-- storage/retention/durability policy status;
-- authentication/private-mode status;
-- incident/failure/support boundary;
-- uptime/freshness claims and what evidence supports them;
-- backup/recovery limitations;
-- export/termination/handoff behavior.
+**Material current facts include:** no repository-level license file; Python 3.12 scheduled runtime; Vercel CLI 59.11.7; scheduled Node 20 vs site Node 22.x mismatch; unpinned scheduled extra `jsonschema`; 120-minute freshness implementation target is not an SLA; publication-cycle artifact retention is 14 days; no generic private-auth product or certification/security-audit claim.
 
-**Important current gap:** there is no repository-level `LICENSE` file on the seed baseline. AP6 must resolve or explicitly govern that fact; do not imply an open-source or commercial license that has not been chosen.
+**Non-goals:** fabricated certifications, invented SLA/privacy/license/support terms, unrelated production fixes inside diligence docs.
 
-**Non-goals:** fabricated certifications, enterprise controls with no buyer requirement.
-
-**Done when:** remaining questions require human commercial/legal choices rather than technical archaeology.
-
-**Expected score movement:** procurement clarity.
+**External done condition:** a real evaluator can identify the remaining blockers from this packet, and humans resolve only the terms/controls actually required by the selected path.
 
 ---
 
 ## AP7 — Transaction and transfer closure
 
-**Goal:** make at least one commercial path executable.
+**Goal:** make “we want to proceed” mechanically concrete.
 
-**Candidate paths:**
+**Implemented:** validated selected commercial path → scope/acceptance, provisional responsibility matrix, human-terms sheet, asset inventory, exit/handoff checklist and hash-bound transaction manifest.
 
-- bounded paid pilot;
-- managed deployment/service;
-- technology/software license;
-- strategic asset/technology transfer.
+**Hard authority rule:** every agent-generated packet states no contract formed, no software rights granted, no payment obligation, no signatures; reserved commercial/legal terms remain `human_decision_required`.
 
-**Candidate outputs:**
+**Non-goals:** billing platform, agent-set prices, license grants, signatures or rights transfer.
 
-- scope and acceptance template;
-- responsibility matrix;
-- support/handoff assumptions;
-- inventory of transferable code/config/deployment assets;
-- customer/adopter exit/export behavior;
-- human-approved commercial terms stored outside code where appropriate.
-
-**Non-goals:** Stripe/billing implementation before needed.
-
-**Done when:** the owner can respond to "we want to proceed" with a concrete next document/action rather than inventing the mechanism live.
-
-**Expected score movement:** transaction closure; procurement clarity.
+**External done condition:** a real counterparty selects/confirms a path, humans approve the actual required terms, the correct external proposal/order/contract is exchanged, and acceptance/signatures are obtained where appropriate.
 
 ---
 
@@ -192,23 +130,18 @@ Choose the smallest deliverable validated by a real adopter. PDF, WhatsApp, Slac
 
 **Goal:** replace simulated buyer pressure with observed adopter evidence.
 
-**Required evidence:**
+**Implemented harness:** acceptance schema, committed pending-only template, strict evaluator, reusable-vs-adopter-specific deviation split, and refusal tests.
 
-- completed intake;
-- preview/production identity;
-- actual source/input mode;
-- operator/reviewer path exercised;
-- agreed deliverable received;
-- acceptance criteria result;
-- deviations that required bespoke intervention;
-- closure-score update;
-- reusable requirements promoted to core backlog;
-- adopter-specific requirements kept outside generic core.
+**Critical truth boundary:** there is no committed accepted adopter record. Representative/test evidence cannot satisfy accepted status. A real accepted record must satisfy intake, preview, source cycles/rights, non-developer operator, recipient delivery, procurement, transaction, deviations and explicit human acceptance gates, then be evaluated with `--confirm-real-external-evidence`.
 
-**Done when:** the first adoption cycle leaves the second one materially easier.
+**Engineering done condition:** the harness can truthfully say why a cycle is pending/not accepted and can validate a complete real-external evidence record.
 
-**Expected score movement:** all dimensions, based on actual evidence rather than estimation.
+**Adoption done condition:** the first real external adoption cycle passes that evaluator. This has **not happened yet**.
 
-## Activation rule
+## Activation rule after AP8
 
-Default next packet is now **AP1** after AP0 implementation, but `carry_state.yaml` is advisory and does not supersede the repository-level agent contract. AP0 still needs external L2 validation before its 80%+ offer-clarity target is claimed. A human executor may deliberately choose another packet if an actual inbound adopter changes the highest-value next move.
+There is no default AP9 engineering packet.
+
+The next authoritative action is `HUMAN_REAL_ADOPTER_EXECUTION`, as recorded in `carry_state.yaml`. Future agents should not restart AP1–AP8 merely because the external L2 gates are still pending.
+
+Additional generic code should only be added when a real adopter exercise exposes a reusable blocker. Adopter-specific requirements remain outside generic core unless repeated evidence earns promotion.

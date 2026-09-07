@@ -112,6 +112,7 @@ jobs:
             tests/test_adopter_delivery.py \
             tests/test_procurement_trust_packet.py \
             tests/test_transaction_packet.py \
+            tests/test_adopter_acceptance.py \
             tests/test_repository_front_door.py \
             tests/test_media_refresh.py \
             tests/test_live_publication_docs.py \
