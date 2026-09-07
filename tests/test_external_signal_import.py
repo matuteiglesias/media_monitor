@@ -2,11 +2,13 @@ import copy
 import json
 from pathlib import Path
 
+from scripts.bootstrap_adopter_preview import EXTERNAL_FILE_PREVIEW_STATUS, build_preview
 from scripts.import_external_signals import import_signals
 
 
 REPO = Path(__file__).resolve().parents[1]
 FIXTURE = REPO / "contracts" / "tests" / "fixtures" / "external_monitored_signal.example.json"
+INTAKE = REPO / "docs" / "adoption" / "adopter_intake.example.yaml"
 
 
 def _fixture() -> dict:
@@ -34,7 +36,7 @@ def _run(tmp_path: Path, rows: list[dict]):
     )
     normalized = [json.loads(line) for line in output.read_text(encoding="utf-8").splitlines() if line]
     quarantined = [json.loads(line) for line in quarantine.read_text(encoding="utf-8").splitlines() if line]
-    return result, normalized, quarantined
+    return result, normalized, quarantined, output
 
 
 def test_external_signal_import_normalizes_provider_rows(tmp_path: Path) -> None:
@@ -47,7 +49,7 @@ def test_external_signal_import_normalizes_provider_rows(tmp_path: Path) -> None
     second["published_at"] = "2026-01-15T12:25:00Z"
     second["link"] = "https://example.com/provider/item-002"
 
-    manifest, normalized, quarantine = _run(tmp_path, [first, second])
+    manifest, normalized, quarantine, _ = _run(tmp_path, [first, second])
 
     assert manifest["status"] == "clean"
     assert manifest["accepted_rows"] == 2
@@ -61,7 +63,7 @@ def test_external_signal_import_normalizes_provider_rows(tmp_path: Path) -> None
 
 def test_identical_external_observations_dedupe_without_losing_count(tmp_path: Path) -> None:
     row = _fixture()
-    manifest, normalized, quarantine = _run(tmp_path, [row, copy.deepcopy(row)])
+    manifest, normalized, quarantine, _ = _run(tmp_path, [row, copy.deepcopy(row)])
 
     assert manifest["accepted_rows"] == 1
     assert manifest["duplicate_observations"] == 1
@@ -75,7 +77,7 @@ def test_conflicting_external_identity_is_fully_quarantined(tmp_path: Path) -> N
     conflicting = copy.deepcopy(first)
     conflicting["title"] = "Conflicting title for same provider identity"
 
-    manifest, normalized, quarantine = _run(tmp_path, [first, conflicting])
+    manifest, normalized, quarantine, _ = _run(tmp_path, [first, conflicting])
 
     assert manifest["status"] == "quarantined"
     assert manifest["accepted_rows"] == 0
@@ -89,7 +91,7 @@ def test_schema_invalid_external_row_is_quarantined(tmp_path: Path) -> None:
     bad = _fixture()
     del bad["link"]
 
-    manifest, normalized, quarantine = _run(tmp_path, [bad])
+    manifest, normalized, quarantine, _ = _run(tmp_path, [bad])
 
     assert manifest["accepted_rows"] == 0
     assert manifest["quarantined_rows"] == 1
@@ -100,8 +102,39 @@ def test_schema_invalid_external_row_is_quarantined(tmp_path: Path) -> None:
 
 def test_external_identity_is_deterministic_across_imports(tmp_path: Path) -> None:
     row = _fixture()
-    first_manifest, first_rows, _ = _run(tmp_path / "a", [row])
-    second_manifest, second_rows, _ = _run(tmp_path / "b", [row])
+    first_manifest, first_rows, _, _ = _run(tmp_path / "a", [row])
+    second_manifest, second_rows, _, _ = _run(tmp_path / "b", [row])
 
     assert first_rows[0]["index_id"] == second_rows[0]["index_id"]
     assert first_manifest["output_sha256"] == second_manifest["output_sha256"]
+
+
+def test_normalized_external_signals_feed_generic_adopter_preview(tmp_path: Path) -> None:
+    first = _fixture()
+    second = copy.deepcopy(first)
+    second["external_id"] = "item-002"
+    second["provenance"]["record_id"] = "row-002"
+    second["title"] = "Representative infrastructure signal"
+    second["topic"] = "infrastructure"
+    second["published_at"] = "2026-01-15T12:25:00Z"
+    second["link"] = "https://example.com/provider/item-002"
+
+    import_manifest, normalized, quarantine, normalized_path = _run(tmp_path / "import", [first, second])
+    assert import_manifest["status"] == "clean"
+    assert quarantine == []
+    assert len(normalized) == 2
+
+    preview = build_preview(
+        INTAKE,
+        tmp_path / "preview",
+        normalized_signals_path=normalized_path,
+    )
+
+    assert preview["status"] == EXTERNAL_FILE_PREVIEW_STATUS
+    assert preview["preview_input_mode"] == "normalized_external_signal_file"
+    assert preview["live_source_status"] == "external_file_imported_not_live_verified"
+    assert preview["deployment_status"] == "not_attempted"
+    assert preview["customer_claim_allowed"] is False
+    assert preview["signal_count"] == 2
+    assert preview["curated_signal_count"] == 2
+    assert preview["identity_isolation_check"] == "passed"
