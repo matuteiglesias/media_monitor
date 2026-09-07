@@ -1,0 +1,137 @@
+program: media_monitor_adoption_loop
+version: 0.3-ap1
+status: ap1_implemented_l1_outsider_validation_pending
+seed_base_commit: f5590546ea478de2b787b6fd1be92cd35f1b25fb
+
+purpose: >-
+  Close the path from outsider interest to requirements, adopter preview,
+  operator use, recipient deliverable, procurement understanding and an
+  executable commercial/transfer decision without turning Media Monitor into
+  generic SaaS infrastructure prematurely.
+
+current_packet: AP1
+current_packet_name: adopter_intake_and_manifest
+current_packet_state: implemented_internal_evidence_L1
+next_packet: AP2
+next_packet_name: real_adopter_bootstrap
+activation_requires_human: true
+
+baseline_estimates_percent:
+  offer_clarity: 35
+  requirements_intake: 20
+  live_preview_without_archaeology: 35
+  analyst_operator_comfort: 25
+  recipient_deliverable: 30
+  procurement_clarity: 15
+  transaction_closure:
+    low: 10
+    high: 20
+
+current_provisional_estimates_percent:
+  offer_clarity: 65
+  requirements_intake: 60
+  live_preview_without_archaeology: 35
+  analyst_operator_comfort: 25
+  recipient_deliverable: 30
+  procurement_clarity: 15
+  transaction_closure:
+    low: 10
+    high: 20
+
+current_evidence_levels:
+  offer_clarity: L1
+  requirements_intake: L1
+  live_preview_without_archaeology: L1
+  analyst_operator_comfort: L0
+  recipient_deliverable: L0
+  procurement_clarity: L0
+  transaction_closure: L0
+
+target_bands_percent:
+  offer_clarity: [80, 90]
+  requirements_intake: [75, 85]
+  live_preview_without_archaeology: [70, 80]
+  analyst_operator_comfort: [60, 70]
+  recipient_deliverable: [65, 75]
+  procurement_clarity: [55, 70]
+  transaction_closure: [50, 65]
+
+ap0_outputs:
+  - ADOPT_MEDIA_MONITOR.md
+  - README.md adopter route
+  - docs/adoption/closures/AP0.md
+
+ap1_outputs:
+  - docs/adoption/adopter_intake.schema.json
+  - docs/adoption/adopter_intake.example.yaml
+  - scripts/adopter_intake.py
+  - tests/test_adopter_intake.py
+  - docs/adoption/closures/AP1.md
+
+ap0_remaining_acceptance:
+  - outsider evaluator can select an engagement path without architecture archaeology
+  - outsider can distinguish proven surfaces from pilot-stage gaps
+  - record L2 evidence before claiming offer_clarity target band
+
+ap1_remaining_acceptance:
+  - outsider completes intake without repository knowledge
+  - deterministic plan is actionable with at most one clarification round
+  - record L2 evidence before claiming requirements_intake target band
+
+seed_decisions:
+  - adoption program lives under docs/adoption and owns no runtime
+  - named prospects stay out of the public repo program
+  - preserve multiple commercial forms until real evidence selects one
+  - concierge onboarding and isolated deployments are acceptable
+  - no generic multi_tenancy billing enterprise_sso or full_cms without demand
+  - public claims remain evidence-calibrated
+
+ap0_decisions:
+  - expose four conversation paths without publishing price or legal terms
+  - use a top-level Markdown evaluator page rather than adding a new runtime/site owner
+  - public contact route may use the already-published owner email and portfolio
+  - explicitly state that repository-level general licensing and SLA/support terms are unresolved
+  - keep AP0 L1 until outsider validation occurs
+
+ap1_decisions:
+  - use JSON Schema 2020-12 as intake authority while allowing YAML authoring
+  - keep adoption schema under docs/adoption rather than contracts/schemas because it is not a runtime integration fact contract
+  - compile requests into config adapter reusable-platform human-decision and out-of-scope buckets before engineering
+  - reject auto-publication of generated text at schema validation time
+  - keep pricing and licensing structurally reserved for human decision
+
+known_blockers:
+  - no real external adopter instance evidenced
+  - no live adopter preview URL or deployment bootstrap evidenced
+  - no generic external signal import front door
+  - no adopter-oriented minimal reviewer surface evidenced
+  - no agreed recurring client deliverable evidenced
+  - no repository-level LICENSE file on seed baseline
+  - no human-approved pricing support or transaction templates
+
+human_decisions_reserved:
+  - pricing and invoicing
+  - repository/software licensing
+  - legal privacy warranty and support commitments
+  - prospect outreach and sends
+  - acceptance of any real pilot or commercial terms
+
+non_goals:
+  - generic multi_tenant_saas
+  - billing_platform
+  - enterprise_sso_without_buyer
+  - full_newsroom_cms
+  - connector_marketplace
+  - generic_dashboard_suite
+  - omnichannel_notifications_before_demand
+
+source_evidence:
+  - README.md
+  - ADOPT_MEDIA_MONITOR.md
+  - EVIDENCE.md
+  - examples/outlet/README.md
+  - docs/adoption/04_adopter_intake_contract.md
+  - docs/adoption/adopter_intake.schema.json
+  - docs/README.md
+  - docs/architecture/artifact-ladder-and-state.md
+  - AGENTS.md

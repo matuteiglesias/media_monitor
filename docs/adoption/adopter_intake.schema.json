@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/matuteiglesias/media_monitor/docs/adoption/adopter_intake.schema.json",
+  "title": "Media Monitor adopter intake v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "organization",
+    "use_case",
+    "sources",
+    "watch_policy",
+    "editorial_authority",
+    "identity",
+    "privacy",
+    "deliverables",
+    "integration",
+    "pilot_acceptance",
+    "commercial_path"
+  ],
+  "properties": {
+    "schema": {"const": "media_monitor_adopter_intake.v1"},
+    "status": {"type": "string"},
+    "organization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "primary_operator_role", "primary_recipient_role"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "team": {"type": "string"},
+        "primary_operator_role": {"type": "string", "minLength": 1},
+        "primary_recipient_role": {"type": "string", "minLength": 1}
+      }
+    },
+    "use_case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "phase", "summary"],
+      "properties": {
+        "class": {
+          "enum": ["monitoring_intelligence", "editorial_outlet", "executive_brief", "risk_watch", "research_radar", "other"]
+        },
+        "phase": {"enum": ["pilot", "recurring", "exploratory"]},
+        "summary": {"type": "string", "minLength": 20}
+      }
+    },
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "provenance_required"],
+      "properties": {
+        "mode": {
+          "enum": ["media_monitor_public_feeds", "adopter_provided_files", "adopter_provided_feed", "adopter_provider_api", "mixed", "undecided"]
+        },
+        "interface": {"type": "string"},
+        "update_cadence": {"type": "string"},
+        "authentication": {"type": "string"},
+        "provenance_required": {"type": "boolean"},
+        "retention_constraints": {"type": "string"}
+      }
+    },
+    "watch_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["geographies", "languages", "topics", "freshness_hours"],
+      "properties": {
+        "geographies": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "languages": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 2}, "uniqueItems": true},
+        "topics": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "entities": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "keywords": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "freshness_hours": {"type": "number", "exclusiveMinimum": 0},
+        "priority_rules": {"type": "array", "items": {"type": "string"}},
+        "diversity_expectations": {"type": "string"},
+        "exclusions": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "editorial_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assisted_generation", "human_review_required", "human_approval_required_for_delivery", "auto_publish_generated_text", "evidence_links_required"],
+      "properties": {
+        "assisted_generation": {"enum": ["disabled", "optional", "required"]},
+        "human_review_required": {"type": "boolean"},
+        "human_approval_required_for_delivery": {"type": "boolean"},
+        "auto_publish_generated_text": {"const": false},
+        "evidence_links_required": {"type": "boolean"},
+        "reviewer_roles": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "approver_roles": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "locale", "domain_mode", "attribution"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "locale": {"type": "string", "minLength": 2},
+        "domain_mode": {"enum": ["preview_first", "owned_domain", "adopter_hosted", "undecided"]},
+        "domain": {"type": "string"},
+        "attribution": {"enum": ["visible", "hidden_requested", "contractually_defined", "to_be_decided"]},
+        "logo_asset": {"type": "string"},
+        "theme_notes": {"type": "string"}
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "authentication", "sensitive_data_expected"],
+      "properties": {
+        "mode": {"enum": ["public", "private", "mixed"]},
+        "authentication": {"type": "string", "minLength": 1},
+        "sensitive_data_expected": {"type": "boolean"},
+        "deployment_account_owner": {"enum": ["media_monitor_owner", "adopter", "shared", "undecided"]},
+        "allowed_external_services": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "retention_constraints": {"type": "string"},
+        "geographic_restrictions": {"type": "string"},
+        "audit_expectations": {"type": "string"}
+      }
+    },
+    "deliverables": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "cadence"],
+        "properties": {
+          "type": {"enum": ["web_outlet", "html_email_brief", "downloadable_report", "feed_api", "webhook_alert", "other"]},
+          "cadence": {"type": "string", "minLength": 1},
+          "delivery_window_local": {"type": "string"},
+          "target_item_count": {"type": ["string", "integer"]},
+          "freshness_target_minutes": {"type": "number", "exclusiveMinimum": 0},
+          "notes": {"type": "string"}
+        }
+      }
+    },
+    "integration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inbound_owner", "outbound_owner", "required_identifiers"],
+      "properties": {
+        "inbound_owner": {"type": "string", "minLength": 1},
+        "outbound_owner": {"type": "string", "minLength": 1},
+        "required_identifiers": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "failure_retry_expectation": {"type": "string"},
+        "systems_of_record": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "pilot_acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["duration_days", "freshness_target_minutes", "operator_review_exercised", "recipient_delivery_exercised", "minimum_successful_scheduled_cycles", "exclusions_documented"],
+      "properties": {
+        "duration_days": {"type": "integer", "minimum": 1},
+        "freshness_target_minutes": {"type": "number", "exclusiveMinimum": 0},
+        "operator_review_exercised": {"type": "boolean"},
+        "recipient_delivery_exercised": {"type": "boolean"},
+        "minimum_successful_scheduled_cycles": {"type": "integer", "minimum": 1},
+        "exclusions_documented": {"type": "boolean"},
+        "termination_handoff_test": {"type": "string"}
+      }
+    },
+    "commercial_path": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evaluating", "price", "license_terms"],
+      "properties": {
+        "evaluating": {"enum": ["paid_pilot", "managed_white_label", "technology_license_partnership", "strategic_transfer", "exploratory_undecided"]},
+        "price": {"const": "human_decision_required"},
+        "license_terms": {"const": "human_decision_required"}
+      }
+    }
+  }
+}
