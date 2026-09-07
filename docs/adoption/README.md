@@ -1,6 +1,6 @@
 # Media Monitor adoption-loop seed
 
-> **Status:** seed program · supporting product/adoption context · **not runtime authority and not a commercial commitment**
+> **Status:** active adoption program · supporting product/adoption context · **not runtime authority and not a commercial commitment**
 
 ## Purpose
 
@@ -8,9 +8,17 @@ Media Monitor already proves a substantial governed product path: sensing, deter
 
 The remaining adoption problem is different. A technically serious outsider can inspect the system, but the path from **interest** to **requirements** to **their live preview** to **their operator** to **their deliverable** to **a commercial decision** is not yet closed.
 
-This folder is the seed program for closing that loop without turning Media Monitor into an undifferentiated multi-tenant SaaS.
+This folder is the program for closing that loop without turning Media Monitor into an undifferentiated multi-tenant SaaS.
 
 It is deliberately housed inside this repository because the adoption surface must stay aligned with the real product contracts, evidence and deployment machinery. It does **not** create a new runtime owner. Runtime ownership remains with the existing `apps/**`, builders, contracts and deployment surfaces.
+
+## Current adopter-facing front door
+
+AP0 has promoted the bounded evaluator surface into [`ADOPT_MEDIA_MONITOR.md`](../../ADOPT_MEDIA_MONITOR.md).
+
+That page is the current answer to "what can an outside organization evaluate here?" It distinguishes bounded pilot, managed white-label deployment, technology/license partnership and strategic technology transfer; states what is proven versus not yet productized; and routes a prospect into the adopter-intake questions without inventing pricing, licensing or SLA terms.
+
+AP0 is internally implemented at evidence level **L1**. External **L2** validation remains pending before the offer-clarity target band is claimed. See [`closures/AP0.md`](closures/AP0.md).
 
 ## Current evidence boundary
 
@@ -38,7 +46,7 @@ The percentages below are heuristic starting estimates, not measured product KPI
 | Procurement understands license/security/support | 15% | explicit trust/procurement packet |
 | They can pay, sign, license or take ownership | 10–20% | explicit transaction/transfer paths |
 
-See [closure scorecard](02_closure_scorecard.md) for evidence-based scoring rules and target bands.
+See [closure scorecard](02_closure_scorecard.md) for evidence-based scoring rules, AP0 movement and target bands.
 
 ## Product thesis under test
 
@@ -67,10 +75,10 @@ No one path is canonical until real adopter evidence supports it.
 
 ## Work-packet sequence
 
-The seed sequence is defined in [03_work_packets.md](03_work_packets.md):
+The sequence is defined in [03_work_packets.md](03_work_packets.md):
 
-- **AP0 — Offer and evaluator front door**
-- **AP1 — Adopter intake and manifest**
+- **AP0 — Offer and evaluator front door** — implemented L1; L2 validation pending
+- **AP1 — Adopter intake and manifest** — default next packet
 - **AP2 — Real adopter bootstrap**
 - **AP3 — Bring-your-own signal boundary**
 - **AP4 — Minimal analyst/reviewer operation**
@@ -83,12 +91,14 @@ Each packet should be independently reviewable. A packet may conclude that no co
 
 ## Navigation
 
+- [public adopter/evaluator front door](../../ADOPT_MEDIA_MONITOR.md)
 - [01 · market pressure and adopter archetypes](01_context_and_market_pressure.md)
 - [02 · closure scorecard](02_closure_scorecard.md)
 - [03 · work packets](03_work_packets.md)
 - [04 · adopter intake contract](04_adopter_intake_contract.md)
 - [05 · commercial-front seed](05_commercial_front_seed.md)
 - [06 · agent/human execution contract](06_agent_execution_contract.md)
+- [AP0 closure](closures/AP0.md)
 - [`adopter_intake.example.yaml`](adopter_intake.example.yaml)
 - [`carry_state.yaml`](carry_state.yaml)
 
