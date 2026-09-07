@@ -1,6 +1,6 @@
 program: media_monitor_adoption_loop
-version: 0.8-ap6
-status: ap6_procurement_trust_packet_implemented_l1
+version: 0.9-ap7
+status: ap7_transaction_scoping_mechanics_implemented_l1
 seed_base_commit: f5590546ea478de2b787b6fd1be92cd35f1b25fb
 
 purpose: >-
@@ -9,17 +9,18 @@ purpose: >-
   executable commercial/transfer decision without turning Media Monitor into
   generic SaaS infrastructure prematurely.
 
-current_packet: AP6
-current_packet_name: procurement_and_trust_packet
-current_packet_state: implemented_internal_diligence_evidence_L1
-next_packet: AP7
-next_packet_name: transaction_and_transfer_closure
+current_packet: AP7
+current_packet_name: transaction_and_transfer_closure
+current_packet_state: implemented_internal_transaction_scoping_L1
+next_packet: AP8
+next_packet_name: first_real_adopter_acceptance
 next_packet_reason: >-
-  AP6 now consolidates repository-backed diligence facts and turns unresolved
-  licensing privacy support SLA warranty durability and commercial matters into
-  explicit human decision fields. The next reusable gap is a concrete
-  proceed-to-scope mechanism for the candidate commercial forms without choosing
-  price rights legal terms or signatures on the owner's behalf.
+  AP7 now compiles a selected commercial path into concrete scope acceptance
+  responsibility asset and exit mechanics while structurally reserving price
+  licensing legal support SLA privacy transfer and signature fields for humans.
+  The remaining program-level gap is an evidence harness that can truthfully
+  record a real adopter cycle and refuse acceptance when real-world evidence is
+  missing.
 activation_requires_human: true
 
 baseline_estimates_percent:
@@ -41,8 +42,8 @@ current_provisional_estimates_percent:
   recipient_deliverable: 55
   procurement_clarity: 55
   transaction_closure:
-    low: 10
-    high: 20
+    low: 40
+    high: 45
 
 current_evidence_levels:
   offer_clarity: L1
@@ -51,7 +52,7 @@ current_evidence_levels:
   analyst_operator_comfort: L1
   recipient_deliverable: L1
   procurement_clarity: L1
-  transaction_closure: L0
+  transaction_closure: L1
 
 target_bands_percent:
   offer_clarity: [80, 90]
@@ -110,6 +111,13 @@ ap6_outputs:
   - tests/test_procurement_trust_packet.py
   - docs/adoption/closures/AP6.md
 
+ap7_outputs:
+  - scripts/build_transaction_packet.py
+  - tests/test_transaction_packet.py
+  - docs/adoption/transaction_and_transfer.md
+  - docs/adoption/closures/AP7.md
+  - scope responsibility human-terms asset inventory exit-handoff transaction packet contract
+
 ap0_remaining_acceptance:
   - outsider evaluator can select an engagement path without architecture archaeology
   - outsider can distinguish proven surfaces from pilot-stage gaps
@@ -155,6 +163,13 @@ ap6_remaining_acceptance:
   - dependency license review completed before contractual software delivery if code rights are part of the deal
   - runtime Node mismatch and unpinned scheduled jsonschema are either fixed or explicitly accepted before stronger reproducibility claims
   - durability/recovery position resolved before any backup or arbitrary-replay promise
+
+ap7_remaining_acceptance:
+  - real counterparty selects or confirms a commercial path
+  - owner approves price payment licensing privacy support SLA warranty liability and transfer terms actually required by that path
+  - correct external proposal order form contract or transfer document is exchanged
+  - owner and counterparty acceptance or signatures are obtained where appropriate
+  - accepted scope is recorded for AP8 comparison against real execution
 
 seed_decisions:
   - adoption program lives under docs/adoption and owns no runtime
@@ -220,6 +235,15 @@ ap6_decisions:
   - keep historical durability and replay promises outside this adoption packet until storage hardening closes
   - require all legal privacy support warranty liability pricing and transfer obligations to remain explicit human fields
 
+ap7_decisions:
+  - reject exploratory undecided conversations as transaction-ready
+  - compile selected commercial path into scope acceptance responsibilities asset inventory and exit mechanics
+  - carry provisional operational owners from intake without converting them into contractual allocations
+  - make every reserved legal commercial and signature field human_decision_required
+  - transaction manifest always states no contract no rights no payment obligation and no signatures
+  - asset inventory is not a license or transfer instrument and excludes secrets and provider credentials
+  - agent may prepare and validate mechanics but may not fill reserved terms or represent acceptance
+
 known_blockers:
   - no real external adopter instance evidenced
   - no live adopter preview URL evidenced
@@ -231,6 +255,7 @@ known_blockers:
   - scheduled Node 20 versus site Node 22.x mismatch remains open
   - scheduled extra jsonschema remains unpinned
   - no human-approved pricing support SLA privacy warranty liability or transaction terms
+  - no real counterparty acceptance or signature
   - historical durability/recovery promise remains outside adoption closure
 
 human_decisions_reserved:
@@ -255,6 +280,7 @@ non_goals:
   - generic_dashboard_suite
   - omnichannel_notifications_before_demand
   - fabricated_enterprise_certifications
+  - agent_generated_contract_terms
 
 source_evidence:
   - README.md
@@ -274,7 +300,9 @@ source_evidence:
   - docs/adoption/procurement_trust_state.yaml
   - docs/adoption/procurement_trust.md
   - scripts/validate_procurement_trust.py
-  - docs/adoption/closures/AP6.md
+  - scripts/build_transaction_packet.py
+  - docs/adoption/transaction_and_transfer.md
+  - docs/adoption/closures/AP7.md
   - .github/workflows/scheduled-publication.yml
   - requirements-sensing.txt
   - apps/news_site/package.json
