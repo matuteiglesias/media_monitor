@@ -20,6 +20,15 @@ def _write_jsonl(path: Path, rows: list[dict]) -> None:
     path.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n", encoding="utf-8")
 
 
+def _run(storage: Path, *extra: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, str(SCRIPT), "--storage-dir", str(storage), *extra],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+
 def test_build_news_access_indexes_creates_latest_readable_files(tmp_path: Path):
     storage = tmp_path / "storage"
     digest_at = "20260313T20"
@@ -99,12 +108,7 @@ def test_build_news_access_indexes_creates_latest_readable_files(tmp_path: Path)
         },
     )
 
-    out = subprocess.run(
-        [sys.executable, str(SCRIPT), "--storage-dir", str(storage)],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
+    out = _run(storage)
     assert "refs=1 groups=1" in out.stdout
 
     refs_latest = storage / "indexes" / "news_recent_refs_latest.jsonl"
@@ -236,12 +240,7 @@ def test_build_news_access_indexes_falls_back_when_latest_group_is_noop(tmp_path
         },
     )
 
-    subprocess.run(
-        [sys.executable, str(SCRIPT), "--storage-dir", str(storage)],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
+    _run(storage)
 
     refs_latest = storage / "indexes" / "news_recent_refs_latest.jsonl"
     rows = [json.loads(line) for line in refs_latest.read_text(encoding="utf-8").splitlines() if line.strip()]
@@ -302,12 +301,7 @@ def test_build_news_access_indexes_succeeds_without_digest_groups(tmp_path: Path
         },
     )
 
-    out = subprocess.run(
-        [sys.executable, str(SCRIPT), "--storage-dir", str(storage)],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
+    out = _run(storage)
     assert "refs=1 groups=0" in out.stdout
 
     refs_latest = storage / "indexes" / "news_recent_refs_latest.jsonl"
@@ -323,21 +317,77 @@ def test_build_news_access_indexes_succeeds_without_digest_groups(tmp_path: Path
 def test_build_news_access_indexes_allows_explicit_empty_candidate(tmp_path: Path):
     storage = tmp_path / "storage"
 
-    out = subprocess.run(
-        [
-            sys.executable,
-            str(SCRIPT),
-            "--storage-dir",
-            str(storage),
-            "--digest-at",
-            "20260313T23",
-            "--allow-empty",
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
+    out = _run(storage, "--digest-at", "20260313T23", "--allow-empty")
 
     assert "refs=0 groups=0" in out.stdout
     assert (storage / "indexes" / "news_recent_refs_latest.jsonl").read_text() == ""
     assert (storage / "indexes" / "news_recent_groups_latest.jsonl").read_text() == ""
+
+
+def test_repeated_access_index_rebuilds_keep_only_latest_read_models(tmp_path: Path):
+    storage = tmp_path / "storage"
+    digest_at = "20260313T20"
+    ref_path = storage / "buses" / "news_ref" / "v1" / "news_ref_current.jsonl"
+    group_path = storage / "buses" / "news_digest_group" / "v1" / "news_digest_group_20260313T20_20260313T200000Z.jsonl"
+
+    _write_jsonl(
+        ref_path,
+        [
+            {
+                "schema_name": "news_ref.v1",
+                "schema_status": "stable",
+                "index_id": "bound123",
+                "source": "Reuters",
+                "link": "https://example.com/bounded",
+                "first_seen": "2026-03-13T20:00:00Z",
+                "last_seen": "2026-03-13T20:00:00Z",
+                "topics": ["Economy"],
+                "meta": {},
+                "digest_file": "stable.csv",
+                "article_id": "1",
+                "join_key": "stable.csv::1",
+            }
+        ],
+    )
+    _write_jsonl(
+        group_path,
+        [
+            {
+                "schema_name": "news_digest_group.v1",
+                "schema_status": "experimental_structured",
+                "digest_group_id": "20260313T20:4h_window:Economy:1",
+                "digest_id_hour": digest_at,
+                "window_type": "4h_window",
+                "topic": "Economy",
+                "group_number": 1,
+                "content": [
+                    {
+                        "article_id": "1",
+                        "title": "Bounded indexes",
+                        "source": "Reuters",
+                        "link": "https://example.com/bounded",
+                        "published": "2026-03-13T20:00:00Z",
+                    }
+                ],
+            }
+        ],
+    )
+    _write_json(
+        storage / "indexes" / "pr3a_exports_latest.json",
+        {
+            "digest_at": digest_at,
+            "export_at": "20260313T200000Z",
+            "status": "exported",
+            "results": [
+                {"name": "news_ref.v1", "status": "exported", "output_path": str(ref_path)},
+                {"name": "news_digest_group.v1", "status": "exported", "output_path": str(group_path)},
+            ],
+        },
+    )
+
+    _run(storage)
+    _run(storage)
+
+    idx_dir = storage / "indexes"
+    assert sorted(p.name for p in idx_dir.glob("news_recent_refs_*.jsonl")) == ["news_recent_refs_latest.jsonl"]
+    assert sorted(p.name for p in idx_dir.glob("news_recent_groups_*.jsonl")) == ["news_recent_groups_latest.jsonl"]
