@@ -1,0 +1,64 @@
+schema: media_monitor_adopter_acceptance.v1
+status: pending
+evidence_class: pending_unclassified
+
+adopter:
+  organization: human_evidence_required
+  adopter_ref: human_evidence_required
+
+intake:
+  path: human_evidence_required
+  sha256: human_evidence_required
+  completed: false
+
+preview:
+  url: human_evidence_required
+  status: pending
+  site_id: human_evidence_required
+  commit_sha: human_evidence_required
+  identity_verified: false
+  owner_identity_leakage_absent: false
+  evidence_ref: human_evidence_required
+
+source:
+  mode: human_evidence_required
+  evidence_ref: human_evidence_required
+  repeated_successful_cycles: 0
+  provider_rights_confirmed_by_human: false
+
+operator:
+  non_developer_operator: false
+  review_cycle_exercised: false
+  no_storage_database_surgery: false
+  evidence_ref: human_evidence_required
+
+delivery:
+  deliverable_type: human_evidence_required
+  artifact_sha256: human_evidence_required
+  status: pending
+  provider_message_ref: human_evidence_required
+  recipient_confirmed_useful: false
+  evidence_ref: human_evidence_required
+
+procurement:
+  packet_reviewed_by_external_evaluator: false
+  unresolved_blockers:
+    - human_evidence_required
+  evidence_ref: human_evidence_required
+
+transaction:
+  commercial_path: human_evidence_required
+  accepted_scope_or_contract: false
+  external_document_ref: human_evidence_required
+  owner_acceptance_ref: human_evidence_required
+  counterparty_acceptance_ref: human_evidence_required
+
+deviations: []
+
+acceptance:
+  human_acceptance_recorded: false
+  accepted_by: human_evidence_required
+  accepted_at: human_evidence_required
+  note: human_evidence_required
+
+observed_closure_scores_percent: {}
