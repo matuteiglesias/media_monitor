@@ -1,5 +1,5 @@
-schema: media_monitor_adopter_intake.v0
-status: example_only_not_validated_runtime_contract
+schema: media_monitor_adopter_intake.v1
+status: representative_example
 
 organization:
   name: Example Intelligence Desk
@@ -18,6 +18,7 @@ sources:
   mode: adopter_provided_feed
   interface: to_be_defined
   update_cadence: hourly
+  authentication: to_be_defined
   provenance_required: true
   retention_constraints: to_be_defined
 
@@ -29,6 +30,8 @@ watch_policy:
     - infrastructure
     - political_risk
   freshness_hours: 24
+  priority_rules: []
+  diversity_expectations: preserve source and topic diversity
   exclusions: []
 
 editorial_authority:
@@ -37,6 +40,8 @@ editorial_authority:
   human_approval_required_for_delivery: true
   auto_publish_generated_text: false
   evidence_links_required: true
+  reviewer_roles: [analyst]
+  approver_roles: [editor]
 
 identity:
   name: Example Intelligence Desk
@@ -48,17 +53,23 @@ privacy:
   mode: private
   authentication: pilot_level_to_be_defined
   sensitive_data_expected: false
+  deployment_account_owner: undecided
+  retention_constraints: to_be_defined
+  audit_expectations: retain run and delivery evidence for pilot acceptance
 
 deliverables:
   - type: html_email_brief
     cadence: weekdays
     delivery_window_local: "07:30-08:00"
     target_item_count: "5-10"
+    freshness_target_minutes: 90
 
 integration:
   inbound_owner: adopter
   outbound_owner: media_monitor_pilot
   required_identifiers: [source_id, external_item_id, published_at]
+  failure_retry_expectation: bounded retry plus visible failed-delivery evidence
+  systems_of_record: [adopter_source_feed]
 
 pilot_acceptance:
   duration_days: 14
@@ -67,6 +78,7 @@ pilot_acceptance:
   recipient_delivery_exercised: true
   minimum_successful_scheduled_cycles: 5
   exclusions_documented: true
+  termination_handoff_test: export pilot config and recipient artifacts without hidden state
 
 commercial_path:
   evaluating: paid_pilot
