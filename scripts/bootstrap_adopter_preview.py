@@ -329,7 +329,7 @@ def build_preview(
     write_json(output_dir / "preview_manifest.json", manifest)
 
     if normalized_signals_path is None:
-        caveat = "This package uses synthetic signals derived from the validated intake topics."
+        caveat = "This package uses synthetic signals derived from the validated intake topics. It is not live news."
     else:
         caveat = "This package uses a normalized external-signal file supplied to the isolated preview build."
     (output_dir / "README.txt").write_text(
