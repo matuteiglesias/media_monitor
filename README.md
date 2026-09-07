@@ -20,6 +20,7 @@ La generación asistida nunca equivale a publicación. `published_article.v1` co
 - **Health público:** https://mediamonitor-psi.vercel.app/api/health
 - **Para periodistas:** https://mediamonitor-psi.vercel.app/journalists
 - **Metodología:** https://mediamonitor-psi.vercel.app/methodology
+- **Adopción / white-label / partnership:** [`ADOPT_MEDIA_MONITOR.md`](ADOPT_MEDIA_MONITOR.md)
 - **Documentación técnica canónica:** https://github.com/matuteiglesias/media_monitor/tree/main/docs
 - **Repositorio:** https://github.com/matuteiglesias/media_monitor
 - **Owner / portfolio:** https://main.matuteiglesias.link
@@ -80,10 +81,6 @@ flowchart LR
     L --> M["/api/health + sitemap + feeds + OG/JSON-LD"]
 ```
 
-
-
-
-
 Principio de autoridad:
 
 ```text
@@ -128,6 +125,10 @@ Sólo objetos `published_article.v1` con estado publicado y aprobación humana p
 `story_context.v1` agrega cobertura observada, fuentes relacionadas, ventanas y relación con la shortlist sin generar interpretación editorial.
 
 ## Entrypoints para distintos usuarios
+
+### Quiero evaluar Media Monitor para mi organización
+
+Leer [`ADOPT_MEDIA_MONITOR.md`](ADOPT_MEDIA_MONITOR.md). Resume qué puede evaluarse hoy, qué aporta el adopter, qué debería producir un piloto, las cuatro conversaciones posibles —pilot, managed white-label, technology/license partnership o strategic transfer— y qué superficies todavía no están productizadas.
 
 ### Quiero entender o reutilizar el sistema
 
