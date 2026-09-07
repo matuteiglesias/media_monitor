@@ -32,16 +32,29 @@ def test_adopter_preview_builds_with_generic_compilers(tmp_path: Path) -> None:
     assert "análisis económico de argentina" not in encoded
 
 
-def test_adopter_preview_is_deterministic_for_same_intake(tmp_path: Path) -> None:
-    first = build_preview(INTAKE, tmp_path / "first")
-    second = build_preview(INTAKE, tmp_path / "second")
+def test_adopter_preview_is_deterministic_when_rebuilt_in_same_workspace(tmp_path: Path) -> None:
+    out = tmp_path / "preview"
+    first = build_preview(INTAKE, out)
+    first_snapshot = (out / "site_snapshot.json").read_bytes()
+
+    second = build_preview(INTAKE, out, replace=True)
+    second_snapshot = (out / "site_snapshot.json").read_bytes()
 
     assert first["site_id"] == second["site_id"]
     assert first["source_intake_sha256"] == second["source_intake_sha256"]
     assert first["snapshot_id"] == second["snapshot_id"]
-    assert (tmp_path / "first" / "site_snapshot.json").read_bytes() == (
-        tmp_path / "second" / "site_snapshot.json"
-    ).read_bytes()
+    assert first_snapshot == second_snapshot
+
+
+def test_preview_identity_is_intake_stable_but_snapshot_provenance_is_workspace_bound(tmp_path: Path) -> None:
+    first = build_preview(INTAKE, tmp_path / "first")
+    second = build_preview(INTAKE, tmp_path / "second")
+
+    # site_snapshot.v4 intentionally hashes provenance including source paths.
+    # AP2 therefore promises stable adopter identity across workspaces, while
+    # snapshot identity remains bound to the canonical build workspace.
+    assert first["site_id"] == second["site_id"]
+    assert first["source_intake_sha256"] == second["source_intake_sha256"]
 
 
 def test_adopter_preview_package_carries_plan_and_caveat(tmp_path: Path) -> None:
