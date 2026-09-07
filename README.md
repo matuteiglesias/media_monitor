@@ -20,7 +20,7 @@ La generación asistida nunca equivale a publicación. `published_article.v1` co
 - **Health público:** https://mediamonitor-psi.vercel.app/api/health
 - **Para periodistas:** https://mediamonitor-psi.vercel.app/journalists
 - **Metodología:** https://mediamonitor-psi.vercel.app/methodology
-- **Adopción / white-label / partnership:** [`ADOPT_MEDIA_MONITOR.md`](ADOPT_MEDIA_MONITOR.md)
+- **Adoptar / desplegar / white-label / partnership:** [`ADOPT_MEDIA_MONITOR.md`](ADOPT_MEDIA_MONITOR.md)
 - **Documentación técnica canónica:** https://github.com/matuteiglesias/media_monitor/tree/main/docs
 - **Repositorio:** https://github.com/matuteiglesias/media_monitor
 - **Owner / portfolio:** https://main.matuteiglesias.link
@@ -104,6 +104,7 @@ Cada transición tiene un contrato o gate explícito.
 | Operación | scheduled guarded refresh + crawler/social acceptance |
 | Reproducibilidad para adopters | `bin/media demo` |
 | Segunda instancia configurable | [`examples/outlet/`](examples/outlet/) |
+| Intake de adopter validado | [`docs/adoption/04_adopter_intake_contract.md`](docs/adoption/04_adopter_intake_contract.md) + `scripts/adopter_intake.py` |
 | Evidencia pública y contribución | [`EVIDENCE.md`](EVIDENCE.md) + [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 
 ## Superficies públicas deliberadamente separadas
@@ -126,17 +127,24 @@ Sólo objetos `published_article.v1` con estado publicado y aprobación humana p
 
 ## Entrypoints para distintos usuarios
 
-### Quiero evaluar Media Monitor para mi organización
-
-Leer [`ADOPT_MEDIA_MONITOR.md`](ADOPT_MEDIA_MONITOR.md). Resume qué puede evaluarse hoy, qué aporta el adopter, qué debería producir un piloto, las cuatro conversaciones posibles —pilot, managed white-label, technology/license partnership o strategic transfer— y qué superficies todavía no están productizadas.
-
 ### Quiero entender o reutilizar el sistema
 
 1. Ejecutar `bin/media demo`.
 2. Leer este README.
 3. Construir la [segunda instancia de ejemplo](examples/outlet/README.md).
-4. Ir al [mapa de documentación](docs/README.md).
-5. Inspeccionar `contracts/schemas/`, `sites/` y `config/`.
+4. Ver [cómo adoptar / desplegar Media Monitor](ADOPT_MEDIA_MONITOR.md).
+5. Ir al [mapa de documentación](docs/README.md).
+6. Inspeccionar `contracts/schemas/`, `sites/` y `config/`.
+
+### Quiero describir un caso de adopción
+
+Usar el [contrato de intake](docs/adoption/04_adopter_intake_contract.md) y validar/planificarlo con:
+
+```bash
+python scripts/adopter_intake.py path/to/intake.yaml --plan --format markdown
+```
+
+Esto clasifica configuración, adapters, requisitos reutilizables y decisiones humanas antes de empezar desarrollo.
 
 ### Quiero operar este deployment
 
@@ -193,6 +201,7 @@ Ninguna fixture puede presentarse como contenido editorial público real.
 - owned-domain cutover;
 - el demo offline reproducible;
 - la segunda instancia configurable;
+- el intake/plan de adopters;
 - el contributor/evidence front door;
 - typecheck del outlet Next.
 
@@ -219,7 +228,7 @@ legacy/                arqueología/compatibilidad explícita
 Empezar por:
 
 ```bash
-python -m pytest -q tests/test_adopter_demo.py tests/test_example_outlet.py
+python -m pytest -q tests/test_adopter_demo.py tests/test_example_outlet.py tests/test_adopter_intake.py
 bin/media demo
 ```
 
