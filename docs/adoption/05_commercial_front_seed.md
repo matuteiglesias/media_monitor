@@ -1,10 +1,12 @@
 # Commercial-front seed
 
-> **Status:** candidate positioning copy · **not yet a public offer, price sheet, license or warranty**
+> **Status:** AP0 source context · promoted into [`ADOPT_MEDIA_MONITOR.md`](../../ADOPT_MEDIA_MONITOR.md) · **not a price sheet, license or warranty**
 
 ## Purpose
 
-This page stores the smallest coherent commercial framing that AP0 can test and refine. It is intentionally evidence-calibrated.
+This page preserves the positioning seed that informed AP0. The adopter-facing canonical surface for this program is now [`ADOPT_MEDIA_MONITOR.md`](../../ADOPT_MEDIA_MONITOR.md).
+
+Future agents should modify this file only when the underlying product thesis changes materially. Ordinary copy improvements belong on the adopter-facing page and must remain evidence-calibrated.
 
 ## Candidate one-line proposition
 
@@ -87,12 +89,12 @@ For a credible pilot:
 - health/freshness evidence;
 - a bounded acceptance/handoff report.
 
-## AP0 publication gate
+## AP0 publication result
 
-Before promoting this framing from seed context into the root README, docs front door or public site:
+AP0 promoted this framing into [`ADOPT_MEDIA_MONITOR.md`](../../ADOPT_MEDIA_MONITOR.md) after re-checking current repository evidence and preserving these constraints:
 
-1. re-check all factual claims against current source/deployment evidence;
-2. decide which engagement paths the owner actually wants to entertain now;
-3. avoid pricing/license language until those decisions exist;
-4. ensure the public contact route is intentional;
-5. keep the page shorter than the architecture documentation it links to.
+1. no pricing/license/SLA commitments were invented;
+2. the public contact route uses already-published owner contact information;
+3. current gaps remain explicit rather than being marketed as completed capabilities;
+4. the root README contains only a restrained evaluator route;
+5. external L2 validation is still required before claiming the scorecard target band for offer clarity.
