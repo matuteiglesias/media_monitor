@@ -10,6 +10,8 @@ A packet may end with documentation/configuration only. Code is justified only w
 
 ## AP0 — Offer and evaluator front door
 
+**Implementation status:** implemented on `program/adoption-loop-seed`; internal evidence **L1**; outsider validation **L2 pending**. See [`closures/AP0.md`](closures/AP0.md) and [`ADOPT_MEDIA_MONITOR.md`](../../ADOPT_MEDIA_MONITOR.md).
+
 **Goal:** raise offer clarity without making unsupported commercial claims.
 
 **Seed inputs:** [commercial-front seed](05_commercial_front_seed.md), root README, `EVIDENCE.md`, public deployment and second-outlet example.
@@ -209,4 +211,4 @@ Choose the smallest deliverable validated by a real adopter. PDF, WhatsApp, Slac
 
 ## Activation rule
 
-Default next packet is **AP0**, but `carry_state.yaml` is advisory and does not supersede the repository-level agent contract. A human executor may deliberately choose AP1 first if an actual inbound adopter appears and requirements capture becomes the highest-value move.
+Default next packet is now **AP1** after AP0 implementation, but `carry_state.yaml` is advisory and does not supersede the repository-level agent contract. AP0 still needs external L2 validation before its 80%+ offer-clarity target is claimed. A human executor may deliberately choose another packet if an actual inbound adopter changes the highest-value next move.
