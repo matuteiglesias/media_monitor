@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/external_monitored_signal.v1.json",
+  "title": "external_monitored_signal.v1",
+  "description": "Stable adopter/provider boundary for one externally monitored media signal before normalization into Media Monitor access-index fields.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_name",
+    "provider_id",
+    "source_id",
+    "external_id",
+    "source_name",
+    "title",
+    "topic",
+    "published_at",
+    "link",
+    "observed_at",
+    "provenance"
+  ],
+  "properties": {
+    "schema_name": {"const": "external_monitored_signal.v1"},
+    "provider_id": {"type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9._-]+$"},
+    "source_id": {"type": "string", "minLength": 1},
+    "external_id": {"type": "string", "minLength": 1},
+    "source_name": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "topic": {"type": "string", "minLength": 1},
+    "published_at": {"type": "string", "format": "date-time"},
+    "link": {"type": "string", "format": "uri"},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_system", "record_id"],
+      "properties": {
+        "source_system": {"type": "string", "minLength": 1},
+        "record_id": {"type": "string", "minLength": 1},
+        "raw_ref": {"type": ["string", "null"]},
+        "retrieved_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    }
+  }
+}
