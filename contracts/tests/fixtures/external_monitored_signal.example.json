@@ -1,0 +1,18 @@
+{
+  "schema_name": "external_monitored_signal.v1",
+  "provider_id": "example-provider",
+  "source_id": "example-source-1",
+  "external_id": "item-001",
+  "source_name": "Example Provider Source",
+  "title": "Representative external monitored signal",
+  "topic": "regulation",
+  "published_at": "2026-01-15T12:30:00Z",
+  "link": "https://example.com/provider/item-001",
+  "observed_at": "2026-01-15T12:35:00Z",
+  "provenance": {
+    "source_system": "provider-export",
+    "record_id": "row-001",
+    "raw_ref": "batch-20260115T12.jsonl",
+    "retrieved_at": "2026-01-15T12:36:00Z"
+  }
+}

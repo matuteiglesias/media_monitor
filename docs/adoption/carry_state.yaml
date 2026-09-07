@@ -1,6 +1,6 @@
 program: media_monitor_adoption_loop
-version: 0.4-ap2-bootstrap
-status: ap2_bootstrap_implemented_l1_live_preview_pending
+version: 0.5-ap3
+status: ap3_external_signal_boundary_implemented_l1
 seed_base_commit: f5590546ea478de2b787b6fd1be92cd35f1b25fb
 
 purpose: >-
@@ -9,16 +9,15 @@ purpose: >-
   executable commercial/transfer decision without turning Media Monitor into
   generic SaaS infrastructure prematurely.
 
-current_packet: AP2
-current_packet_name: real_adopter_bootstrap
-current_packet_state: representative_preview_bootstrap_internal_evidence_L1
-next_packet: AP3
-next_packet_name: bring_your_own_signal_boundary
+current_packet: AP3
+current_packet_name: bring_your_own_signal_boundary
+current_packet_state: implemented_file_boundary_internal_evidence_L1
+next_packet: AP4
+next_packet_name: minimal_analyst_reviewer_operation
 next_packet_reason: >-
-  The representative AP1 intake requests an adopter-provided feed. AP2 can now
-  compile a deterministic branded preview package, but live/representative-real
-  input requires an explicit external signal boundary before a credible provider
-  preview can be exercised.
+  The representative intake is private and explicitly requires human review and
+  approval. AP3 now provides the external input seam; the next adoption blocker
+  is making existing human authority usable by a non-developer operator.
 activation_requires_human: true
 
 baseline_estimates_percent:
@@ -35,7 +34,7 @@ baseline_estimates_percent:
 current_provisional_estimates_percent:
   offer_clarity: 65
   requirements_intake: 60
-  live_preview_without_archaeology: 50
+  live_preview_without_archaeology: 60
   analyst_operator_comfort: 25
   recipient_deliverable: 30
   procurement_clarity: 15
@@ -79,6 +78,15 @@ ap2_outputs:
   - docs/adoption/closures/AP2.md
   - representative preview manifest/package contract
 
+ap3_outputs:
+  - contracts/schemas/external_monitored_signal.v1.json
+  - contracts/tests/fixtures/external_monitored_signal.example.json
+  - scripts/import_external_signals.py
+  - tests/test_external_signal_import.py
+  - docs/adoption/external_signal_boundary.md
+  - docs/adoption/closures/AP3.md
+  - AP2 preview support for normalized external signal files
+
 ap0_remaining_acceptance:
   - outsider evaluator can select an engagement path without architecture archaeology
   - outsider can distinguish proven surfaces from pilot-stage gaps
@@ -91,11 +99,16 @@ ap1_remaining_acceptance:
 
 ap2_remaining_acceptance:
   - choose one real or representative adopter intake
-  - supply live or representative-real input through a governed boundary
   - create isolated provider preview URL without changing canonical Argentina deployment
   - independently verify adopter identity and no owner leakage
   - record commit intake hash config/source identity and preview URL/status
   - prove no adopter-specific generic-core edits
+
+ap3_remaining_acceptance:
+  - outsider/provider maps a representative real export to external_monitored_signal.v1
+  - clean import completes without repository archaeology
+  - provider/data-rights and retention assumptions are explicitly confirmed by the relevant human parties
+  - repeated cycles required before any live-source claim
 
 seed_decisions:
   - adoption program lives under docs/adoption and owns no runtime
@@ -104,13 +117,6 @@ seed_decisions:
   - concierge onboarding and isolated deployments are acceptable
   - no generic multi_tenancy billing enterprise_sso or full_cms without demand
   - public claims remain evidence-calibrated
-
-ap0_decisions:
-  - expose four conversation paths without publishing price or legal terms
-  - use a top-level Markdown evaluator page rather than adding a new runtime/site owner
-  - public contact route may use the already-published owner email and portfolio
-  - explicitly state that repository-level general licensing and SLA/support terms are unresolved
-  - keep AP0 L1 until outsider validation occurs
 
 ap1_decisions:
   - use JSON Schema 2020-12 as intake authority while allowing YAML authoring
@@ -125,12 +131,21 @@ ap2_decisions:
   - exercise the real generic selection context and site-snapshot builders
   - bind preview identity to the intake SHA and snapshot ID
   - fail on known Media Monitor owner/editor identity leakage
-  - leave provider deployment and live source status explicitly not_attempted
+  - leave provider deployment status explicitly not_attempted
+
+ap3_decisions:
+  - make one stable file contract the provider boundary rather than hard-code vendor adapters
+  - derive downstream identity deterministically from provider source and external identity
+  - dedupe identical repeated observations while counting them
+  - quarantine all occurrences of a semantically conflicting identity instead of selecting a winner
+  - retain provider/source-record provenance on normalized rows
+  - allow normalized external files to feed the same generic AP2 downstream compiler
+  - do not claim a continuously operating live source from a one-file import
 
 known_blockers:
   - no real external adopter instance evidenced
   - no live adopter preview URL evidenced
-  - no generic external signal import front door
+  - no outsider/provider L2 validation of external import boundary
   - no adopter-oriented minimal reviewer surface evidenced
   - no agreed recurring client deliverable evidenced
   - no repository-level LICENSE file on seed baseline
@@ -143,6 +158,7 @@ human_decisions_reserved:
   - prospect outreach and sends
   - acceptance of any real pilot or commercial terms
   - provider/account mutation for a real adopter preview unless explicitly delegated
+  - confirmation of rights/permissions for real third-party source data
 
 non_goals:
   - generic multi_tenant_saas
@@ -161,7 +177,10 @@ source_evidence:
   - docs/adoption/04_adopter_intake_contract.md
   - docs/adoption/adopter_intake.schema.json
   - scripts/bootstrap_adopter_preview.py
-  - docs/adoption/closures/AP2.md
+  - contracts/schemas/external_monitored_signal.v1.json
+  - scripts/import_external_signals.py
+  - docs/adoption/external_signal_boundary.md
+  - docs/adoption/closures/AP3.md
   - docs/README.md
   - docs/architecture/artifact-ladder-and-state.md
   - AGENTS.md
