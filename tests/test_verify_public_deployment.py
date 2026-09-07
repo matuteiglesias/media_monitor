@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -7,7 +8,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from verify_public_deployment import validate_health
+from verify_public_deployment import main, resolve_public_url, validate_health
 
 
 def roll_record():
@@ -104,3 +105,61 @@ def test_public_stale_state_fails():
 def test_public_target_miss_fails_even_if_still_fresh():
     with pytest.raises(ValueError, match="missed target"):
         validate_health(roll_record(), public_health(within_target=False, age_minutes=150))
+
+
+def test_public_url_uses_provider_url_until_owned_domain_is_active():
+    identity = {
+        "public_outlet_url": "https://provider.example/",
+        "owned_outlet_url": "https://owned.example",
+    }
+    assert resolve_public_url(identity, False) == "https://provider.example"
+    assert resolve_public_url(identity, True) == "https://owned.example"
+
+
+@pytest.mark.parametrize(
+    "public_url",
+    ["", "http://provider.example", "https://provider.example/unexpected-path"],
+)
+def test_public_url_must_be_an_https_origin(public_url):
+    with pytest.raises(ValueError, match="invalid public_outlet_url"):
+        resolve_public_url({"public_outlet_url": public_url}, False)
+
+
+def test_main_fetches_configured_public_url(tmp_path, monkeypatch):
+    roll_path = tmp_path / "roll.json"
+    identity_path = tmp_path / "identity.json"
+    output_path = tmp_path / "report.json"
+    roll_path.write_text(json.dumps(roll_record()), encoding="utf-8")
+    identity_path.write_text(
+        json.dumps(
+            {
+                "public_outlet_url": "https://provider.example",
+                "owned_outlet_url": "https://owned.example",
+            }
+        ),
+        encoding="utf-8",
+    )
+    requested = []
+    monkeypatch.setattr(
+        "verify_public_deployment.fetch_health",
+        lambda public_url, timeout: requested.append((public_url, timeout)) or public_health(),
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "verify_public_deployment.py",
+            "--roll-record",
+            str(roll_path),
+            "--public-identity",
+            str(identity_path),
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    assert main() == 0
+    assert requested == [("https://provider.example", 20.0)]
+    report = json.loads(output_path.read_text(encoding="utf-8"))
+    assert report["deployment_host"] == "roll-abc.vercel.app"
+    assert report["public_url"] == "https://provider.example"
