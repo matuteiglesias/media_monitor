@@ -1,6 +1,6 @@
 program: media_monitor_adoption_loop
-version: 0.1-seed
-status: seeded_not_activated
+version: 0.2-ap0
+status: ap0_implemented_l1_outsider_validation_pending
 seed_base_commit: f5590546ea478de2b787b6fd1be92cd35f1b25fb
 
 purpose: >-
@@ -9,8 +9,11 @@ purpose: >-
   executable commercial/transfer decision without turning Media Monitor into
   generic SaaS infrastructure prematurely.
 
-next_packet: AP0
-next_packet_name: offer_and_evaluator_front_door
+current_packet: AP0
+current_packet_name: offer_and_evaluator_front_door
+current_packet_state: implemented_internal_evidence_L1
+next_packet: AP1
+next_packet_name: adopter_intake_and_manifest
 activation_requires_human: true
 
 baseline_estimates_percent:
@@ -24,6 +27,26 @@ baseline_estimates_percent:
     low: 10
     high: 20
 
+current_provisional_estimates_percent:
+  offer_clarity: 65
+  requirements_intake: 20
+  live_preview_without_archaeology: 35
+  analyst_operator_comfort: 25
+  recipient_deliverable: 30
+  procurement_clarity: 15
+  transaction_closure:
+    low: 10
+    high: 20
+
+current_evidence_levels:
+  offer_clarity: L1
+  requirements_intake: L0
+  live_preview_without_archaeology: L1
+  analyst_operator_comfort: L0
+  recipient_deliverable: L0
+  procurement_clarity: L0
+  transaction_closure: L0
+
 target_bands_percent:
   offer_clarity: [80, 90]
   requirements_intake: [75, 85]
@@ -33,6 +56,16 @@ target_bands_percent:
   procurement_clarity: [55, 70]
   transaction_closure: [50, 65]
 
+ap0_outputs:
+  - ADOPT_MEDIA_MONITOR.md
+  - README.md adopter route
+  - docs/adoption/closures/AP0.md
+
+ap0_remaining_acceptance:
+  - outsider evaluator can select an engagement path without architecture archaeology
+  - outsider can distinguish proven surfaces from pilot-stage gaps
+  - record L2 evidence before claiming offer_clarity target band
+
 seed_decisions:
   - adoption program lives under docs/adoption and owns no runtime
   - named prospects stay out of the public repo program
@@ -40,6 +73,13 @@ seed_decisions:
   - concierge onboarding and isolated deployments are acceptable
   - no generic multi_tenancy billing enterprise_sso or full_cms without demand
   - public claims remain evidence-calibrated
+
+ap0_decisions:
+  - expose four conversation paths without publishing price or legal terms
+  - use a top-level Markdown evaluator page rather than adding a new runtime/site owner
+  - public contact route may use the already-published owner email and portfolio
+  - explicitly state that repository-level general licensing and SLA/support terms are unresolved
+  - keep AP0 L1 until outsider validation occurs
 
 known_blockers:
   - no real external adopter instance evidenced
@@ -52,12 +92,11 @@ known_blockers:
   - no human-approved pricing support or transaction templates
 
 human_decisions_reserved:
-  - commercial paths to actively offer
   - pricing and invoicing
   - repository/software licensing
   - legal privacy warranty and support commitments
-  - public marketing claims
   - prospect outreach and sends
+  - acceptance of any real pilot or commercial terms
 
 non_goals:
   - generic multi_tenant_saas
@@ -70,6 +109,7 @@ non_goals:
 
 source_evidence:
   - README.md
+  - ADOPT_MEDIA_MONITOR.md
   - EVIDENCE.md
   - examples/outlet/README.md
   - docs/README.md
