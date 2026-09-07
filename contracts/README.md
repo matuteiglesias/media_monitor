@@ -5,6 +5,7 @@ Draft-but-concrete contracts for incremental migration.
 ## Stable now
 
 - `news_ref.v1`
+- `external_monitored_signal.v1` — adopter/provider import boundary consumed by `scripts/import_external_signals.py`; accepted rows normalize into the stable monitored-signal/access-index fields used by downstream selection/context/snapshot builders.
 - `scrape_request.v1`
 - `scraped_article.v1`
 - `public_contract_v1` (`contracts/schemas/publish_surface_v1.json`) con solo `frontpage.v1`, `topic_page.v1`, `story_page.v1`, `editorial_handoff.v1`.
@@ -23,6 +24,7 @@ Draft-but-concrete contracts for incremental migration.
 
 Each contract is grounded in current repository seams/models and is validated by fixture-based contract tests in `contracts/tests/test_contracts.py`.
 
+For `external_monitored_signal.v1`, provider/source/external identity and source-record provenance are preserved by the import adapter. Invalid rows quarantine; repeated identities with conflicting semantic content are denied rather than silently overwritten.
 
 ## Public v1 governance
 

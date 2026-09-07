@@ -50,9 +50,9 @@ def test_preview_identity_is_intake_stable_but_snapshot_provenance_is_workspace_
     first = build_preview(INTAKE, tmp_path / "first")
     second = build_preview(INTAKE, tmp_path / "second")
 
-    # AP2 owns an intake-derived adopter identity. site_snapshot.v4 separately
-    # records source paths in provenance, so relocating the canonical workspace
-    # is allowed to change snapshot_id without changing adopter identity.
+    # site_snapshot.v4 intentionally hashes provenance including source paths.
+    # AP2 therefore promises stable adopter identity across workspaces, while
+    # snapshot identity remains bound to the canonical build workspace.
     assert first["site_id"] == second["site_id"]
     assert first["source_intake_sha256"] == second["source_intake_sha256"]
 

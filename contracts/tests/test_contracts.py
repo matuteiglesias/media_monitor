@@ -12,6 +12,7 @@ FIXTURES_DIR = ROOT / "contracts" / "tests" / "fixtures"
 
 CASES = [
     ("news_ref.v1.json", "news_ref.example.json"),
+    ("external_monitored_signal.v1.json", "external_monitored_signal.example.json"),
     ("scrape_request.v1.json", "scrape_request.example.json"),
     ("scraped_article.v1.json", "scraped_article.example.json"),
     ("news_digest_group.v1.json", "news_digest_group.example.json"),

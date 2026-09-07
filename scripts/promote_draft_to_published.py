@@ -105,7 +105,12 @@ def validate_published(article: dict[str, Any]) -> None:
         raise ValueError("published article failed schema validation: " + "; ".join(e.message for e in errors))
 
 
-def promote(draft: dict[str, Any], review_status: str) -> tuple[dict[str, Any], Path]:
+def promote(
+    draft: dict[str, Any],
+    review_status: str,
+    *,
+    published_bus: Path | None = None,
+) -> tuple[dict[str, Any], Path]:
     validate_draft(draft)
     slug = slugify(str(draft.get("slug_candidate") or draft["title"]))
     article_id = stable_article_id(draft, slug)
@@ -129,8 +134,9 @@ def promote(draft: dict[str, Any], review_status: str) -> tuple[dict[str, Any], 
         "updated_at": now,
     }
     validate_published(article)
-    PUBLISHED_BUS.mkdir(parents=True, exist_ok=True)
-    out = PUBLISHED_BUS / f"{article_id}.jsonl"
+    target_bus = published_bus or PUBLISHED_BUS
+    target_bus.mkdir(parents=True, exist_ok=True)
+    out = target_bus / f"{article_id}.jsonl"
     out.write_text(json.dumps(article, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
     return article, out
 
@@ -142,10 +148,16 @@ def main() -> int:
     group.add_argument("--draft-path")
     parser.add_argument("--approve-human", action="store_true", help="Required explicit approval gate for publication")
     parser.add_argument("--review-status", default="human_approved")
+    parser.add_argument(
+        "--published-bus-dir",
+        default=None,
+        help="Optional explicit published bus target. Defaults to the canonical repository published_article bus.",
+    )
     args = parser.parse_args()
     if not args.approve_human:
         raise SystemExit("refusing to publish without --approve-human")
-    article, out = promote(load_draft(args), args.review_status)
+    published_bus = Path(args.published_bus_dir) if args.published_bus_dir else None
+    article, out = promote(load_draft(args), args.review_status, published_bus=published_bus)
     print(json.dumps({"status": "ok", "article_id": article["article_id"], "slug": article["slug"], "output_path": str(out)}, indent=2))
     return 0
 
