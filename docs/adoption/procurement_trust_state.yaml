@@ -1,0 +1,165 @@
+schema: media_monitor_procurement_trust.v1
+status: internal_diligence_packet_not_legal_or_commercial_commitment
+
+scope:
+  purpose: >-
+    Make repository-backed technical diligence answerable without archaeology while
+    preserving legal, commercial, privacy, support and licensing choices for explicit
+    human decision.
+  not_a_contract: true
+  not_a_security_certification: true
+  not_an_sla: true
+
+repository:
+  visibility: public
+  repository_level_license:
+    status: unresolved_no_repository_level_license_file
+    decision: human_decision_required
+  commercial_licensing_model:
+    decision: human_decision_required
+
+runtime_and_deployment:
+  scheduled_workflow: .github/workflows/scheduled-publication.yml
+  schedule_expression: "45 * * * *"
+  concurrency_group: scheduled-publication-production
+  timeout_minutes: 25
+  python_version: "3.12"
+  scheduled_node_version: "20"
+  news_site_declared_node_engine: "22.x"
+  node_runtime_contract_status: mismatch_open
+  vercel_cli_version: "59.11.7"
+  public_freshness_implementation_target_minutes: 120
+  public_freshness_is_contractual_sla: false
+  anonymous_public_verification_in_workflow: true
+  crawler_social_verification_in_workflow: true
+  canonical_scheduler_cutover_status: hardening_outside_this_adoption_packet
+
+secrets_and_accounts:
+  scheduled_publication_secret_names:
+    - VERCEL_TOKEN
+    - VERCEL_ORG_ID
+    - VERCEL_PROJECT_ID
+  secret_values_in_workflow: false
+  adopter_deployment_account_ownership:
+    decision: human_decision_required
+  private_authentication_posture:
+    status: not_productized_as_generic_adopter_capability
+    decision: human_decision_required
+
+third_party_dependencies:
+  python_sensing_manifest: requirements-sensing.txt
+  python_sensing_direct_dependencies_exactly_pinned: true
+  scheduled_extra_jsonschema_pin_status: unpinned
+  news_site_manifest: apps/news_site/package.json
+  news_site_lockfile: apps/news_site/package-lock.json
+  dependency_license_inventory_status: technical_inventory_present_license_review_incomplete
+  dependency_license_acceptance:
+    decision: human_decision_required
+
+source_data_and_provenance:
+  external_signal_contract: contracts/schemas/external_monitored_signal.v1.json
+  provider_boundary_doc: docs/adoption/external_signal_boundary.md
+  external_provider_identity_and_provenance_required: true
+  data_rights_retention_and_permitted_use:
+    decision: human_decision_required
+
+editorial_and_delivery_authority:
+  human_publication_gate: scripts/promote_draft_to_published.py
+  adopter_review_surface: scripts/adopter_review.py
+  recipient_delivery_surface: scripts/adopter_delivery.py
+  generated_equals_published: false
+  delivery_artifact_preparation_equals_delivery: false
+  real_editorial_approval:
+    decision: human_decision_required
+  real_recipient_delivery_authorization:
+    decision: human_decision_required
+
+storage_retention_and_recovery:
+  github_publication_evidence_retention_days: 14
+  publication_evidence_retention_source: .github/workflows/scheduled-publication.yml
+  historical_durable_corpus_status: unresolved_in_separate_storage_hardening_work
+  generic_backup_or_recovery_guarantee: none_claimed
+  durability_or_cold_archive_commitment:
+    decision: human_decision_required
+  adopter_data_retention_terms:
+    decision: human_decision_required
+
+security_and_trust:
+  architecture_boundary_doc: docs/architecture/trust-boundaries.md
+  browser_write_authority: none_by_architecture
+  public_snapshot_allowlisting: documented
+  provider_credentials_are_environment_or_provider_inputs: documented
+  certifications:
+    status: none_claimed
+  penetration_test_status: not_claimed
+  formal_security_audit_status: not_claimed
+
+support_incident_and_service_terms:
+  operational_runbooks_exist: true
+  support_model:
+    decision: human_decision_required
+  support_hours:
+    decision: human_decision_required
+  incident_response_commitment:
+    decision: human_decision_required
+  uptime_or_freshness_sla:
+    decision: human_decision_required
+  warranty_indemnity_and_liability:
+    decision: human_decision_required
+
+export_termination_and_handoff:
+  machine_readable_artifacts_exist: true
+  artifact_formats:
+    - JSON
+    - JSONL
+    - YAML
+    - HTML
+    - text
+  provenance_hashes_used_in_adoption_surfaces: true
+  contractual_export_package:
+    decision: human_decision_required
+  termination_handoff_obligation:
+    decision: human_decision_required
+  source_code_or_deployment_asset_transfer_scope:
+    decision: human_decision_required
+
+commercial_decisions:
+  pricing:
+    decision: human_decision_required
+  invoicing_and_payment_terms:
+    decision: human_decision_required
+  attribution_and_white_label_terms:
+    decision: human_decision_required
+  pilot_or_service_acceptance_terms:
+    decision: human_decision_required
+
+known_open_diligence_items:
+  - choose repository and commercial licensing posture before granting software rights
+  - resolve or explicitly accept scheduled Node 20 versus site engine Node 22.x mismatch
+  - pin or deliberately govern scheduled jsonschema installation
+  - define private authentication only when a real adopter requires private operation
+  - finish historical durability/recovery decision before promising backup or replay guarantees
+  - complete third-party dependency license review before contractual software delivery
+  - define support SLA privacy warranty liability and commercial terms only with human/legal approval
+
+public_claim_guardrails:
+  - do_not_claim_open_source_license_without_license_file
+  - do_not_claim_customer_or_adopter_without_real_acceptance_evidence
+  - do_not_turn_120_minute_implementation_target_into_contractual_sla
+  - do_not_claim_certifications_pen_test_or_formal_security_audit_without_evidence
+  - do_not_claim_durable_historical_backup_until_storage_hardening_closes
+  - do_not_claim_private_authentication_as_generic_product_capability
+
+evidence_paths:
+  - .github/workflows/scheduled-publication.yml
+  - requirements-sensing.txt
+  - apps/news_site/package.json
+  - apps/news_site/package-lock.json
+  - docs/architecture/trust-boundaries.md
+  - docs/architecture/identity-provenance-and-replay.md
+  - contracts/schemas/external_monitored_signal.v1.json
+  - docs/adoption/external_signal_boundary.md
+  - scripts/promote_draft_to_published.py
+  - scripts/adopter_review.py
+  - scripts/adopter_delivery.py
+  - ADOPT_MEDIA_MONITOR.md
