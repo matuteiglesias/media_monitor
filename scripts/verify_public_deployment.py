@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 
@@ -80,9 +82,18 @@ def validate_health(roll: dict[str, Any], observed: dict[str, Any]) -> dict[str,
     }
 
 
-def fetch_health(host: str, timeout: float = 20.0) -> dict[str, Any]:
+def resolve_public_url(identity: dict[str, Any], owned_domain_active: bool) -> str:
+    key = "owned_outlet_url" if owned_domain_active else "public_outlet_url"
+    public_url = str(identity.get(key) or "").strip().rstrip("/")
+    parsed = urlparse(public_url)
+    if parsed.scheme != "https" or not parsed.netloc or parsed.path not in ("", "/"):
+        raise ValueError(f"public identity has invalid {key}")
+    return public_url
+
+
+def fetch_health(public_url: str, timeout: float = 20.0) -> dict[str, Any]:
     request = Request(
-        f"https://{host}/api/health",
+        f"{public_url}/api/health",
         headers={"Accept": "application/json", "User-Agent": "media-monitor-public-check/1"},
     )
     with urlopen(request, timeout=timeout) as response:
@@ -109,6 +120,10 @@ def main() -> int:
         "--output",
         default="storage/observability/public_deployment_check_latest.json",
     )
+    parser.add_argument(
+        "--public-identity",
+        default="apps/news_site/config/public_identity.json",
+    )
     parser.add_argument("--timeout", type=float, default=20.0)
     args = parser.parse_args()
 
@@ -118,8 +133,14 @@ def main() -> int:
         host = str(roll.get("deployment_host") or "").strip()
         if not host:
             raise ValueError("roll record is missing deployment_host")
-        observed = fetch_health(host, args.timeout)
+        identity = read_json(Path(args.public_identity))
+        public_url = resolve_public_url(
+            identity,
+            os.getenv("CANONICAL_OWNED_DOMAIN_ACTIVE") == "1",
+        )
+        observed = fetch_health(public_url, args.timeout)
         report = validate_health(roll, observed)
+        report["public_url"] = public_url
     except Exception as exc:
         report = {
             "schema_name": "public_deployment_check.v1",
