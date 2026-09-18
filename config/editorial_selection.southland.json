@@ -1,0 +1,21 @@
+{
+  "policy_id": "southland-v1",
+  "policy_version": "1",
+  "max_age_minutes": 720,
+  "future_tolerance_minutes": 5,
+  "minimum_items": 1,
+  "max_items": 20,
+  "high_priority_threshold": 10,
+  "default_topic_weight": 0,
+  "topic_weights": {},
+  "freshness_buckets": [
+    {"max_age_minutes": 60, "score": 30, "reason_code": "fresh_under_60m"},
+    {"max_age_minutes": 180, "score": 20, "reason_code": "fresh_under_180m"},
+    {"max_age_minutes": 360, "score": 15, "reason_code": "fresh_under_360m"},
+    {"max_age_minutes": 720, "score": 10, "reason_code": "fresh_under_720m"}
+  ],
+  "first_source_bonus": 6,
+  "first_topic_bonus": 4,
+  "repeat_source_penalty": 0,
+  "repeat_topic_penalty": 0
+}
