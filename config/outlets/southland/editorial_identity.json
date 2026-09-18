@@ -5,18 +5,33 @@
   "editor": {
     "name": "Matías Iglesias",
     "role": "Editor responsable",
-    "job_title": "Editor responsable",
     "bio_short": "Editor responsable de Southland, un experimento editorial satírico construido sobre evidencia pública, separación explícita entre hechos y ficción y aprobación humana antes de publicar.",
     "location": "Buenos Aires, Argentina",
-    "credentials": ["PhD en Economía", "MSc en Física"],
-    "expertise": ["edición satírica","economía argentina","datos públicos","sistemas reproducibles"],
+    "credentials": [
+      "PhD en Economía",
+      "MSc en Física"
+    ],
+    "expertise": [
+      "edición satírica",
+      "economía argentina",
+      "datos públicos",
+      "sistemas reproducibles"
+    ],
     "contact": {
       "email": "matuteiglesias@gmail.com",
       "website": "https://main.matuteiglesias.link",
       "linkedin": "https://www.linkedin.com/in/matiasiglesias/",
       "github": "https://github.com/matuteiglesias"
     },
-    "same_as": ["https://main.matuteiglesias.link","https://github.com/matuteiglesias"]
+    "same_as": [
+      "https://main.matuteiglesias.link",
+      "https://github.com/matuteiglesias"
+    ]
   },
-  "routes": {"about":"/about","methodology":"/methodology","journalists":"/journalists","author":"/authors/matias-iglesias"}
+  "routes": {
+    "about": "/about",
+    "methodology": "/methodology",
+    "journalists": "/journalists",
+    "author": "/authors/matias-iglesias"
+  }
 }
