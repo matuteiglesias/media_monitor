@@ -112,7 +112,7 @@ def compute_slices(anchor: datetime) -> List[Tuple[str, datetime, datetime]]:
 
 def fetch_rss_now(feeds: Dict[str, str], limit: int | None) -> pd.DataFrame:
     rows: List[dict] = []
-    for topic, url in feeds.items():
+    for feed_order, (topic, url) in enumerate(feeds.items()):
         feed = feedparser.parse(url)
         entries = feed.entries if limit is None else feed.entries[: int(limit)]
         for e in entries:
@@ -137,6 +137,7 @@ def fetch_rss_now(feeds: Dict[str, str], limit: int | None) -> pd.DataFrame:
                     "Link": link,
                     "Published": published,
                     "Source": source,
+                    "_feed_order": feed_order,
                 }
             )
 
@@ -147,11 +148,15 @@ def fetch_rss_now(feeds: Dict[str, str], limit: int | None) -> pd.DataFrame:
     # Normalize datetime to UTC and drop unparsable
     df["Published"] = pd.to_datetime(df["Published"], errors="coerce", utc=True)
     df = df.dropna(subset=["Published"]).copy()
-    # Sort for stable assignment
-    df = df.sort_values(["Published", "Title", "Source"]).reset_index(drop=True)
-    # Dedup within this fetch by (Title, Source, Link)
+    # Preserve configured feed order when one publisher cross-lists the same
+    # article into multiple section feeds. mergesort keeps ties stable, so the
+    # first configured section owns the deterministic topic attribution.
+    df = df.sort_values(
+        ["Published", "_feed_order", "Title", "Source", "Link"],
+        kind="mergesort",
+    ).reset_index(drop=True)
     df = df.drop_duplicates(subset=["Title", "Source", "Link"], keep="first")
-    return df
+    return df.drop(columns=["_feed_order"])
 
 def validate_row_v01(r: pd.Series) -> Tuple[bool, str | None]:
     if not (str(r.get("Title") or "").strip()):
