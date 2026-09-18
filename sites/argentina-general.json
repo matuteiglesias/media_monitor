@@ -6,7 +6,8 @@
   "runtime": {
     "data_dir": "data",
     "storage_dir": "storage",
-    "selection_policy": "config/editorial_selection.argentina.json"
+    "selection_policy": "config/editorial_selection.argentina.json",
+    "feed_config": "config/sensing_feeds.v1.yaml"
   },
   "selection": {
     "topics": ["All Topics"],

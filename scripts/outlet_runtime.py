@@ -16,6 +16,8 @@ class OutletRuntime:
     data_dir: Path
     storage_dir: Path
     selection_policy: Path
+    feed_config: Path | None = None
+    source_name: str | None = None
 
     @property
     def indexes_dir(self) -> Path:
@@ -26,8 +28,19 @@ class OutletRuntime:
         return self.storage_dir / "buses" / "published_article" / "v1"
 
     @property
+    def scraped_article_bus_dir(self) -> Path:
+        return self.storage_dir / "buses" / "scraped_article" / "v1"
+
+    @property
     def snapshot_path(self) -> Path:
         return self.storage_dir / "public" / "site_snapshot.json"
+
+    def require_feed_config(self) -> Path:
+        if self.feed_config is None:
+            raise ValueError(
+                f"{self.site_config}: runtime.feed_config is required for outlet sensing"
+            )
+        return self.feed_config
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -83,6 +96,20 @@ def resolve_outlet_runtime(repo_root: Path, site_id: str) -> OutletRuntime:
         "runtime.selection_policy",
         must_exist=True,
     )
+    feed_config = None
+    if runtime.get("feed_config") is not None:
+        feed_config = _repo_path(
+            root,
+            runtime["feed_config"],
+            "runtime.feed_config",
+            must_exist=True,
+        )
+    source_name = runtime.get("source_name")
+    if source_name is not None:
+        if not isinstance(source_name, str) or not source_name.strip():
+            raise ValueError(f"{config_path}: runtime.source_name must be a non-empty string")
+        source_name = source_name.strip()
+
     if data_dir == storage_dir:
         raise ValueError(f"{config_path}: runtime data_dir and storage_dir must differ")
 
@@ -93,4 +120,6 @@ def resolve_outlet_runtime(repo_root: Path, site_id: str) -> OutletRuntime:
         data_dir=data_dir,
         storage_dir=storage_dir,
         selection_policy=selection_policy,
+        feed_config=feed_config,
+        source_name=source_name,
     )
