@@ -4,9 +4,12 @@ import { curationReasonLabel } from "@/lib/curation_labels";
 import { EDITORIAL_IDENTITY } from "@/lib/editorial_identity";
 import { formatPublicDate } from "@/lib/format";
 import { OutletPulse } from "@/components/OutletPulse";
+import { SouthlandHome } from "@/components/SouthlandHome";
+import { SITE_PRESENTATION } from "@/lib/site_presentation";
 
 export default function HomePage() {
   const outlet = loadOutlet();
+  if (SITE_PRESENTATION.mode === "publication") return <SouthlandHome outlet={outlet} />;
   const { site, publication, signals } = outlet;
   const featured = publication.featured;
   const moreAnalysis = publication.latest.filter(
