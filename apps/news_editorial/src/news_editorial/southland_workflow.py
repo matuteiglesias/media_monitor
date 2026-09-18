@@ -1,6 +1,4 @@
 """Southland editorial reasoning DAG on Microsoft Agent Framework."""
-from __future__ import annotations
-
 import asyncio
 from dataclasses import asdict, dataclass
 import hashlib
