@@ -117,7 +117,8 @@ def test_homepage_makes_editorial_curated_and_chronological_layers_distinct() ->
 def test_article_route_only_reads_published_article_projection() -> None:
     article_route = (NEWS_SITE_ROOT / "app" / "articles" / "[slug]" / "page.tsx").read_text(encoding="utf-8")
     assert "findArticle(params.slug)" in article_route
-    assert "Análisis editorial · aprobado" in article_route
+    assert "SITE_PRESENTATION.publication_label" in article_route
+    assert "Qué es real y qué no" in article_route
     assert "article.summary" in article_route
     assert "article.body_md" in article_route
     assert "article.citations" in article_route
