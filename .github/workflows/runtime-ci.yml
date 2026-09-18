@@ -29,6 +29,7 @@ on:
       - ".github/workflows/runtime-ci.yml"
       - ".github/workflows/scheduled-publication.yml"
       - ".github/workflows/owned-domain-readiness.yml"
+      - ".github/workflows/southland-*.yml"
   push:
     branches: [main]
     paths:
@@ -109,6 +110,7 @@ jobs:
             tests/test_outlet_runtime_isolation.py \
             tests/test_outlet_source_evidence.py \
             tests/test_editorial_ai_workflow.py \
+            tests/test_southland_publication_launch.py \
             tests/test_adopter_intake.py \
             tests/test_adopter_preview_bootstrap.py \
             tests/test_external_signal_import.py \
@@ -128,7 +130,6 @@ jobs:
             tests/test_surface_boundaries.py
 
   news-site-contracts:
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
