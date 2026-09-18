@@ -1,11 +1,11 @@
-"""Southland editorial reasoning workflow on Microsoft Agent Framework."""
+"""Southland editorial reasoning DAG on Microsoft Agent Framework."""
 from __future__ import annotations
 
 import asyncio
 from dataclasses import asdict, dataclass
 import hashlib
 import json
-from typing import Any, Sequence
+from typing import Any, Never, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -34,6 +34,34 @@ class EvidencePacket(BaseModel):
     fetched_at: str = Field(min_length=1)
     text_hash: str = Field(min_length=1)
     text: str = Field(min_length=1)
+
+
+class AnalyzedStory(BaseModel):
+    packet: EvidencePacket
+    analysis: EvidenceAnalysis
+
+
+class DecidedStory(BaseModel):
+    packet: EvidencePacket
+    analysis: EvidenceAnalysis
+    decision: SouthlandDecision
+
+
+class DraftedStory(BaseModel):
+    packet: EvidencePacket
+    analysis: EvidenceAnalysis
+    decision: SouthlandDecision
+    draft: SouthlandDraft
+    revisions_used: int = 0
+
+
+class ReviewedStory(BaseModel):
+    packet: EvidencePacket
+    analysis: EvidenceAnalysis
+    decision: SouthlandDecision
+    draft: SouthlandDraft
+    review: SouthlandReview
+    revisions_used: int = 0
 
 
 @dataclass(frozen=True)
@@ -102,14 +130,24 @@ political advocacy. Return a complete replacement draft."""
 
 
 class SouthlandEditorialWorkflow:
+    """Build a fresh MAF graph for one evidence packet.
+
+    Topology:
+      analyze -> decide
+                 | reject -> terminal
+                 | accept -> write -> review
+                                      | approve/reject -> terminal
+                                      | revise -> revise -> final_review -> terminal
+    """
+
     def __init__(
         self,
         ai_node: StructuredAINode,
         *,
         max_revisions: int = 1,
     ) -> None:
-        if max_revisions < 0:
-            raise ValueError("max_revisions must be >= 0")
+        if max_revisions not in {0, 1}:
+            raise ValueError("Southland v1 supports max_revisions of 0 or 1")
         self.ai_node = ai_node
         self.max_revisions = max_revisions
 
@@ -146,101 +184,88 @@ class SouthlandEditorialWorkflow:
             )
         return response_model.model_validate(result.output)
 
-    async def _execute(
-        self,
-        packet: EvidencePacket,
-        ai_results: list[AIWorkResult],
-    ) -> dict[str, Any]:
-        analysis = await self._call(
-            packet=packet,
-            stage="southland_analyze",
-            instructions=ANALYST_INSTRUCTIONS,
-            prompt="Analyze this source article.\n\n" + _packet_json(packet),
-            response_model=EvidenceAnalysis,
-            ai_results=ai_results,
-        )
-        assert isinstance(analysis, EvidenceAnalysis)
+    def _build_graph(self, ai_results: list[AIWorkResult]):
+        from agent_framework import WorkflowBuilder, WorkflowContext, executor
 
-        decision = await self._call(
-            packet=packet,
-            stage="southland_decide",
-            instructions=EDITOR_INSTRUCTIONS,
-            prompt=(
-                "Decide whether this article should be Southlandized.\n\n"
-                + json.dumps(
-                    {
-                        "source": packet.model_dump(mode="json", exclude={"text"}),
-                        "analysis": analysis.model_dump(mode="json"),
-                    },
-                    ensure_ascii=False,
-                    indent=2,
-                )
-            ),
-            response_model=SouthlandDecision,
-            ai_results=ai_results,
-        )
-        assert isinstance(decision, SouthlandDecision)
-
-        if decision.decision == "reject":
-            return SouthlandWorkflowResult(
-                status="rejected",
-                index_id=packet.index_id,
-                workflow_id=WORKFLOW_ID,
-                analysis=analysis,
-                decision=decision,
-                stage_work_ids=[row.work_id for row in ai_results],
-            ).model_dump(mode="json")
-
-        draft = await self._call(
-            packet=packet,
-            stage="southland_write",
-            instructions=WRITER_INSTRUCTIONS,
-            prompt=json.dumps(
-                {
-                    "source": packet.model_dump(mode="json"),
-                    "analysis": analysis.model_dump(mode="json"),
-                    "decision": decision.model_dump(mode="json"),
-                },
-                ensure_ascii=False,
-                indent=2,
-            ),
-            response_model=SouthlandDraft,
-            ai_results=ai_results,
-        )
-        assert isinstance(draft, SouthlandDraft)
-
-        review = await self._call(
-            packet=packet,
-            stage="southland_review",
-            instructions=REVIEWER_INSTRUCTIONS,
-            prompt=json.dumps(
-                {
-                    "analysis": analysis.model_dump(mode="json"),
-                    "decision": decision.model_dump(mode="json"),
-                    "draft": draft.model_dump(mode="json"),
-                },
-                ensure_ascii=False,
-                indent=2,
-            ),
-            response_model=SouthlandReview,
-            ai_results=ai_results,
-        )
-        assert isinstance(review, SouthlandReview)
-
-        revisions_used = 0
-        while review.decision == "revise" and revisions_used < self.max_revisions:
-            revisions_used += 1
-            draft = await self._call(
+        @executor(id="southland_analyze")
+        async def analyze(
+            packet: EvidencePacket,
+            ctx: WorkflowContext[AnalyzedStory],
+        ) -> None:
+            analysis = await self._call(
                 packet=packet,
-                stage="southland_revise",
-                revision=revisions_used,
-                instructions=REVISER_INSTRUCTIONS,
+                stage="southland_analyze",
+                instructions=ANALYST_INSTRUCTIONS,
+                prompt="Analyze this source article.\n\n" + _packet_json(packet),
+                response_model=EvidenceAnalysis,
+                ai_results=ai_results,
+            )
+            await ctx.send_message(
+                AnalyzedStory(packet=packet, analysis=analysis)
+            )
+
+        @executor(id="southland_decide")
+        async def decide(
+            state: AnalyzedStory,
+            ctx: WorkflowContext[DecidedStory],
+        ) -> None:
+            decision = await self._call(
+                packet=state.packet,
+                stage="southland_decide",
+                instructions=EDITOR_INSTRUCTIONS,
+                prompt=(
+                    "Decide whether this article should be Southlandized.\n\n"
+                    + json.dumps(
+                        {
+                            "source": state.packet.model_dump(
+                                mode="json", exclude={"text"}
+                            ),
+                            "analysis": state.analysis.model_dump(mode="json"),
+                        },
+                        ensure_ascii=False,
+                        indent=2,
+                    )
+                ),
+                response_model=SouthlandDecision,
+                ai_results=ai_results,
+            )
+            await ctx.send_message(
+                DecidedStory(
+                    packet=state.packet,
+                    analysis=state.analysis,
+                    decision=decision,
+                )
+            )
+
+        @executor(id="southland_reject_terminal")
+        async def reject_terminal(
+            state: DecidedStory,
+            ctx: WorkflowContext[Never, dict[str, Any]],
+        ) -> None:
+            result = SouthlandWorkflowResult(
+                status="rejected",
+                index_id=state.packet.index_id,
+                workflow_id=WORKFLOW_ID,
+                analysis=state.analysis,
+                decision=state.decision,
+                stage_work_ids=[row.work_id for row in ai_results],
+            )
+            await ctx.yield_output(result.model_dump(mode="json"))
+
+        @executor(id="southland_write")
+        async def write(
+            state: DecidedStory,
+            ctx: WorkflowContext[DraftedStory],
+        ) -> None:
+            draft = await self._call(
+                packet=state.packet,
+                stage="southland_write",
+                instructions=WRITER_INSTRUCTIONS,
                 prompt=json.dumps(
                     {
-                        "analysis": analysis.model_dump(mode="json"),
-                        "decision": decision.model_dump(mode="json"),
-                        "draft": draft.model_dump(mode="json"),
-                        "review": review.model_dump(mode="json"),
+                        "source": state.packet.model_dump(mode="json"),
+                        "analysis": state.analysis.model_dump(mode="json"),
+                        "decision": state.decision.model_dump(mode="json"),
                     },
                     ensure_ascii=False,
                     indent=2,
@@ -248,17 +273,31 @@ class SouthlandEditorialWorkflow:
                 response_model=SouthlandDraft,
                 ai_results=ai_results,
             )
-            assert isinstance(draft, SouthlandDraft)
+            await ctx.send_message(
+                DraftedStory(
+                    packet=state.packet,
+                    analysis=state.analysis,
+                    decision=state.decision,
+                    draft=draft,
+                    revisions_used=0,
+                )
+            )
+
+        async def run_review(
+            state: DraftedStory,
+            *,
+            stage: str,
+        ) -> ReviewedStory:
             review = await self._call(
-                packet=packet,
-                stage="southland_review_final",
-                revision=revisions_used,
+                packet=state.packet,
+                stage=stage,
+                revision=state.revisions_used,
                 instructions=REVIEWER_INSTRUCTIONS,
                 prompt=json.dumps(
                     {
-                        "analysis": analysis.model_dump(mode="json"),
-                        "decision": decision.model_dump(mode="json"),
-                        "draft": draft.model_dump(mode="json"),
+                        "analysis": state.analysis.model_dump(mode="json"),
+                        "decision": state.decision.model_dump(mode="json"),
+                        "draft": state.draft.model_dump(mode="json"),
                     },
                     ensure_ascii=False,
                     indent=2,
@@ -266,44 +305,131 @@ class SouthlandEditorialWorkflow:
                 response_model=SouthlandReview,
                 ai_results=ai_results,
             )
-            assert isinstance(review, SouthlandReview)
+            return ReviewedStory(
+                packet=state.packet,
+                analysis=state.analysis,
+                decision=state.decision,
+                draft=state.draft,
+                review=review,
+                revisions_used=state.revisions_used,
+            )
 
-        checks_pass = (
-            review.decision == "approve"
-            and review.topology_preserved
-            and review.fiction_separated
-            and review.attribution_preserved
-            and review.alias_consistent
+        @executor(id="southland_review")
+        async def review(
+            state: DraftedStory,
+            ctx: WorkflowContext[ReviewedStory],
+        ) -> None:
+            await ctx.send_message(
+                await run_review(state, stage="southland_review")
+            )
+
+        @executor(id="southland_revise")
+        async def revise(
+            state: ReviewedStory,
+            ctx: WorkflowContext[DraftedStory],
+        ) -> None:
+            draft = await self._call(
+                packet=state.packet,
+                stage="southland_revise",
+                revision=1,
+                instructions=REVISER_INSTRUCTIONS,
+                prompt=json.dumps(
+                    {
+                        "analysis": state.analysis.model_dump(mode="json"),
+                        "decision": state.decision.model_dump(mode="json"),
+                        "draft": state.draft.model_dump(mode="json"),
+                        "review": state.review.model_dump(mode="json"),
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                response_model=SouthlandDraft,
+                ai_results=ai_results,
+            )
+            await ctx.send_message(
+                DraftedStory(
+                    packet=state.packet,
+                    analysis=state.analysis,
+                    decision=state.decision,
+                    draft=draft,
+                    revisions_used=1,
+                )
+            )
+
+        @executor(id="southland_review_final")
+        async def final_review(
+            state: DraftedStory,
+            ctx: WorkflowContext[ReviewedStory],
+        ) -> None:
+            await ctx.send_message(
+                await run_review(state, stage="southland_review_final")
+            )
+
+        @executor(id="southland_review_terminal")
+        async def review_terminal(
+            state: ReviewedStory,
+            ctx: WorkflowContext[Never, dict[str, Any]],
+        ) -> None:
+            checks_pass = (
+                state.review.decision == "approve"
+                and state.review.topology_preserved
+                and state.review.fiction_separated
+                and state.review.attribution_preserved
+                and state.review.alias_consistent
+            )
+            result = SouthlandWorkflowResult(
+                status="accepted" if checks_pass else "rejected",
+                index_id=state.packet.index_id,
+                workflow_id=WORKFLOW_ID,
+                analysis=state.analysis,
+                decision=state.decision,
+                draft=state.draft,
+                review=state.review,
+                revisions_used=state.revisions_used,
+                stage_work_ids=[row.work_id for row in ai_results],
+                error="" if checks_pass else "final editorial review did not approve",
+            )
+            await ctx.yield_output(result.model_dump(mode="json"))
+
+        builder = WorkflowBuilder(
+            start_executor=analyze,
+            output_from=[reject_terminal, review_terminal],
         )
-        status = "accepted" if checks_pass else "rejected"
-        return SouthlandWorkflowResult(
-            status=status,
-            index_id=packet.index_id,
-            workflow_id=WORKFLOW_ID,
-            analysis=analysis,
-            decision=decision,
-            draft=draft,
-            review=review,
-            revisions_used=revisions_used,
-            stage_work_ids=[row.work_id for row in ai_results],
-            error="" if checks_pass else "final editorial review did not approve",
-        ).model_dump(mode="json")
+        builder.add_edge(analyze, decide)
+        builder.add_edge(
+            decide,
+            reject_terminal,
+            condition=lambda state: state.decision.decision == "reject",
+        )
+        builder.add_edge(
+            decide,
+            write,
+            condition=lambda state: state.decision.decision == "accept",
+        )
+        builder.add_edge(write, review)
+        builder.add_edge(
+            review,
+            revise,
+            condition=lambda state: (
+                state.review.decision == "revise" and self.max_revisions == 1
+            ),
+        )
+        builder.add_edge(
+            review,
+            review_terminal,
+            condition=lambda state: (
+                state.review.decision != "revise" or self.max_revisions == 0
+            ),
+        )
+        builder.add_edge(revise, final_review)
+        builder.add_edge(final_review, review_terminal)
+        return builder.build()
 
     async def run(self, packet: EvidencePacket) -> SouthlandRunEvidence:
-        # Build a fresh MAF workflow for each story.  FunctionalWorkflow instances
-        # are stateful and should be scoped to one logical caller/session.
-        from agent_framework import workflow
-
         ai_results: list[AIWorkResult] = []
-
-        @workflow
-        async def editorial_flow(payload: dict[str, Any]) -> dict[str, Any]:
-            parsed = EvidencePacket.model_validate(payload)
-            return await self._execute(parsed, ai_results)
-
-        built = editorial_flow.build()
+        workflow = self._build_graph(ai_results)
         try:
-            run_result = await built.run(packet.model_dump(mode="json"))
+            run_result = await workflow.run(packet)
             outputs = run_result.get_outputs()
             if not outputs:
                 raise SouthlandStageError("MAF workflow produced no terminal output")
@@ -320,7 +446,7 @@ class SouthlandEditorialWorkflow:
 
 
 class SouthlandEditorialNode:
-    """Outer pipeline AI node: batch stories while isolating each MAF workflow."""
+    """Outer pipeline AI node: batch stories while isolating each MAF DAG."""
 
     def __init__(
         self,
