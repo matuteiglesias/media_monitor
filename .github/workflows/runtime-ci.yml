@@ -106,6 +106,7 @@ jobs:
             tests/test_adopter_demo.py \
             tests/test_example_outlet.py \
             tests/test_outlet_runtime_isolation.py \
+            tests/test_outlet_source_evidence.py \
             tests/test_adopter_intake.py \
             tests/test_adopter_preview_bootstrap.py \
             tests/test_external_signal_import.py \
