@@ -120,9 +120,12 @@ def fetch_rss_now(feeds: Dict[str, str], limit: int | None) -> pd.DataFrame:
             link = getattr(e, "link", "") or ""
             # published string; pandas will normalize to UTC later
             published = getattr(e, "published", "") or getattr(e, "updated", "") or ""
-            # Google News may embed 'source'
+            # Direct-publisher feeds often omit the RSS <source> element.
+            # A configured outlet may provide an authoritative publisher identity;
+            # otherwise preserve the existing embedded-source / N/A behavior.
+            configured_source = os.getenv("SENSING_SOURCE_NAME", "").strip()
             src_title = getattr(getattr(e, "source", None), "title", None)
-            source = (src_title or "").strip() or "N/A"
+            source = configured_source or (src_title or "").strip() or "N/A"
 
             uid = compute_uid(title, source)
 
