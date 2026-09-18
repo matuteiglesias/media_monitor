@@ -75,6 +75,7 @@ def enrich_selected(
     minimum_successes: int = 5,
     minimum_text_chars: int = 500,
     timeout: int = 20,
+    allow_generic_fallback: bool = False,
     now: datetime | None = None,
     fetcher: Callable[[str], FetchResult] | None = None,
 ) -> dict[str, Any]:
@@ -129,7 +130,12 @@ def enrich_selected(
             },
         )
         record = enrich_one(request, timeout=timeout, fetcher=fetcher)
-        quality_ok = bool(record.ok and record.char_count >= minimum_text_chars)
+        semantic_ok = allow_generic_fallback or record.extractor != "requests_basic"
+        quality_ok = bool(
+            record.ok
+            and record.char_count >= minimum_text_chars
+            and semantic_ok
+        )
         unchanged = bool(
             quality_ok
             and record.text_hash
@@ -176,6 +182,7 @@ def enrich_selected(
         "attempted_count": len(results),
         "minimum_successes": minimum_successes,
         "minimum_text_chars": minimum_text_chars,
+        "allow_generic_fallback": allow_generic_fallback,
         "accepted_success_count": accepted_successes,
         "written_count": written,
         "skipped_unchanged_count": skipped_unchanged,
@@ -198,6 +205,11 @@ def main() -> int:
     parser.add_argument("--minimum-successes", type=int, default=5)
     parser.add_argument("--minimum-text-chars", type=int, default=500)
     parser.add_argument("--timeout", type=int, default=20)
+    parser.add_argument(
+        "--allow-generic-fallback",
+        action="store_true",
+        help="Count whole-page requests_basic extraction toward the quality gate.",
+    )
     args = parser.parse_args()
     try:
         report = enrich_selected(
@@ -208,6 +220,7 @@ def main() -> int:
             minimum_successes=args.minimum_successes,
             minimum_text_chars=args.minimum_text_chars,
             timeout=args.timeout,
+            allow_generic_fallback=args.allow_generic_fallback,
         )
     except Exception as exc:
         print(
