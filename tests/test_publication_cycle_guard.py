@@ -23,6 +23,7 @@ def write_jsonl(path: Path, rows) -> None:
 
 
 def fixture(root: Path, *, digest="20260824T18", age_minutes=30, mixed=False, count=5):
+    write_json(root / "config/policy.json", {"policy_id": "fixture"})
     write_json(
         root / "sites/argentina-general.json",
         {
@@ -30,6 +31,7 @@ def fixture(root: Path, *, digest="20260824T18", age_minutes=30, mixed=False, co
             "name": "Actualidad Argentina",
             "tagline": "Noticias recientes de Argentina",
             "locale": "es-AR",
+            "runtime": {"data_dir": "data", "storage_dir": "storage", "selection_policy": "config/policy.json"},
             "selection": {
                 "topics": ["All Topics"],
                 "max_age_hours": 3,
