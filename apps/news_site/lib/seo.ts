@@ -14,7 +14,7 @@ export function personJsonLd() {
     "@type": "Person",
     "@id": `${canonicalUrl(EDITORIAL_IDENTITY.routes.author)}#person`,
     name: editor.name,
-    jobTitle: editor.job_title ?? editor.role,
+    jobTitle: editor.role,
     description: editor.bio_short,
     url: canonicalUrl(EDITORIAL_IDENTITY.routes.author),
     sameAs: editor.same_as,
@@ -25,7 +25,7 @@ export function personJsonLd() {
 
 export function authorMetadata(): Metadata {
   const editor = EDITORIAL_IDENTITY.editor;
-  const title = `${editor.name} — ${editor.job_title ?? editor.role} | ${PUBLIC_IDENTITY.outlet_name}`;
+  const title = `${editor.name} — ${editor.role} | ${PUBLIC_IDENTITY.outlet_name}`;
   const description = `${editor.bio_short} Áreas: ${editor.expertise.slice(0, 4).join(", ")}.`;
   return {
     title,
