@@ -138,6 +138,34 @@ def test_configured_publisher_identity_overrides_rss_source(monkeypatch) -> None
     assert frame.iloc[0]["Topic"] == "Política"
 
 
+def test_cross_listed_story_uses_configured_feed_precedence(monkeypatch) -> None:
+    monkeypatch.setenv("SENSING_SOURCE_NAME", "La Política Online")
+
+    def parse(_url):
+        return SimpleNamespace(
+            entries=[
+                SimpleNamespace(
+                    title="Historia compartida",
+                    link="https://www.lapoliticaonline.com/politica/historia-compartida/",
+                    published="Fri, 18 Sep 2026 18:15:00 -0300",
+                    source=None,
+                )
+            ]
+        )
+
+    monkeypatch.setattr(stage01.feedparser, "parse", parse)
+    frame = stage01.fetch_rss_now(
+        {
+            "Política": "https://example.test/politica.xml",
+            "Provincia": "https://example.test/provincia.xml",
+        },
+        limit=None,
+    )
+
+    assert len(frame) == 1
+    assert frame.iloc[0]["Topic"] == "Política"
+
+
 def test_sensing_pipeline_routes_every_mutable_path_to_outlet_runtime(tmp_path: Path) -> None:
     fixture_site(tmp_path)
     runtime = resolve_outlet_runtime(tmp_path, "southland")
@@ -323,6 +351,59 @@ def test_selected_enrichment_yields_clean_evidence_and_replay_dedupes(tmp_path: 
     assert all("NAVEGACION QUE NO DEBE ENTRAR" not in row["text"] for row in rows)
     assert all("PIE QUE NO DEBE ENTRAR" not in row["text"] for row in rows)
     assert (storage / "indexes/enrich_latest.json").is_file()
+
+
+def test_whole_page_fallback_does_not_satisfy_clean_evidence_gate(tmp_path: Path) -> None:
+    fixture_site(tmp_path)
+    storage = tmp_path / ".runtime/southland/storage"
+    write_json(
+        storage / "indexes/editorial_selection_latest.json",
+        {
+            "schema_name": "editorial_selection.v1",
+            "selection_id": "b" * 64,
+            "digest_at": DIGEST,
+            "selected": [
+                {
+                    "rank": 1,
+                    "index_id": "fallback-1",
+                    "title": "Fallback",
+                    "topic": "Política",
+                    "published_at": "2026-09-18T21:10:00Z",
+                    "link": "https://www.lapoliticaonline.com/politica/fallback/",
+                    "source": "La Política Online",
+                    "score": 10,
+                    "score_components": {},
+                    "reason_codes": ["fresh_under_60m"],
+                }
+            ],
+        },
+    )
+
+    def fetcher(url: str) -> FetchResult:
+        html = "<html><body><div>" + ("texto largo sin semántica " * 80) + "</div></body></html>"
+        return FetchResult(
+            status_code=200,
+            final_url=url,
+            html=html,
+            byte_size=len(html.encode("utf-8")),
+            fetched_at=NOW_DT,
+        )
+
+    report = enrich_selected(
+        repo_root=tmp_path,
+        site_id="southland",
+        digest_at=DIGEST,
+        max_items=1,
+        minimum_successes=1,
+        minimum_text_chars=500,
+        now=NOW_DT,
+        fetcher=fetcher,
+    )
+
+    assert report["status"] == "failed"
+    assert report["accepted_success_count"] == 0
+    assert report["results"][0]["extractor"] == "requests_basic"
+    assert report["results"][0]["quality_ok"] is False
 
 
 def test_jsonld_article_body_is_preferred_over_page_chrome() -> None:
