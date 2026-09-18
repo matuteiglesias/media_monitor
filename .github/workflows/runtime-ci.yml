@@ -22,6 +22,7 @@ on:
       - "scripts/**"
       - "tests/**"
       - "requirements-sensing.txt"
+      - "requirements-ai.txt"
       - "Makefile"
       - ".github/PULL_REQUEST_TEMPLATE.md"
       - ".github/ISSUE_TEMPLATE/**"
@@ -74,7 +75,7 @@ jobs:
       - name: Install focused runtime test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements-sensing.txt pytest jsonschema requests PyYAML
+          python -m pip install -r requirements-ai.txt pytest jsonschema requests PyYAML
       - name: Run contract and bounded runtime suites
         run: |
           python -m pytest -q \
@@ -107,6 +108,7 @@ jobs:
             tests/test_example_outlet.py \
             tests/test_outlet_runtime_isolation.py \
             tests/test_outlet_source_evidence.py \
+            tests/test_editorial_ai_workflow.py \
             tests/test_adopter_intake.py \
             tests/test_adopter_preview_bootstrap.py \
             tests/test_external_signal_import.py \
