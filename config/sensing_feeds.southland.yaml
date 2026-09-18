@@ -1,0 +1,22 @@
+schema_version: sensing_feeds.v1
+feeds:
+  # Official La Política Online RSS channels:
+  # https://www.lapoliticaonline.com/institucional/77763-rss/
+  - topic: "Política"
+    url: "http://www.lapoliticaonline.com.ar/files/rss/politica.xml"
+  - topic: "Economía"
+    url: "http://www.lapoliticaonline.com.ar/files/rss/economia.xml"
+  - topic: "Ciudad"
+    url: "http://www.lapoliticaonline.com.ar/files/rss/ciudad.xml"
+  - topic: "Provincia"
+    url: "http://www.lapoliticaonline.com.ar/files/rss/provincia.xml"
+  - topic: "Conurbano"
+    url: "http://www.lapoliticaonline.com.ar/files/rss/conurbano.xml"
+  - topic: "Santa Fe"
+    url: "http://www.lapoliticaonline.com.ar/files/rss/santafe.xml"
+  - topic: "Judiciales"
+    url: "http://www.lapoliticaonline.com.ar/files/rss/judiciales.xml"
+  - topic: "Campo"
+    url: "http://www.lapoliticaonline.com.ar/files/rss/campo.xml"
+  - topic: "Medios"
+    url: "http://www.lapoliticaonline.com.ar/files/rss/medios.xml"
