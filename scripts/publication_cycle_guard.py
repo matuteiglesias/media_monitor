@@ -9,6 +9,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from outlet_runtime import resolve_outlet_runtime
+
 DIGEST_RE = re.compile(r"^\d{8}T\d{2}$")
 
 
@@ -106,8 +108,9 @@ def validate_predeploy(
     if not isinstance(minimum_items, int) or minimum_items <= 0:
         raise ValueError(f"{config_path}: selection.minimum_items must be positive")
 
-    refs_path = root / "storage" / "indexes" / "news_recent_refs_latest.jsonl"
-    groups_path = root / "storage" / "indexes" / "news_recent_groups_latest.jsonl"
+    runtime = resolve_outlet_runtime(root, site_id)
+    refs_path = runtime.indexes_dir / "news_recent_refs_latest.jsonl"
+    groups_path = runtime.indexes_dir / "news_recent_groups_latest.jsonl"
     refs = read_jsonl(refs_path)
     groups = read_jsonl(groups_path)
 
