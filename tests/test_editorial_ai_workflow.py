@@ -184,10 +184,10 @@ def _packet(index_id: str) -> EvidencePacket:
 
 def test_southland_maf_workflow_accepts_rejects_and_revises() -> None:
     # Import smoke: the workflow itself uses Microsoft Agent Framework's
-    # functional @workflow runtime even though the provider is deterministic.
-    from agent_framework import workflow as maf_workflow
+    # stable graph builder even though the provider is deterministic.
+    from agent_framework import WorkflowBuilder
 
-    assert callable(maf_workflow)
+    assert WorkflowBuilder is not None
     backend = FixtureBackend()
     ai_node = StructuredAINode(backend, concurrency=3, max_attempts=1)
     editorial = SouthlandEditorialNode(
