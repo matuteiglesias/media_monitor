@@ -3,6 +3,11 @@
   "name": "Media Monitor",
   "tagline": "Análisis editorial aprobado y monitoreo de señales económicas de Argentina.",
   "locale": "es-AR",
+  "runtime": {
+    "data_dir": "data",
+    "storage_dir": "storage",
+    "selection_policy": "config/editorial_selection.argentina.json"
+  },
   "selection": {
     "topics": ["All Topics"],
     "max_age_hours": 3,
