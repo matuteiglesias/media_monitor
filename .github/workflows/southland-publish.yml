@@ -1,0 +1,110 @@
+name: Southland Publish Issue
+
+on:
+  workflow_dispatch:
+    inputs:
+      prepare_run_id:
+        description: "Run ID from Southland Prepare Issue"
+        required: true
+      draft_ids:
+        description: "Comma-separated draft IDs explicitly approved after reading the prepare summary"
+        required: true
+      confirm:
+        description: "Type PUBLISH SOUTHLAND"
+        required: true
+      target:
+        type: choice
+        description: "Vercel deployment target"
+        options: [preview, production]
+        default: preview
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  publish:
+    if: inputs.confirm == 'PUBLISH SOUTHLAND'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      SOUTHLAND_VERCEL_PROJECT_ID: ${{ secrets.SOUTHLAND_VERCEL_PROJECT_ID }}
+      SOUTHLAND_PUBLIC_OUTLET_URL: ${{ vars.SOUTHLAND_PUBLIC_OUTLET_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-ai.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/news_site/package-lock.json
+      - name: Install runtime and Vercel CLI
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-ai.txt jsonschema requests PyYAML
+          npm ci --prefix apps/news_site
+          npm install --global vercel
+      - name: Download prepared issue
+        uses: actions/download-artifact@v4
+        with:
+          name: southland-prepared-${{ inputs.prepare_run_id }}
+          run-id: ${{ inputs.prepare_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .runtime/southland
+      - name: Resolve prepared digest and approve selected drafts
+        id: publish
+        shell: bash
+        run: |
+          DIGEST="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path(".runtime/southland/storage/observability/editorial_ai_latest.json")
+          print(json.loads(p.read_text())["digest_at"])
+          PY
+          )"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          IFS=',' read -ra IDS <<< "${{ inputs.draft_ids }}"
+          for raw in "${IDS[@]}"; do
+            id="$(echo "$raw" | xargs)"
+            test -n "$id"
+            python scripts/promote_draft_to_published.py               --site-id southland               --draft-id "$id"               --approve-human
+          done
+      - name: Deploy configured Southland outlet
+        run: |
+          python scripts/deploy_outlet.py             --site-id southland             --digest-at "${{ steps.publish.outputs.digest }}"             --target "${{ inputs.target }}"
+      - name: Verify canonical production surface
+        if: inputs.target == 'production'
+        run: |
+          python scripts/verify_public_deployment.py             --roll-record ".runtime/southland/storage/observability/configured_outlet_roll_latest_southland.json"             --public-identity "apps/news_site/config/public_identity.json"             --output ".runtime/southland/storage/observability/public_deployment_check_latest.json"
+          python scripts/verify_crawler_surface.py             --base-url "$SOUTHLAND_PUBLIC_OUTLET_URL"             --publication-label "Ficción satírica · aprobación humana"             > ".runtime/southland/storage/observability/crawler_surface_check_latest.json"
+      - name: Release summary
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          p=Path(".runtime/southland/storage/observability/configured_outlet_roll_latest_southland.json")
+          print("# Southland release")
+          if p.exists():
+              r=json.loads(p.read_text())
+              print(f"- Status: `{r.get('status')}`")
+              print(f"- Digest: `{r.get('digest_at')}`")
+              print(f"- Published articles: {r.get('expected',{}).get('published_article_count')}")
+              print(f"- Deployment host: {r.get('deployment_host')}")
+              if r.get("error"): print(f"- Error: {r['error']}")
+          PY
+      - name: Upload release evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: southland-release-${{ github.run_id }}
+          retention-days: 14
+          include-hidden-files: true
+          path: .runtime/southland/**

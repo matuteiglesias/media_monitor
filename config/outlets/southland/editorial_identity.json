@@ -1,22 +1,21 @@
 {
   "schema_name": "editorial_identity.v1",
-  "outlet_name": "Media Monitor",
-  "endorsement_line": "Análisis económico de Argentina — por Matías Iglesias",
+  "outlet_name": "Southland",
+  "endorsement_line": "Ficción satírica basada en hechos públicos · edición humana explícita",
   "editor": {
     "name": "Matías Iglesias",
-    "role": "Editor y autor",
-    "bio_short": "Economista (PhD) e ingeniero de datos e IA. Trabaja en la intersección entre economía argentina, datos públicos, investigación empírica y sistemas reproducibles.",
+    "role": "Editor responsable",
+    "bio_short": "Editor responsable de Southland, un experimento editorial satírico construido sobre evidencia pública, separación explícita entre hechos y ficción y aprobación humana antes de publicar.",
     "location": "Buenos Aires, Argentina",
     "credentials": [
       "PhD en Economía",
       "MSc en Física"
     ],
     "expertise": [
+      "edición satírica",
       "economía argentina",
-      "inflación y precios",
-      "tipo de cambio y reservas",
-      "actividad y empleo",
-      "datos públicos y métodos reproducibles"
+      "datos públicos",
+      "sistemas reproducibles"
     ],
     "contact": {
       "email": "matuteiglesias@gmail.com",
@@ -26,9 +25,7 @@
     },
     "same_as": [
       "https://main.matuteiglesias.link",
-      "https://www.linkedin.com/in/matiasiglesias/",
-      "https://github.com/matuteiglesias",
-      "https://thesis.matuteiglesias.link/"
+      "https://github.com/matuteiglesias"
     ]
   },
   "routes": {

@@ -240,3 +240,29 @@ a {
     gap: 0.25rem;
   }
 }
+
+.southland-home {
+  --paper: #f6edcf;
+}
+
+.southland-wordmark {
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  letter-spacing: -0.055em;
+  text-shadow: 3px 3px 0 rgba(255, 255, 255, 0.65);
+}
+
+.southland-visual {
+  box-shadow: 7px 7px 0 rgba(23, 23, 20, 0.16);
+}
+
+.southland-visual > * {
+  filter: saturate(0.95);
+}
+
+body:has(.southland-home) {
+  background:
+    linear-gradient(rgba(35, 28, 18, 0.025) 1px, transparent 1px),
+    #f6edcf;
+  background-size: 100% 5px;
+}
+

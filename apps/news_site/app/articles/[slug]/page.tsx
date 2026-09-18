@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { findArticle, loadOutlet } from "@/lib/adapter/mappers";
 import { EDITORIAL_IDENTITY } from "@/lib/editorial_identity";
+import { SITE_PRESENTATION } from "@/lib/site_presentation";
+import { ArticleVisual } from "@/components/ArticleVisual";
 import { formatPublicDate } from "@/lib/format";
 import { articleJsonLd, articleMetadata, serializeJsonLd } from "@/lib/seo";
 
@@ -26,7 +28,7 @@ function ArticleBody({ body }: { body: string }) {
 
 export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
   const article = findArticle(params.slug);
-  if (!article) return { title: `Artículo no encontrado | Media Monitor`, robots: { index: false } };
+  if (!article) return { title: `Artículo no encontrado | ${EDITORIAL_IDENTITY.outlet_name}`, robots: { index: false } };
   return articleMetadata(article);
 }
 
@@ -35,6 +37,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
   if (!article) notFound();
   const outlet = loadOutlet();
   const editor = EDITORIAL_IDENTITY.editor;
+  const publication = SITE_PRESENTATION.mode === "publication";
 
   return (
     <main className="publication-shell py-8 sm:py-12">
@@ -42,10 +45,12 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
       <div className="mx-auto max-w-4xl">
         <Link href="/" className="text-xs font-semibold uppercase tracking-[0.08em] text-stone-500 underline underline-offset-4">← Portada</Link>
         <article className="mt-8">
-          <div className="eyebrow">Análisis editorial · aprobado</div>
+          <div className="eyebrow">{SITE_PRESENTATION.publication_label}</div>
           <p className="meta-line mt-4">{outlet.site.name} · {article.topic}</p>
-          <h1 className="mt-4 text-5xl font-semibold leading-[1.02] sm:text-6xl">{article.title}</h1>
+          <h1 className={publication ? "mt-4 text-5xl font-black leading-[0.98] sm:text-7xl" : "mt-4 text-5xl font-semibold leading-[1.02] sm:text-6xl"}>{article.title}</h1>
           <p className="mt-6 max-w-3xl text-xl leading-8 text-stone-700 sm:text-2xl sm:leading-9">{article.summary}</p>
+
+          {publication ? <ArticleVisual slug={article.slug} title={article.title} className="mt-8 min-h-[23rem] border-2 border-black sm:min-h-[30rem]" /> : null}
 
           <div className="mt-7 flex flex-wrap items-center justify-between gap-5 border-y border-stone-300 py-4">
             <p className="text-sm text-stone-700">
@@ -58,21 +63,27 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
             </div>
           </div>
 
+          {publication ? (
+            <aside className="mt-7 border-2 border-black bg-[#fff8d8] p-5 text-sm leading-6 text-stone-800">
+              <strong>Qué es real y qué no:</strong> el evento de partida y sus fuentes son reales. La narración, literalizaciones, aliases y exageraciones de Southland son ficción satírica.
+            </aside>
+          ) : null}
+
           <ArticleBody body={article.body_md} />
 
           <section className="mt-14 border-t border-stone-300 pt-8">
-            <div className="section-kicker">Transparencia</div>
-            <h2 className="mt-3 text-3xl font-semibold">Evidencia y citas</h2>
+            <div className="section-kicker">{publication ? "Realidad documentada" : "Transparencia"}</div>
+            <h2 className="mt-3 text-3xl font-semibold">{publication ? "Fuentes del evento real" : "Evidencia y citas"}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-600">
-              Claims estructurados y enlaces a las fuentes utilizadas para que la lectura pueda continuar fuera de Media Monitor.
+              {SITE_PRESENTATION.source_disclosure}
             </p>
             {article.citations.length ? (
               <ol className="mt-6 grid gap-4 sm:grid-cols-2">
                 {article.citations.map((citation: any, index: number) => (
                   <li key={citation.citation_id} className="publication-surface p-5">
-                    <p className="eyebrow">Cita {String(index + 1).padStart(2, "0")}</p>
+                    <p className="eyebrow">Fuente {String(index + 1).padStart(2, "0")}</p>
                     <p className="mt-3 text-sm leading-6 text-stone-700">{citation.claim_text}</p>
-                    <a href={citation.url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-xs font-bold uppercase tracking-[0.06em] text-[#8d2b2b] underline underline-offset-4">Abrir fuente citada ↗</a>
+                    <a href={citation.url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-xs font-bold uppercase tracking-[0.06em] underline underline-offset-4">Abrir fuente real ↗</a>
                   </li>
                 ))}
               </ol>
@@ -87,7 +98,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
                 try { label = new URL(url).hostname.replace(/^www\./, ""); } catch {}
                 return (
                   <li key={url} className="py-3">
-                    <a href={url} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-4 text-sm font-semibold hover:text-[#8d2b2b]">
+                    <a href={url} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-4 text-sm font-semibold hover:underline">
                       <span>{label}</span><span aria-hidden>↗</span>
                     </a>
                   </li>

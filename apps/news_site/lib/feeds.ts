@@ -1,6 +1,7 @@
 import { EDITORIAL_IDENTITY } from "@/lib/editorial_identity";
 import { PUBLIC_IDENTITY } from "@/lib/public_identity";
 import { canonicalUrl } from "@/lib/seo";
+import { SITE_PRESENTATION } from "@/lib/site_presentation";
 
 function escapeXml(value: unknown) {
   return String(value ?? "")
@@ -23,9 +24,12 @@ export function approvedAnalysisRss(outlet: any) {
     const url = canonicalUrl(`/articles/${article.slug}`);
     return `<item>\n<title>${escapeXml(article.title)}</title>\n<link>${escapeXml(url)}</link>\n<guid isPermaLink="true">${escapeXml(url)}</guid>\n<description>${escapeXml(article.summary)}</description>\n<category>${escapeXml(article.topic)}</category>\n<author>${escapeXml(EDITORIAL_IDENTITY.editor.contact.email)} (${escapeXml(EDITORIAL_IDENTITY.editor.name)})</author>\n<pubDate>${new Date(article.published_at).toUTCString()}</pubDate>\n</item>`;
   });
+  const publication = SITE_PRESENTATION.mode === "publication";
   return rssDocument(
-    `${PUBLIC_IDENTITY.outlet_name} — análisis`,
-    "Análisis editorial human-approved de Media Monitor. No incluye titulares monitoreados de terceros.",
+    `${PUBLIC_IDENTITY.outlet_name} — ${publication ? "publicación" : "análisis"}`,
+    publication
+      ? `${SITE_PRESENTATION.publication_label}. Ficción satírica basada en hechos públicos; no incluye el cable monitoreado como contenido propio.`
+      : "Análisis editorial human-approved de Media Monitor. No incluye titulares monitoreados de terceros.",
     "/feed.xml",
     items,
   );

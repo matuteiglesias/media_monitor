@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { EDITORIAL_IDENTITY } from "@/lib/editorial_identity";
 import { PUBLIC_IDENTITY } from "@/lib/public_identity";
+import { SITE_PRESENTATION } from "@/lib/site_presentation";
 
 export function canonicalUrl(pathname: string) {
   return new URL(pathname, PUBLIC_IDENTITY.public_outlet_url).toString();
@@ -13,7 +14,7 @@ export function personJsonLd() {
     "@type": "Person",
     "@id": `${canonicalUrl(EDITORIAL_IDENTITY.routes.author)}#person`,
     name: editor.name,
-    jobTitle: "Economista y editor",
+    jobTitle: editor.role,
     description: editor.bio_short,
     url: canonicalUrl(EDITORIAL_IDENTITY.routes.author),
     sameAs: editor.same_as,
@@ -24,7 +25,7 @@ export function personJsonLd() {
 
 export function authorMetadata(): Metadata {
   const editor = EDITORIAL_IDENTITY.editor;
-  const title = `${editor.name} — economista y editor | ${PUBLIC_IDENTITY.outlet_name}`;
+  const title = `${editor.name} — ${editor.role} | ${PUBLIC_IDENTITY.outlet_name}`;
   const description = `${editor.bio_short} Áreas: ${editor.expertise.slice(0, 4).join(", ")}.`;
   return {
     title,
@@ -92,6 +93,7 @@ export function articleJsonLd(article: any) {
       url: PUBLIC_IDENTITY.public_outlet_url,
     },
     citation: article.citations.map((citation: any) => citation.url),
+    ...(SITE_PRESENTATION.mode === "publication" ? { genre: "Satire", isAccessibleForFree: true } : {}),
   };
 }
 

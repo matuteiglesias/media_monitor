@@ -9,6 +9,16 @@
     "selection_policy": "config/editorial_selection.argentina.json",
     "feed_config": "config/sensing_feeds.v1.yaml"
   },
+  "build": {
+    "public_identity": "config/outlets/argentina-general/public_identity.json",
+    "editorial_identity": "config/outlets/argentina-general/editorial_identity.json"
+  },
+  "deployment": {
+    "provider": "vercel",
+    "org_id_env": "VERCEL_ORG_ID",
+    "project_id_env": "VERCEL_PROJECT_ID",
+    "public_url_env": ""
+  },
   "selection": {
     "topics": ["All Topics"],
     "max_age_hours": 3,
@@ -17,6 +27,20 @@
   },
   "presentation": {
     "latest_count": 12,
-    "show_sources": true
+    "show_sources": true,
+    "mode": "monitor",
+    "theme": "monitor",
+    "header_kicker": "Economía argentina · monitoreo y análisis",
+    "location_label": "Buenos Aires",
+    "home_eyebrow": "Economía argentina · información para decidir qué mirar",
+    "home_title": "Lo que se mueve.\nLo que importa.",
+    "publication_label": "Análisis editorial · aprobado",
+    "publication_section_label": "Análisis actual",
+    "publication_read_label": "Leer análisis →",
+    "disclosure_short": "Las señales monitoreadas provienen de fuentes externas. El análisis propio se publica únicamente después de aprobación humana explícita.",
+    "source_disclosure": "Claims estructurados y enlaces a las fuentes utilizadas para que la lectura pueda continuar fuera de Media Monitor.",
+    "show_monitor_pulse": true,
+    "show_monitor_sections_on_home": true,
+    "show_signals_feed": true
   }
 }

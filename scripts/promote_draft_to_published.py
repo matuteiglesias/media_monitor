@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from outlet_runtime import resolve_outlet_runtime
+
 from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,23 +48,23 @@ def read_jsonl_rows(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def find_draft_path(draft_id: str) -> Path:
-    exact = DRAFT_BUS / f"{draft_id}.jsonl"
+def find_draft_path(draft_id: str, *, draft_bus: Path = DRAFT_BUS) -> Path:
+    exact = draft_bus / f"{draft_id}.jsonl"
     if exact.exists():
         return exact
     matches: list[Path] = []
-    for path in sorted(DRAFT_BUS.glob("*.jsonl")):
+    for path in sorted(draft_bus.glob("*.jsonl")):
         if any(str(row.get("draft_id") or "") == draft_id for row in read_jsonl_rows(path)):
             matches.append(path)
     if not matches:
-        raise FileNotFoundError(f"draft_id not found in {DRAFT_BUS}: {draft_id}")
+        raise FileNotFoundError(f"draft_id not found in {draft_bus}: {draft_id}")
     if len(matches) > 1:
         raise ValueError(f"draft_id found in multiple files: {', '.join(str(p) for p in matches)}")
     return matches[0]
 
 
-def load_draft(args: argparse.Namespace) -> dict[str, Any]:
-    path = Path(args.draft_path) if args.draft_path else find_draft_path(args.draft_id)
+def load_draft(args: argparse.Namespace, *, draft_bus: Path = DRAFT_BUS) -> dict[str, Any]:
+    path = Path(args.draft_path) if args.draft_path else find_draft_path(args.draft_id, draft_bus=draft_bus)
     rows = read_jsonl_rows(path)
     if args.draft_id:
         rows = [row for row in rows if str(row.get("draft_id") or "") == args.draft_id]
@@ -147,6 +149,8 @@ def main() -> int:
     group.add_argument("--draft-id")
     group.add_argument("--draft-path")
     parser.add_argument("--approve-human", action="store_true", help="Required explicit approval gate for publication")
+    parser.add_argument("--site-id", default=None, help="Configured outlet whose isolated draft/published buses should be used")
+    parser.add_argument("--repo-root", default=ROOT)
     parser.add_argument("--review-status", default="human_approved")
     parser.add_argument(
         "--published-bus-dir",
@@ -156,8 +160,14 @@ def main() -> int:
     args = parser.parse_args()
     if not args.approve_human:
         raise SystemExit("refusing to publish without --approve-human")
+    draft_bus = DRAFT_BUS
     published_bus = Path(args.published_bus_dir) if args.published_bus_dir else None
-    article, out = promote(load_draft(args), args.review_status, published_bus=published_bus)
+    if args.site_id:
+        runtime = resolve_outlet_runtime(Path(args.repo_root), args.site_id)
+        draft_bus = runtime.storage_dir / "buses" / "news_article_draft" / "v1"
+        if published_bus is None:
+            published_bus = runtime.published_bus_dir
+    article, out = promote(load_draft(args, draft_bus=draft_bus), args.review_status, published_bus=published_bus)
     print(json.dumps({"status": "ok", "article_id": article["article_id"], "slug": article["slug"], "output_path": str(out)}, indent=2))
     return 0
 
