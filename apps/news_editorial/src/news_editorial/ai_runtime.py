@@ -81,8 +81,9 @@ class StructuredAINode:
         self.backend = backend
         self.concurrency = concurrency
         self.max_attempts = max_attempts
+        self._semaphore = asyncio.Semaphore(concurrency)
 
-    async def run_one(self, item: AIWorkItem) -> AIWorkResult:
+    async def _run_one_unbounded(self, item: AIWorkItem) -> AIWorkResult:
         started = perf_counter()
         last_error: Exception | None = None
         for attempt in range(1, self.max_attempts + 1):
@@ -141,11 +142,9 @@ class StructuredAINode:
             metadata=dict(item.metadata),
         )
 
+    async def run_one(self, item: AIWorkItem) -> AIWorkResult:
+        async with self._semaphore:
+            return await self._run_one_unbounded(item)
+
     async def run_many(self, items: Sequence[AIWorkItem]) -> list[AIWorkResult]:
-        semaphore = asyncio.Semaphore(self.concurrency)
-
-        async def bounded(item: AIWorkItem) -> AIWorkResult:
-            async with semaphore:
-                return await self.run_one(item)
-
-        return list(await asyncio.gather(*(bounded(item) for item in items)))
+        return list(await asyncio.gather(*(self.run_one(item) for item in items)))
