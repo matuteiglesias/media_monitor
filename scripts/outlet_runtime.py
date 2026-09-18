@@ -17,6 +17,7 @@ class OutletRuntime:
     storage_dir: Path
     selection_policy: Path
     feed_config: Path | None = None
+    ai_config: Path | None = None
     source_name: str | None = None
 
     @property
@@ -41,6 +42,13 @@ class OutletRuntime:
                 f"{self.site_config}: runtime.feed_config is required for outlet sensing"
             )
         return self.feed_config
+
+    def require_ai_config(self) -> Path:
+        if self.ai_config is None:
+            raise ValueError(
+                f"{self.site_config}: runtime.ai_config is required for outlet AI"
+            )
+        return self.ai_config
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -104,6 +112,15 @@ def resolve_outlet_runtime(repo_root: Path, site_id: str) -> OutletRuntime:
             "runtime.feed_config",
             must_exist=True,
         )
+    ai_config = None
+    if runtime.get("ai_config") is not None:
+        ai_config = _repo_path(
+            root,
+            runtime["ai_config"],
+            "runtime.ai_config",
+            must_exist=True,
+        )
+
     source_name = runtime.get("source_name")
     if source_name is not None:
         if not isinstance(source_name, str) or not source_name.strip():
@@ -121,5 +138,6 @@ def resolve_outlet_runtime(repo_root: Path, site_id: str) -> OutletRuntime:
         storage_dir=storage_dir,
         selection_policy=selection_policy,
         feed_config=feed_config,
+        ai_config=ai_config,
         source_name=source_name,
     )

@@ -8,10 +8,13 @@
     "storage_dir": ".runtime/southland/storage",
     "selection_policy": "config/editorial_selection.southland.json",
     "feed_config": "config/sensing_feeds.southland.yaml",
-    "source_name": "La Política Online"
+    "source_name": "La Política Online",
+    "ai_config": "config/editorial_ai.southland.yaml"
   },
   "selection": {
-    "topics": ["All Topics"],
+    "topics": [
+      "All Topics"
+    ],
     "max_age_hours": 3,
     "minimum_items": 5,
     "max_items": 20

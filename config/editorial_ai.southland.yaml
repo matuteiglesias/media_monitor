@@ -1,0 +1,13 @@
+schema_version: editorial_ai.v1
+workflow_id: southland-editorial-v1
+backend:
+  kind: maf_openai
+  model_env: MEDIA_MONITOR_AI_MODEL
+  api_key_env: OPENAI_API_KEY
+execution:
+  provider_concurrency: 4
+  story_concurrency: 4
+  max_attempts: 2
+  max_revisions: 1
+  minimum_inputs: 5
+  publish_candidate_target: 3

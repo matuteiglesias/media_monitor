@@ -138,3 +138,69 @@ See operational details in [`runbook.md`](./runbook.md).
 ## Canonical documentation
 
 Use the canonical [news_editorial component guide](../../docs/components/news-editorial.md) for ownership and contracts. This app-local README and its runbook remain supporting implementation context; canonical operational procedures will be consolidated in PR-MD4.
+
+## Governed AI workflow node
+
+New outlet-specific editorial workflows can bypass the legacy PromptFlow runtime
+without changing the promoted editorial contracts. Southland is the first adopter:
+
+```text
+clean scraped_article.v1 evidence
+  -> StructuredAINode (provider-neutral work/result boundary)
+  -> Microsoft Agent Framework DAG per story
+       analyze
+       -> decide
+          -> reject
+          -> write -> review
+                       -> approve/reject
+                       -> revise -> final_review
+  -> accepted news_piece_brief.v1
+  -> accepted news_article_draft.v1
+  -> editorial_latest.json
+```
+
+The outer Media Monitor seam is
+`apps/news_editorial/src/news_editorial/ai_runtime.py`. It owns bounded
+concurrency, retry limits, per-item failure isolation, and provider/model/timing/
+usage provenance. Provider-specific code lives behind that seam; the first
+adapter is `maf_backend.py`, using Microsoft Agent Framework's
+`OpenAIChatClient` (Responses API).
+
+Southland's MAF graph is
+`apps/news_editorial/src/news_editorial/southland_workflow.py`. A fresh graph
+is built for every story so workflow state is never shared across concurrent
+items. Reject/abstain is a normal successful editorial result. Only outputs that
+pass the terminal reviewer gate are adapted into the existing brief/draft buses.
+Raw AI call evidence remains Level 0 under the outlet's generated `data/ai_runs`
+tree and is not a public/editorial contract.
+
+Install the AI runtime separately from the sensing-only environment:
+
+```bash
+python -m pip install -r requirements-ai.txt
+```
+
+For the configured Southland OpenAI backend, set the model and provider key in
+the environment and run the node for a digest that already completed milestone-2
+enrichment:
+
+```bash
+export MEDIA_MONITOR_AI_MODEL=<responses-api-model>
+export OPENAI_API_KEY=<provider-key>
+
+python scripts/run_outlet_ai.py \
+  --site-id southland \
+  --digest-at YYYYMMDDTHH
+```
+
+Configuration lives in `config/editorial_ai.southland.yaml`; secrets and model
+credentials do not. The command writes accepted briefs/drafts under the
+Southland storage root, updates `storage/indexes/editorial_latest.json` inside
+that outlet runtime, and writes
+`storage/observability/editorial_ai_latest.json` as the compact run summary.
+
+PromptFlow remains supported for the existing editorial compatibility lane.
+It is not invoked by the Southland governed-AI path. This separation is
+intentional: downstream code depends on Media Monitor contracts, not on either
+PromptFlow or Microsoft Agent Framework.
+
