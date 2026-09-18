@@ -148,7 +148,7 @@ def test_promotion_can_target_configured_southland_runtime(tmp_path, monkeypatch
         "body_md": "Body",
         "topic": "Política",
         "source_links": ["https://example.test/source"],
-        "citations": [],
+        "citations": [{"citation_id":"c1","claim_text":"Source event","source_ref_id":"source-1","url":"https://example.com/source"}],
         "status": "draft",
     }
     draft_path = tmp_path / ".runtime/southland/storage/buses/news_article_draft/v1/southland-draft-1.jsonl"
