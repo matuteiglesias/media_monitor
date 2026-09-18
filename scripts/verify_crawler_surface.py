@@ -36,7 +36,7 @@ def require(condition: bool, message: str) -> None:
         raise ValueError(message)
 
 
-def verify(base_url: str, fetch: Callable[[str], Response] = http_get) -> dict:
+def verify(base_url: str, fetch: Callable[[str], Response] = http_get, publication_label: str = "Análisis editorial · aprobado") -> dict:
     base = base_url.rstrip("/") + "/"
     robots_url = urljoin(base, "robots.txt")
     sitemap_url = urljoin(base, "sitemap.xml")
@@ -64,7 +64,7 @@ def verify(base_url: str, fetch: Callable[[str], Response] = http_get) -> dict:
     article_status = "no_approved_public_article"
     if article_url:
         html = fetch(article_url).body
-        require("Análisis editorial · aprobado" in html, "approved article page lacks publication label")
+        require(publication_label in html, "approved article page lacks configured publication label")
         require('rel="canonical"' in html or "rel='canonical'" in html, "article is missing canonical link")
         require(f'href="{article_url}"' in html or f"href='{article_url}'" in html, "article canonical URL mismatch")
         require('property="og:title"' in html, "article is missing og:title")
@@ -93,9 +93,10 @@ def verify(base_url: str, fetch: Callable[[str], Response] = http_get) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", required=True)
+    parser.add_argument("--publication-label", default="Análisis editorial · aprobado")
     args = parser.parse_args()
     try:
-        report = verify(args.base_url)
+        report = verify(args.base_url, publication_label=args.publication_label)
     except Exception as exc:
         print(json.dumps({"schema_name": "crawler_surface_check.v1", "status": "failed", "error": str(exc)}))
         return 1
