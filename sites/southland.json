@@ -11,16 +11,38 @@
     "source_name": "La Política Online",
     "ai_config": "config/editorial_ai.southland.yaml"
   },
+  "build": {
+    "public_identity": "config/outlets/southland/public_identity.json",
+    "editorial_identity": "config/outlets/southland/editorial_identity.json"
+  },
+  "deployment": {
+    "provider": "vercel",
+    "org_id_env": "VERCEL_ORG_ID",
+    "project_id_env": "SOUTHLAND_VERCEL_PROJECT_ID",
+    "public_url_env": "SOUTHLAND_PUBLIC_OUTLET_URL"
+  },
   "selection": {
-    "topics": [
-      "All Topics"
-    ],
+    "topics": ["All Topics"],
     "max_age_hours": 3,
     "minimum_items": 5,
     "max_items": 20
   },
   "presentation": {
     "latest_count": 12,
-    "show_sources": true
+    "show_sources": true,
+    "mode": "publication",
+    "theme": "southland",
+    "header_kicker": "Ficción satírica argentina · hechos públicos, universo paralelo",
+    "location_label": "Southland",
+    "home_eyebrow": "Edición actual",
+    "home_title": "Todo ocurrió.\nSólo que acá se entiende distinto.",
+    "publication_label": "Ficción satírica · aprobación humana",
+    "publication_section_label": "Historias de Southland",
+    "publication_read_label": "Entrar a la historia →",
+    "disclosure_short": "Southland es ficción satírica basada en hechos públicos. Las fuentes reales se enlazan de forma explícita y toda publicación requiere aprobación humana.",
+    "source_disclosure": "La sección de evidencia identifica las fuentes reales que sostienen el evento de partida. Los elementos de Southland son ficción y no deben leerse como afirmaciones fácticas adicionales.",
+    "show_monitor_pulse": false,
+    "show_monitor_sections_on_home": false,
+    "show_signals_feed": true
   }
 }
