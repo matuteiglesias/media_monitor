@@ -97,9 +97,10 @@ def compute_slices(anchor: datetime, recent_window_hours: int = 4) -> List[Tuple
     # four hours; low-cadence outlets may request a wider bounded window.
     if recent_window_hours < 2 or recent_window_hours > 168:
         raise ValueError("recent_window_hours must be between 2 and 168")
+    recent_label = "recent_4h_window" if recent_window_hours == 4 else "recent_window"
     out.append(
         (
-            f"recent_{recent_window_hours}h_window",
+            recent_label,
             hour - timedelta(hours=recent_window_hours - 1),
             hour + timedelta(hours=1),
         )
