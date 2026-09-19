@@ -123,7 +123,7 @@ def test_compute_slices_keeps_default_four_hours_and_supports_low_cadence_window
     widened = stage01.compute_slices(anchor, recent_window_hours=36)
 
     default_recent = next(row for row in default if row[0] == "recent_4h_window")
-    widened_recent = next(row for row in widened if row[0] == "recent_36h_window")
+    widened_recent = next(row for row in widened if row[0] == "recent_window")
     assert default_recent[1] == datetime(2026, 9, 19, 19, tzinfo=timezone.utc)
     assert default_recent[2] == datetime(2026, 9, 19, 23, tzinfo=timezone.utc)
     assert widened_recent[1] == datetime(2026, 9, 18, 11, tzinfo=timezone.utc)
