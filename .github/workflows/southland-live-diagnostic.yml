@@ -25,7 +25,7 @@ jobs:
       - name: Install sensing runtime
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements-sensing.txt requests PyYAML
+          python -m pip install -r requirements-sensing.txt requests PyYAML jsonschema
       - name: Probe configured LPO feeds
         shell: bash
         run: |
