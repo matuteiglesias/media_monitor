@@ -43,6 +43,7 @@ def test_digest_group_contract_accepts_live_recent_window():
     )
     allowed = schema["properties"]["window_type"]["enum"]
     assert "recent_4h_window" in allowed
+    assert "recent_window" in allowed
 
 
 def _raw_row(topic="Inflación y Precios"):
