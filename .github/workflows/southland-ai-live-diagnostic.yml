@@ -1,0 +1,128 @@
+name: Southland AI Live Diagnostic
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/southland-ai-live-diagnostic.yml"
+      - "apps/news_editorial/**"
+      - "tests/test_editorial_ai_workflow.py"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      MEDIA_MONITOR_AI_MODEL: ${{ vars.MEDIA_MONITOR_AI_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-ai.txt
+      - name: Install runtime
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-ai.txt jsonschema requests PyYAML
+      - name: Verify external configuration
+        run: |
+          test -n "$OPENAI_API_KEY"
+          test -n "$MEDIA_MONITOR_AI_MODEL"
+          echo "model=$MEDIA_MONITOR_AI_MODEL"
+      - name: Smoke every live structured response schema
+        shell: bash
+        run: |
+          python - <<'PY'
+          import asyncio, os
+          from apps.news_editorial.src.news_editorial.ai_runtime import AIWorkItem, StructuredAINode
+          from apps.news_editorial.src.news_editorial.maf_backend import MAFOpenAIBackend
+          from apps.news_editorial.src.news_editorial.southland_models import (
+              EvidenceAnalysis, SouthlandDecision, SouthlandDraft, SouthlandReview
+          )
+
+          cases = [
+              (
+                  "schema_analyze",
+                  EvidenceAnalysis,
+                  """Return structured evidence analysis. Use exactly one short factual_kernel item and empty arrays for every other list.""",
+              ),
+              (
+                  "schema_decide",
+                  SouthlandDecision,
+                  """Return an accept decision. Use a short reason and comic mechanism. Use one alias mapping represented according to the supplied schema. Use one preserved topology sentence and one item in each transformation list.""",
+              ),
+              (
+                  "schema_draft",
+                  SouthlandDraft,
+                  """Return a tiny fictional draft with title, summary, dek, lede, exactly one section, short body_md, and empty fact_check_flags/revision_notes.""",
+              ),
+              (
+                  "schema_review",
+                  SouthlandReview,
+                  """Return approve, empty notes, all four boolean checks true, and an empty revision_instruction.""",
+              ),
+          ]
+
+          async def main():
+              backend=MAFOpenAIBackend(
+                  model=os.environ["MEDIA_MONITOR_AI_MODEL"],
+                  api_key=os.environ["OPENAI_API_KEY"],
+              )
+              node=StructuredAINode(backend, concurrency=1, max_attempts=1)
+              for task, model, prompt in cases:
+                  item=AIWorkItem(
+                      work_id="diag_"+task,
+                      task=task,
+                      instructions="This is a structured-output schema diagnostic. Follow the response schema exactly.",
+                      prompt=prompt,
+                      response_model=model,
+                      metadata={"diagnostic": True},
+                  )
+                  result=await node.run_one(item)
+                  print(task, result.status, result.error_type or "", result.error_message or "")
+                  if not result.ok:
+                      raise SystemExit(1)
+          asyncio.run(main())
+          PY
+      - name: Exercise one real Southland story through MAF DAG
+        shell: bash
+        run: |
+          DIGEST="$(date -u +%Y%m%dT%H)"
+          python scripts/refresh_outlet_evidence.py --site-id southland --digest-at "$DIGEST"
+          python - <<'PY'
+          import asyncio, os
+          from pathlib import Path
+          from apps.news_editorial.src.news_editorial.ai_runtime import StructuredAINode
+          from apps.news_editorial.src.news_editorial.southland_workflow import SouthlandEditorialNode
+          from scripts.outlet_runtime import resolve_outlet_runtime
+          from scripts.run_outlet_ai import _load_policy, _make_backend, load_evidence_packets
+
+          async def main():
+              root=Path(".").resolve()
+              runtime=resolve_outlet_runtime(root, "southland")
+              policy=_load_policy(runtime.require_ai_config())
+              packets=load_evidence_packets(
+                  storage_dir=runtime.storage_dir,
+                  digest_at=os.popen("date -u +%Y%m%dT%H").read().strip(),
+              )
+              if not packets:
+                  raise SystemExit("no evidence packets")
+              execution=policy["execution"]
+              node=StructuredAINode(
+                  _make_backend(policy),
+                  concurrency=1,
+                  max_attempts=1,
+              )
+              editorial=SouthlandEditorialNode(node, story_concurrency=1, max_revisions=1)
+              run=(await editorial.run_many([packets[0]]))[0]
+              print("real_story_status", run.result.status)
+              print("real_story_error", run.result.error)
+              print("stages", run.result.stage_work_ids)
+              if run.result.status == "failed":
+                  raise SystemExit(1)
+          asyncio.run(main())
+          PY
