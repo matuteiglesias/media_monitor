@@ -77,6 +77,33 @@ jobs:
               newest=getattr(entries[0],"published",None) if entries else None
               print(name, "status", getattr(f,"status",None), "entries", len(entries), "newest", newest, "href", getattr(f,"href",None))
           PY
+      - name: Count unique current stories by candidate horizon
+        shell: bash
+        run: |
+          python - <<'PY'
+          import feedparser, yaml
+          from datetime import datetime, timezone
+          from email.utils import parsedate_to_datetime
+          from pathlib import Path
+          cfg=yaml.safe_load(Path("config/sensing_feeds.southland.yaml").read_text())
+          now=datetime.now(timezone.utc)
+          rows={}
+          for feed in cfg["feeds"]:
+              parsed=feedparser.parse(feed["url"])
+              for e in getattr(parsed,"entries",[]):
+                  url=getattr(e,"link","")
+                  published=getattr(e,"published","") or getattr(e,"updated","")
+                  try: dt=parsedate_to_datetime(published).astimezone(timezone.utc)
+                  except Exception: continue
+                  if url and (url not in rows or dt > rows[url][0]):
+                      rows[url]=(dt, feed["topic"], getattr(e,"title",""))
+          print("unique_total", len(rows), "newest", max((v[0] for v in rows.values()), default=None))
+          for hours in [3,6,12,24,30,36,48,72]:
+              selected=[(u,*v) for u,v in rows.items() if (now-v[0]).total_seconds() <= hours*3600]
+              print("horizon_hours", hours, "count", len(selected))
+              for u,dt,topic,title in sorted(selected,key=lambda x:x[1],reverse=True)[:12]:
+                  print(" ", dt.isoformat(), topic, title[:90])
+          PY
       - name: Run current Southland sensing pipeline with full stage output
         shell: bash
         run: |
