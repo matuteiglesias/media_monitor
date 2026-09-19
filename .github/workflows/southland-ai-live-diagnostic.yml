@@ -91,8 +91,8 @@ jobs:
       - name: Exercise one real Southland story through MAF DAG
         shell: bash
         run: |
-          DIGEST="$(date -u +%Y%m%dT%H)"
-          python scripts/refresh_outlet_evidence.py --site-id southland --digest-at "$DIGEST"
+          export DIAG_DIGEST="$(date -u +%Y%m%dT%H)"
+          python scripts/refresh_outlet_evidence.py --site-id southland --digest-at "$DIAG_DIGEST"
           python - <<'PY'
           import asyncio, os
           from pathlib import Path
@@ -107,7 +107,7 @@ jobs:
               policy=_load_policy(runtime.require_ai_config())
               packets=load_evidence_packets(
                   storage_dir=runtime.storage_dir,
-                  digest_at=os.popen("date -u +%Y%m%dT%H").read().strip(),
+                  digest_at=os.environ["DIAG_DIGEST"],
               )
               if not packets:
                   raise SystemExit("no evidence packets")
