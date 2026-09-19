@@ -135,6 +135,10 @@ class FixtureBackend:
                     fiction_separated=False,
                     attribution_preserved=True,
                     alias_consistent=True,
+                    mechanism_disciplined=True,
+                    analysis_leakage_absent=True,
+                    comic_payoff_present=True,
+                    concise_enough=True,
                     revision_instruction="Hacer explícito que la literalización ocurre sólo en Southland.",
                 )
             return SouthlandReview(
