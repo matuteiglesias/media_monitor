@@ -112,6 +112,7 @@ jobs:
           export STORAGE_DIR="$PWD/.runtime/southland/storage"
           export SENSING_FEED_CONFIG="$PWD/config/sensing_feeds.southland.yaml"
           export SENSING_SOURCE_NAME="La Política Online"
+          export SENSING_RECENT_WINDOW_HOURS=36
           export ACQUIRE_NETWORK=1 WRITE_ARTIFACTS=1 ENQUEUE_SCRAPE=0 DB_RUN_BOOKKEEPING=0 DRY_RUN=0 PYTHONPATH="$PWD"
           echo "DIGEST_AT=$DIGEST_AT"
           set -x
@@ -132,3 +133,6 @@ jobs:
           for f in "$STORAGE_DIR"/buses/news_digest_group/v1/manifest_*.json; do [ -e "$f" ] && cat "$f"; done
           echo "=== build access ==="
           python scripts/build_news_access_indexes.py --digest-at "$DIGEST_AT" --storage-dir "$STORAGE_DIR"
+          echo "=== actual refresh_outlet_evidence from clean runtime ==="
+          rm -rf .runtime/southland
+          python scripts/refresh_outlet_evidence.py --site-id southland --digest-at "$DIGEST_AT"
