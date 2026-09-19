@@ -25,12 +25,17 @@ class EvidenceAnalysis(StrictModel):
     risk_flags: list[str] = Field(default_factory=list)
 
 
+class SouthlandAlias(StrictModel):
+    real_name: str = Field(min_length=1)
+    southland_name: str = Field(min_length=1)
+
+
 class SouthlandDecision(StrictModel):
     decision: Literal["accept", "reject"]
     reason: str = Field(min_length=1)
     comic_mechanism: str = ""
     preserved_event_topology: str = ""
-    aliases: dict[str, str] = Field(default_factory=dict)
+    aliases: list[SouthlandAlias] = Field(default_factory=list)
     literalizations: list[str] = Field(default_factory=list)
     fictional_escalations: list[str] = Field(default_factory=list)
     forbidden_distortions: list[str] = Field(default_factory=list)
