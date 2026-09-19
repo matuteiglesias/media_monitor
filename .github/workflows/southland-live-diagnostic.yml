@@ -52,6 +52,31 @@ jobs:
               except Exception as e:
                   print("feedparser ERROR", type(e).__name__, e)
           PY
+      - name: Probe candidate LPO coverage feeds
+        shell: bash
+        run: |
+          python - <<'PY'
+          import feedparser
+          candidates = [
+              "ultimasnoticias.xml",
+              "congreso.xml",
+              "internacionales.xml",
+              "justicia.xml",
+              "judiciales.xml",
+              "energia.xml",
+              "energía.xml",
+              "cordoba.xml",
+              "mendoza.xml",
+              "transporte.xml",
+              "entrevista.xml",
+          ]
+          base="http://www.lapoliticaonline.com.ar/files/rss/"
+          for name in candidates:
+              f=feedparser.parse(base+name)
+              entries=getattr(f,"entries",[])
+              newest=getattr(entries[0],"published",None) if entries else None
+              print(name, "status", getattr(f,"status",None), "entries", len(entries), "newest", newest, "href", getattr(f,"href",None))
+          PY
       - name: Run current Southland sensing pipeline with full stage output
         shell: bash
         run: |
