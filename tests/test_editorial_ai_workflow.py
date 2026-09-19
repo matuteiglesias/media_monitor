@@ -25,12 +25,26 @@ from apps.news_editorial.src.news_editorial.southland_models import (
 from apps.news_editorial.src.news_editorial.southland_workflow import (
     EvidencePacket,
     SouthlandEditorialNode,
+    SouthlandEditorialPolicy,
 )
 from scripts.run_outlet_ai import run_outlet_ai
 
 
 DIGEST = "20260918T21"
 CREATED_AT = "2026-09-18T21:40:00Z"
+
+TEST_EDITORIAL_POLICY = SouthlandEditorialPolicy(
+    target_min_words=8,
+    target_max_words=40,
+    hard_min_words=5,
+    hard_max_words=80,
+    max_sections=4,
+    max_literalizations=2,
+    max_fictional_escalations=2,
+    alias_registry=(
+        SouthlandAlias(real_name="Actor público", southland_name="Actor Público del Sur"),
+    ),
+)
 
 
 class EchoModel(BaseModel):
@@ -130,6 +144,10 @@ class FixtureBackend:
                 fiction_separated=True,
                 attribution_preserved=True,
                 alias_consistent=True,
+                mechanism_disciplined=True,
+                analysis_leakage_absent=True,
+                comic_payoff_present=True,
+                concise_enough=True,
             )
         if item.task == "southland_review_final":
             return SouthlandReview(
@@ -139,6 +157,10 @@ class FixtureBackend:
                 fiction_separated=True,
                 attribution_preserved=True,
                 alias_consistent=True,
+                mechanism_disciplined=True,
+                analysis_leakage_absent=True,
+                comic_payoff_present=True,
+                concise_enough=True,
             )
         raise AssertionError(f"unexpected task {item.task}")
 
@@ -216,6 +238,7 @@ def test_southland_maf_workflow_accepts_rejects_and_revises() -> None:
         ai_node,
         story_concurrency=3,
         max_revisions=1,
+        editorial_policy=TEST_EDITORIAL_POLICY,
     )
 
     first = asyncio.run(
@@ -237,6 +260,85 @@ def test_southland_maf_workflow_accepts_rejects_and_revises() -> None:
     assert first[0].result.stage_work_ids == second[0].result.stage_work_ids
 
 
+def test_editorial_v2_revises_when_deterministic_length_gate_fails() -> None:
+    class LongDraftBackend(FixtureBackend):
+        def _value(self, item: AIWorkItem):
+            if item.task == "southland_write":
+                return SouthlandDraft(
+                    title="Southland largo",
+                    summary="Resumen",
+                    dek="Bajada",
+                    lede="Lede",
+                    sections=[{"heading": "La escena", "summary": "Resumen"}],
+                    body_md="palabra " * 120,
+                    fact_check_flags=[],
+                    revision_notes=[],
+                )
+            if item.task == "southland_revise":
+                return SouthlandDraft(
+                    title="Southland breve",
+                    summary="Resumen",
+                    dek="Bajada",
+                    lede="Lede",
+                    sections=[{"heading": "La escena", "summary": "Resumen"}],
+                    body_md="palabra " * 20,
+                    fact_check_flags=[],
+                    revision_notes=["recorte editorial"],
+                )
+            return super()._value(item)
+
+    backend = LongDraftBackend()
+    node = StructuredAINode(backend, concurrency=1, max_attempts=1)
+    editorial = SouthlandEditorialNode(
+        node,
+        story_concurrency=1,
+        max_revisions=1,
+        editorial_policy=TEST_EDITORIAL_POLICY,
+    )
+
+    run = asyncio.run(editorial.run_many([_packet("accept-long")]))[0]
+
+    assert run.result.status == "accepted"
+    assert run.result.revisions_used == 1
+    assert run.result.draft is not None
+    assert len(run.result.draft.body_md.split()) == 20
+    assert any(result.task == "southland_revise" for result in run.ai_results)
+
+
+def test_editorial_v2_rejects_unregistered_alias_before_writing() -> None:
+    class BadAliasBackend(FixtureBackend):
+        def _value(self, item: AIWorkItem):
+            if item.task == "southland_decide":
+                return SouthlandDecision(
+                    decision="accept",
+                    reason="Mechanism otherwise works.",
+                    comic_mechanism="un mecanismo único",
+                    preserved_event_topology="A hace B.",
+                    aliases=[{"real_name": "Actor público", "southland_name": "Alias improvisado"}],
+                    literalizations=["literalización"],
+                    fictional_escalations=[],
+                    forbidden_distortions=[],
+                )
+            return super()._value(item)
+
+    backend = BadAliasBackend()
+    node = StructuredAINode(backend, concurrency=1, max_attempts=1)
+    editorial = SouthlandEditorialNode(
+        node,
+        story_concurrency=1,
+        max_revisions=1,
+        editorial_policy=TEST_EDITORIAL_POLICY,
+    )
+
+    run = asyncio.run(editorial.run_many([_packet("accept-badalias")]))[0]
+
+    assert run.result.status == "rejected"
+    assert [result.task for result in run.ai_results] == [
+        "southland_analyze",
+        "southland_decide",
+    ]
+
+
 def write_json(path: Path, value) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -252,9 +354,17 @@ def write_jsonl(path: Path, rows: list[dict]) -> None:
 
 def seed_outlet(tmp_path: Path) -> None:
     (tmp_path / "config").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "config/aliases.yaml").write_text(
+        """schema_version: southland_aliases.v1
+aliases:
+  - real_name: Actor público
+    southland_name: Actor Público del Sur
+""",
+        encoding="utf-8",
+    )
     (tmp_path / "config/editorial_ai.southland.yaml").write_text(
         """schema_version: editorial_ai.v1
-workflow_id: southland-editorial-v1
+workflow_id: southland-editorial-v2
 backend:
   kind: maf_openai
   model_env: MEDIA_MONITOR_AI_MODEL
@@ -266,6 +376,15 @@ execution:
   max_revisions: 1
   minimum_inputs: 5
   publish_candidate_target: 3
+editorial:
+  alias_registry: config/aliases.yaml
+  target_min_words: 8
+  target_max_words: 40
+  hard_min_words: 5
+  hard_max_words: 80
+  max_sections: 4
+  max_literalizations: 2
+  max_fictional_escalations: 2
 """,
         encoding="utf-8",
     )
@@ -419,7 +538,7 @@ def test_outlet_ai_materializes_only_approved_contract_artifacts_and_replays(tmp
     for brief in briefs:
         validate_piece_brief(brief)
         assert brief["meta"]["editorial_mode"] == "satirical_mirror"
-        assert brief["meta"]["workflow_id"] == "southland-editorial-v1"
+        assert brief["meta"]["workflow_id"] == "southland-editorial-v2"
         assert brief["source_refs"][0]["source"] == "La Política Online"
     for draft in drafts:
         validate_article_draft(draft)
