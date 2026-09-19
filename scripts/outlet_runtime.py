@@ -19,6 +19,7 @@ class OutletRuntime:
     feed_config: Path | None = None
     ai_config: Path | None = None
     source_name: str | None = None
+    sensing_recent_window_hours: int = 4
 
     @property
     def indexes_dir(self) -> Path:
@@ -121,6 +122,12 @@ def resolve_outlet_runtime(repo_root: Path, site_id: str) -> OutletRuntime:
             must_exist=True,
         )
 
+    recent_window = runtime.get("sensing_recent_window_hours", 4)
+    if not isinstance(recent_window, int) or not (2 <= recent_window <= 168):
+        raise ValueError(
+            f"{config_path}: runtime.sensing_recent_window_hours must be an integer between 2 and 168"
+        )
+
     source_name = runtime.get("source_name")
     if source_name is not None:
         if not isinstance(source_name, str) or not source_name.strip():
@@ -140,4 +147,5 @@ def resolve_outlet_runtime(repo_root: Path, site_id: str) -> OutletRuntime:
         feed_config=feed_config,
         ai_config=ai_config,
         source_name=source_name,
+        sensing_recent_window_hours=recent_window,
     )
