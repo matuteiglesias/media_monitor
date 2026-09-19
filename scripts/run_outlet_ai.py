@@ -29,10 +29,12 @@ from apps.news_editorial.src.news_editorial.draft_bus_writer import write_articl
 from apps.news_editorial.src.news_editorial.maf_backend import MAFOpenAIBackend
 from apps.news_editorial.src.news_editorial.piece_brief_bus import write_piece_brief
 from apps.news_editorial.src.news_editorial.slugs import slugify
+from apps.news_editorial.src.news_editorial.southland_models import SouthlandAlias
 from apps.news_editorial.src.news_editorial.southland_workflow import (
     WORKFLOW_ID,
     EvidencePacket,
     SouthlandEditorialNode,
+    SouthlandEditorialPolicy,
     SouthlandRunEvidence,
     ai_result_record,
 )
@@ -89,8 +91,11 @@ def _load_policy(path: Path) -> dict[str, Any]:
         )
     backend = value.get("backend")
     execution = value.get("execution")
+    editorial = value.get("editorial")
     if not isinstance(backend, dict) or not isinstance(execution, dict):
         raise ValueError(f"{path}: backend and execution must be objects")
+    if not isinstance(editorial, dict):
+        raise ValueError(f"{path}: editorial must be an object")
     if backend.get("kind") != "maf_openai":
         raise ValueError(f"{path}: unsupported backend.kind={backend.get('kind')!r}")
     for key in (
@@ -103,7 +108,51 @@ def _load_policy(path: Path) -> dict[str, Any]:
     ):
         if not isinstance(execution.get(key), int):
             raise ValueError(f"{path}: execution.{key} must be an integer")
+    for key in (
+        "target_min_words",
+        "target_max_words",
+        "hard_min_words",
+        "hard_max_words",
+        "max_sections",
+        "max_literalizations",
+        "max_fictional_escalations",
+    ):
+        if not isinstance(editorial.get(key), int):
+            raise ValueError(f"{path}: editorial.{key} must be an integer")
+    if not isinstance(editorial.get("alias_registry"), str) or not editorial["alias_registry"].strip():
+        raise ValueError(f"{path}: editorial.alias_registry must be a repository-relative path")
     return value
+
+
+def _load_editorial_policy(repo_root: Path, policy: dict[str, Any]) -> SouthlandEditorialPolicy:
+    editorial = policy["editorial"]
+    root = repo_root.resolve()
+    alias_path = (root / editorial["alias_registry"]).resolve()
+    try:
+        alias_path.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("editorial.alias_registry escapes repository root") from exc
+    if not alias_path.is_file():
+        raise ValueError(f"missing Southland alias registry: {alias_path}")
+
+    alias_value = yaml.safe_load(alias_path.read_text(encoding="utf-8"))
+    if not isinstance(alias_value, dict) or alias_value.get("schema_version") != "southland_aliases.v1":
+        raise ValueError(f"{alias_path}: expected schema_version southland_aliases.v1")
+    rows = alias_value.get("aliases")
+    if not isinstance(rows, list):
+        raise ValueError(f"{alias_path}: aliases must be a list")
+    aliases = tuple(SouthlandAlias.model_validate(row) for row in rows)
+
+    return SouthlandEditorialPolicy(
+        target_min_words=int(editorial["target_min_words"]),
+        target_max_words=int(editorial["target_max_words"]),
+        hard_min_words=int(editorial["hard_min_words"]),
+        hard_max_words=int(editorial["hard_max_words"]),
+        max_sections=int(editorial["max_sections"]),
+        max_literalizations=int(editorial["max_literalizations"]),
+        max_fictional_escalations=int(editorial["max_fictional_escalations"]),
+        alias_registry=aliases,
+    )
 
 
 def _make_backend(policy: dict[str, Any]) -> StructuredAIBackend:
@@ -380,6 +429,7 @@ async def run_outlet_ai(
     runtime = resolve_outlet_runtime(repo_root, site_id)
     policy = _load_policy(runtime.require_ai_config())
     execution = policy["execution"]
+    editorial_policy = _load_editorial_policy(repo_root, policy)
     packets = load_evidence_packets(
         storage_dir=runtime.storage_dir,
         digest_at=digest_at,
@@ -400,6 +450,7 @@ async def run_outlet_ai(
         ai_node,
         story_concurrency=int(execution["story_concurrency"]),
         max_revisions=int(execution["max_revisions"]),
+        editorial_policy=editorial_policy,
     )
     runs = await editorial_node.run_many(packets)
 
@@ -456,6 +507,16 @@ async def run_outlet_ai(
         "site_id": site_id,
         "digest_at": digest_at,
         "workflow_id": WORKFLOW_ID,
+        "editorial_policy": {
+            "target_min_words": editorial_policy.target_min_words,
+            "target_max_words": editorial_policy.target_max_words,
+            "hard_min_words": editorial_policy.hard_min_words,
+            "hard_max_words": editorial_policy.hard_max_words,
+            "max_sections": editorial_policy.max_sections,
+            "max_literalizations": editorial_policy.max_literalizations,
+            "max_fictional_escalations": editorial_policy.max_fictional_escalations,
+            "alias_count": len(editorial_policy.alias_registry),
+        },
         "backend": selected_backend.backend_name,
         "provider": selected_backend.provider_name,
         "model": selected_backend.model_name,
