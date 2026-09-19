@@ -3,6 +3,7 @@ import asyncio
 from dataclasses import asdict, dataclass
 import hashlib
 import json
+import re
 from typing import Any, Never, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -10,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from .ai_runtime import AIWorkItem, AIWorkResult, StructuredAINode
 from .southland_models import (
     EvidenceAnalysis,
+    SouthlandAlias,
     SouthlandDecision,
     SouthlandDraft,
     SouthlandReview,
@@ -17,7 +19,29 @@ from .southland_models import (
 )
 
 
-WORKFLOW_ID = "southland-editorial-v1"
+WORKFLOW_ID = "southland-editorial-v2"
+
+
+@dataclass(frozen=True)
+class SouthlandEditorialPolicy:
+    target_min_words: int = 450
+    target_max_words: int = 700
+    hard_min_words: int = 300
+    hard_max_words: int = 850
+    max_sections: int = 4
+    max_literalizations: int = 2
+    max_fictional_escalations: int = 2
+    alias_registry: tuple[SouthlandAlias, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not (1 <= self.hard_min_words <= self.target_min_words):
+            raise ValueError("hard_min_words must be positive and <= target_min_words")
+        if not (self.target_min_words <= self.target_max_words <= self.hard_max_words):
+            raise ValueError("target word bounds must sit inside hard word bounds")
+        if self.max_sections < 1:
+            raise ValueError("max_sections must be positive")
+        if self.max_literalizations < 0 or self.max_fictional_escalations < 0:
+            raise ValueError("fictional-device limits must be non-negative")
 
 
 class EvidencePacket(BaseModel):
@@ -92,39 +116,95 @@ def _packet_json(packet: EvidencePacket) -> str:
     )
 
 
+def _word_count(value: str) -> int:
+    return len(re.findall(r"\b[\wÁÉÍÓÚáéíóúÑñÜü]+\b", value, flags=re.UNICODE))
+
+
+def draft_metrics(draft: SouthlandDraft, policy: SouthlandEditorialPolicy) -> dict[str, Any]:
+    words = _word_count(draft.body_md)
+    sections = len(draft.sections)
+    return {
+        "word_count": words,
+        "section_count": sections,
+        "target_min_words": policy.target_min_words,
+        "target_max_words": policy.target_max_words,
+        "hard_min_words": policy.hard_min_words,
+        "hard_max_words": policy.hard_max_words,
+        "max_sections": policy.max_sections,
+        "target_length_ok": policy.target_min_words <= words <= policy.target_max_words,
+        "hard_length_ok": policy.hard_min_words <= words <= policy.hard_max_words,
+        "section_count_ok": sections <= policy.max_sections,
+    }
+
+
 ANALYST_INSTRUCTIONS = """You are the evidence analyst inside a satirical-news editorial system.
 Work only from the supplied source article. Separate documented facts/actions from attributed claims,
 publisher interpretation, and uncertainty. Do not infer private motives. Do not invent quotations,
-events, crimes, relationships, or factual details. Humor is not your task. Return concise structured
-analysis suitable for a later editor."""
+events, crimes, relationships, or factual details. Humor is not your task. Be concise: identify the
+small factual kernel and the few uncertainties that materially constrain a later satire editor."""
 
 EDITOR_INSTRUCTIONS = """You are the Southland editorial gate. Southland is a clearly fictional,
-deadpan satirical mirror of Argentine public news. Decide whether the supplied evidence has a strong,
-story-specific comic mechanism. Preserve the real event topology while allowing metaphors,
-euphemisms, prestige games, incentives, and institutional absurdities to become literal in fiction.
-Reject weak stories rather than forcing a joke. Do not advocate for or against political actors,
-parties, policies, votes, or electoral choices. Never invent direct quotations, criminal conduct,
-private facts, or unsupported factual allegations. Clearly list transformations that a writer must
-not blur back into factual claims."""
+deadpan satirical mirror of Argentine public news.
 
-WRITER_INSTRUCTIONS = """Write a Southland article from the approved transformation plan.
-Use dry straight-news prose in an obviously fictional satirical universe. Keep the underlying event
-topology recognizable, but keep fictional escalation distinct from sourced reality. Do not invent
-quotes. Do not turn publisher interpretation into fact. Do not tell readers how to vote or support
-or oppose political actors. Escalate modestly rather than piling on unrelated absurdity. Produce a
-complete article draft, not notes."""
+Accept only when there is ONE strong, story-specific comic mechanism that can carry a compact article.
+The mechanism should expose or literalize something already structurally present in the real event:
+an incentive, euphemism, institutional ritual, market convention, prestige game, bureaucratic rule,
+or contradiction. Reject stories whose joke would mainly be renaming people, stacking metaphors,
+retelling a complicated hypothetical scenario, or explaining the source with decorative absurdity.
 
-REVIEWER_INSTRUCTIONS = """Review a Southland draft against its source analysis and transformation
-plan. Check: event topology is preserved; fiction is not presented as sourced fact; attribution is
-preserved; aliases are internally consistent; no invented quotations or unsupported factual
-accusations appear; no political advocacy or voting recommendation appears. Approve only when all
-checks pass. If fixable, request one concrete revision. Reject if the transformation is fundamentally
-unsafe or detached from the source."""
+Preserve the real event topology. Reject rather than forcing a joke. Never advocate for or against a
+political actor, party, policy, vote, or electoral choice. Never invent real quotations, criminal
+conduct, private facts, or unsupported factual allegations.
 
-REVISER_INSTRUCTIONS = """Revise the Southland draft only as instructed by the reviewer. Preserve
-the approved comic mechanism and sourced event topology. Remove or repair any factual/fictional
-blurring, attribution loss, alias inconsistency, invented quotation, unsupported allegation, or
-political advocacy. Return a complete replacement draft."""
+Alias discipline is strict: use ONLY aliases present in the supplied canonical alias registry.
+If an actor/entity has no canonical alias, keep the real public name. Do not invent a new alias.
+Use no more fictional devices than the supplied editorial policy allows. The writer should be able
+to express the dominant mechanism in one sentence and reuse it economically rather than introducing
+a new conceit in every section."""
+
+WRITER_INSTRUCTIONS = """Write a compact Southland article from the approved transformation plan.
+
+Use dry straight-news prose in an obviously fictional satirical universe. ONE dominant comic
+mechanism should organize the article. Do not add unrelated metaphors, departments, machines,
+inspectors, counters, terminals, forms, weather systems, or other comic furniture merely to sustain
+length. Stop the joke before it is exhausted.
+
+Aim for the target word range and section count supplied in the editorial policy. Prefer 2-4 short
+sections. The result should read like a newspaper story, not a research memo.
+
+Preserve the sourced event topology. Do not invent quotes. Do not turn publisher interpretation into
+fact. Attribute material claims once where needed. Do not repeatedly leak analyst language such as
+"no está confirmado", "no implica", "no existe evidencia", "según el material analizado", or long
+methodological caveats into the body when the same safety can be achieved by simply not asserting
+the unsupported claim. The public article already has a reality/fiction disclosure and source links.
+
+Use only the aliases explicitly approved in the transformation plan; otherwise retain real public
+names. Do not tell readers how to vote or support/oppose political actors. Produce the complete
+article draft, not notes."""
+
+REVIEWER_INSTRUCTIONS = """Act as a strict Southland editor, not only a safety checker.
+
+Check factual integrity: event topology preserved, fiction clearly separate from sourced reality,
+material attribution preserved, canonical aliases followed, no invented quotation, unsupported
+factual accusation, or political advocacy.
+
+Also check editorial quality:
+- ONE dominant mechanism carries the piece;
+- the mechanism has an actual comic payoff rather than merely translating the source into metaphor;
+- the writer does not introduce multiple competing conceits;
+- source-analysis/caveat language does not leak repeatedly into the prose;
+- the draft is compact and within the supplied target whenever practical;
+- the joke stops before it is exhausted.
+
+Use the deterministic draft metrics supplied with the prompt. A draft outside hard word/section
+bounds cannot be approved. If the story is fundamentally weak, reject it. If it is good but bloated,
+over-explained, or mechanically repetitive, request ONE concrete rewrite rather than approving it."""
+
+REVISER_INSTRUCTIONS = """Rewrite the Southland draft decisively in response to the review.
+Do not merely patch individual sentences. Preserve the approved single comic mechanism and the real
+event topology, but cut aggressively. Remove repeated caveats, duplicate explanations, extra comic
+devices, and unnecessary sections. Hit the target word range if possible and stay inside the hard
+bounds. Use only canonical approved aliases. Return a complete replacement draft."""
 
 
 class SouthlandEditorialWorkflow:
@@ -143,11 +223,90 @@ class SouthlandEditorialWorkflow:
         ai_node: StructuredAINode,
         *,
         max_revisions: int = 1,
+        editorial_policy: SouthlandEditorialPolicy | None = None,
     ) -> None:
         if max_revisions not in {0, 1}:
-            raise ValueError("Southland v1 supports max_revisions of 0 or 1")
+            raise ValueError("Southland v2 supports max_revisions of 0 or 1")
         self.ai_node = ai_node
         self.max_revisions = max_revisions
+        self.editorial_policy = editorial_policy or SouthlandEditorialPolicy()
+
+    def _policy_payload(self) -> dict[str, Any]:
+        policy = self.editorial_policy
+        return {
+            "target_min_words": policy.target_min_words,
+            "target_max_words": policy.target_max_words,
+            "hard_min_words": policy.hard_min_words,
+            "hard_max_words": policy.hard_max_words,
+            "max_sections": policy.max_sections,
+            "max_literalizations": policy.max_literalizations,
+            "max_fictional_escalations": policy.max_fictional_escalations,
+        }
+
+    def _alias_payload(self) -> list[dict[str, str]]:
+        return [alias.model_dump(mode="json") for alias in self.editorial_policy.alias_registry]
+
+    def _aliases_are_canonical(self, decision: SouthlandDecision) -> bool:
+        allowed = {
+            alias.real_name.casefold(): alias.southland_name.casefold()
+            for alias in self.editorial_policy.alias_registry
+        }
+        seen: set[str] = set()
+        for alias in decision.aliases:
+            key = alias.real_name.casefold()
+            if key in seen:
+                return False
+            seen.add(key)
+            if allowed.get(key) != alias.southland_name.casefold():
+                return False
+        return True
+
+    def _decision_passes_gate(self, decision: SouthlandDecision) -> bool:
+        if decision.decision != "accept" or not decision.comic_mechanism.strip():
+            return False
+        if len(decision.literalizations) > self.editorial_policy.max_literalizations:
+            return False
+        if len(decision.fictional_escalations) > self.editorial_policy.max_fictional_escalations:
+            return False
+        return self._aliases_are_canonical(decision)
+
+    def _review_style_checks(self, review: SouthlandReview) -> bool:
+        return (
+            review.mechanism_disciplined
+            and review.analysis_leakage_absent
+            and review.comic_payoff_present
+            and review.concise_enough
+        )
+
+    def _review_safety_checks(self, review: SouthlandReview) -> bool:
+        return (
+            review.topology_preserved
+            and review.fiction_separated
+            and review.attribution_preserved
+            and review.alias_consistent
+        )
+
+    def _needs_revision(self, state: ReviewedStory) -> bool:
+        if state.review.decision == "reject" or self.max_revisions == 0:
+            return False
+        metrics = draft_metrics(state.draft, self.editorial_policy)
+        return (
+            state.review.decision == "revise"
+            or not self._review_safety_checks(state.review)
+            or not self._review_style_checks(state.review)
+            or not metrics["hard_length_ok"]
+            or not metrics["section_count_ok"]
+        )
+
+    def _terminal_accepts(self, state: ReviewedStory) -> bool:
+        metrics = draft_metrics(state.draft, self.editorial_policy)
+        return (
+            state.review.decision == "approve"
+            and self._review_safety_checks(state.review)
+            and self._review_style_checks(state.review)
+            and metrics["hard_length_ok"]
+            and metrics["section_count_ok"]
+        )
 
     async def _call(
         self,
@@ -198,9 +357,7 @@ class SouthlandEditorialWorkflow:
                 response_model=EvidenceAnalysis,
                 ai_results=ai_results,
             )
-            await ctx.send_message(
-                AnalyzedStory(packet=packet, analysis=analysis)
-            )
+            await ctx.send_message(AnalyzedStory(packet=packet, analysis=analysis))
 
         @executor(id="southland_decide")
         async def decide(
@@ -211,18 +368,16 @@ class SouthlandEditorialWorkflow:
                 packet=state.packet,
                 stage="southland_decide",
                 instructions=EDITOR_INSTRUCTIONS,
-                prompt=(
-                    "Decide whether this article should be Southlandized.\n\n"
-                    + json.dumps(
-                        {
-                            "source": state.packet.model_dump(
-                                mode="json", exclude={"text"}
-                            ),
-                            "analysis": state.analysis.model_dump(mode="json"),
-                        },
-                        ensure_ascii=False,
-                        indent=2,
-                    )
+                prompt=json.dumps(
+                    {
+                        "instruction": "Decide whether this article should be Southlandized.",
+                        "source": state.packet.model_dump(mode="json", exclude={"text"}),
+                        "analysis": state.analysis.model_dump(mode="json"),
+                        "editorial_policy": self._policy_payload(),
+                        "canonical_alias_registry": self._alias_payload(),
+                    },
+                    ensure_ascii=False,
+                    indent=2,
                 ),
                 response_model=SouthlandDecision,
                 ai_results=ai_results,
@@ -247,6 +402,11 @@ class SouthlandEditorialWorkflow:
                 analysis=state.analysis,
                 decision=state.decision,
                 stage_work_ids=[row.work_id for row in ai_results],
+                error=(
+                    ""
+                    if state.decision.decision == "reject"
+                    else "editorial decision failed deterministic mechanism/alias discipline"
+                ),
             )
             await ctx.yield_output(result.model_dump(mode="json"))
 
@@ -264,6 +424,7 @@ class SouthlandEditorialWorkflow:
                         "source": state.packet.model_dump(mode="json"),
                         "analysis": state.analysis.model_dump(mode="json"),
                         "decision": state.decision.model_dump(mode="json"),
+                        "editorial_policy": self._policy_payload(),
                     },
                     ensure_ascii=False,
                     indent=2,
@@ -286,6 +447,7 @@ class SouthlandEditorialWorkflow:
             *,
             stage: str,
         ) -> ReviewedStory:
+            metrics = draft_metrics(state.draft, self.editorial_policy)
             review = await self._call(
                 packet=state.packet,
                 stage=stage,
@@ -296,6 +458,9 @@ class SouthlandEditorialWorkflow:
                         "analysis": state.analysis.model_dump(mode="json"),
                         "decision": state.decision.model_dump(mode="json"),
                         "draft": state.draft.model_dump(mode="json"),
+                        "draft_metrics": metrics,
+                        "editorial_policy": self._policy_payload(),
+                        "canonical_alias_registry": self._alias_payload(),
                     },
                     ensure_ascii=False,
                     indent=2,
@@ -317,9 +482,7 @@ class SouthlandEditorialWorkflow:
             state: DraftedStory,
             ctx: WorkflowContext[ReviewedStory],
         ) -> None:
-            await ctx.send_message(
-                await run_review(state, stage="southland_review")
-            )
+            await ctx.send_message(await run_review(state, stage="southland_review"))
 
         @executor(id="southland_revise")
         async def revise(
@@ -337,6 +500,9 @@ class SouthlandEditorialWorkflow:
                         "decision": state.decision.model_dump(mode="json"),
                         "draft": state.draft.model_dump(mode="json"),
                         "review": state.review.model_dump(mode="json"),
+                        "draft_metrics": draft_metrics(state.draft, self.editorial_policy),
+                        "editorial_policy": self._policy_payload(),
+                        "canonical_alias_registry": self._alias_payload(),
                     },
                     ensure_ascii=False,
                     indent=2,
@@ -368,13 +534,8 @@ class SouthlandEditorialWorkflow:
             state: ReviewedStory,
             ctx: WorkflowContext[Never, dict[str, Any]],
         ) -> None:
-            checks_pass = (
-                state.review.decision == "approve"
-                and state.review.topology_preserved
-                and state.review.fiction_separated
-                and state.review.attribution_preserved
-                and state.review.alias_consistent
-            )
+            checks_pass = self._terminal_accepts(state)
+            metrics = draft_metrics(state.draft, self.editorial_policy)
             result = SouthlandWorkflowResult(
                 status="accepted" if checks_pass else "rejected",
                 index_id=state.packet.index_id,
@@ -385,7 +546,14 @@ class SouthlandEditorialWorkflow:
                 review=state.review,
                 revisions_used=state.revisions_used,
                 stage_work_ids=[row.work_id for row in ai_results],
-                error="" if checks_pass else "final editorial review did not approve",
+                error=(
+                    ""
+                    if checks_pass
+                    else (
+                        "final editorial quality gate did not approve "
+                        f"(words={metrics['word_count']}, sections={metrics['section_count']})"
+                    )
+                ),
             )
             await ctx.yield_output(result.model_dump(mode="json"))
 
@@ -397,27 +565,23 @@ class SouthlandEditorialWorkflow:
         builder.add_edge(
             decide,
             reject_terminal,
-            condition=lambda state: state.decision.decision == "reject",
+            condition=lambda state: not self._decision_passes_gate(state.decision),
         )
         builder.add_edge(
             decide,
             write,
-            condition=lambda state: state.decision.decision == "accept",
+            condition=lambda state: self._decision_passes_gate(state.decision),
         )
         builder.add_edge(write, review)
         builder.add_edge(
             review,
             revise,
-            condition=lambda state: (
-                state.review.decision == "revise" and self.max_revisions == 1
-            ),
+            condition=lambda state: self._needs_revision(state),
         )
         builder.add_edge(
             review,
             review_terminal,
-            condition=lambda state: (
-                state.review.decision != "revise" or self.max_revisions == 0
-            ),
+            condition=lambda state: not self._needs_revision(state),
         )
         builder.add_edge(revise, final_review)
         builder.add_edge(final_review, review_terminal)
@@ -452,12 +616,14 @@ class SouthlandEditorialNode:
         *,
         story_concurrency: int = 4,
         max_revisions: int = 1,
+        editorial_policy: SouthlandEditorialPolicy | None = None,
     ) -> None:
         if story_concurrency < 1:
             raise ValueError("story_concurrency must be positive")
         self.ai_node = ai_node
         self.story_concurrency = story_concurrency
         self.max_revisions = max_revisions
+        self.editorial_policy = editorial_policy or SouthlandEditorialPolicy()
 
     async def run_many(
         self, packets: Sequence[EvidencePacket]
@@ -469,6 +635,7 @@ class SouthlandEditorialNode:
                 workflow_runner = SouthlandEditorialWorkflow(
                     self.ai_node,
                     max_revisions=self.max_revisions,
+                    editorial_policy=self.editorial_policy,
                 )
                 return await workflow_runner.run(packet)
 
