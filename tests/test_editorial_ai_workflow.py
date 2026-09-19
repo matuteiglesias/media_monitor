@@ -18,6 +18,7 @@ from apps.news_editorial.src.news_editorial.piece_brief_bus import validate_piec
 from apps.news_editorial.src.news_editorial.southland_models import (
     EvidenceAnalysis,
     SouthlandDecision,
+    SouthlandAlias,
     SouthlandDraft,
     SouthlandReview,
 )
@@ -140,6 +141,27 @@ class FixtureBackend:
                 alias_consistent=True,
             )
         raise AssertionError(f"unexpected task {item.task}")
+
+
+def _assert_no_open_ended_objects(schema: dict) -> None:
+    if not isinstance(schema, dict):
+        return
+    if schema.get("type") == "object":
+        additional = schema.get("additionalProperties")
+        assert not isinstance(additional, dict), schema
+    for value in schema.values():
+        if isinstance(value, dict):
+            _assert_no_open_ended_objects(value)
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    _assert_no_open_ended_objects(item)
+
+
+def test_live_structured_models_do_not_expose_open_ended_object_maps() -> None:
+    assert SouthlandAlias(real_name="A", southland_name="B").southland_name == "B"
+    for model in (EvidenceAnalysis, SouthlandDecision, SouthlandDraft, SouthlandReview):
+        _assert_no_open_ended_objects(model.model_json_schema())
 
 
 def test_structured_ai_node_bounds_concurrency_and_retries_per_item() -> None:
