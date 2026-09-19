@@ -1,7 +1,7 @@
 {
-  "policy_id": "southland-v2",
-  "policy_version": "2",
-  "max_age_minutes": 180,
+  "policy_id": "southland-v3",
+  "policy_version": "3",
+  "max_age_minutes": 2160,
   "future_tolerance_minutes": 5,
   "minimum_items": 5,
   "max_items": 10,
@@ -14,14 +14,36 @@
     "Ciudad": 7,
     "Conurbano": 7,
     "Santa Fe": 6,
-    "Judiciales": 6,
+    "Justicia": 6,
     "Campo": 5,
     "Medios": 5
   },
   "freshness_buckets": [
-    {"max_age_minutes": 60, "score": 30, "reason_code": "fresh_under_60m"},
-    {"max_age_minutes": 120, "score": 20, "reason_code": "fresh_under_120m"},
-    {"max_age_minutes": 180, "score": 10, "reason_code": "fresh_under_180m"}
+    {
+      "max_age_minutes": 60,
+      "score": 30,
+      "reason_code": "fresh_under_60m"
+    },
+    {
+      "max_age_minutes": 180,
+      "score": 20,
+      "reason_code": "fresh_under_180m"
+    },
+    {
+      "max_age_minutes": 720,
+      "score": 12,
+      "reason_code": "fresh_under_12h"
+    },
+    {
+      "max_age_minutes": 1440,
+      "score": 6,
+      "reason_code": "fresh_under_24h"
+    },
+    {
+      "max_age_minutes": 2160,
+      "score": 2,
+      "reason_code": "fresh_under_36h"
+    }
   ],
   "first_source_bonus": 0,
   "first_topic_bonus": 4,

@@ -9,7 +9,8 @@
     "selection_policy": "config/editorial_selection.southland.json",
     "feed_config": "config/sensing_feeds.southland.yaml",
     "source_name": "La Política Online",
-    "ai_config": "config/editorial_ai.southland.yaml"
+    "ai_config": "config/editorial_ai.southland.yaml",
+    "sensing_recent_window_hours": 36
   },
   "build": {
     "public_identity": "config/outlets/southland/public_identity.json",
@@ -22,8 +23,10 @@
     "public_url_env": "SOUTHLAND_PUBLIC_OUTLET_URL"
   },
   "selection": {
-    "topics": ["All Topics"],
-    "max_age_hours": 3,
+    "topics": [
+      "All Topics"
+    ],
+    "max_age_hours": 36,
     "minimum_items": 5,
     "max_items": 20
   },
