@@ -85,7 +85,7 @@ class FixtureBackend:
                 reason="La mecánica surge directamente del evento.",
                 comic_mechanism="la metáfora institucional se vuelve literal",
                 preserved_event_topology="Actor A realiza acción B frente a institución C.",
-                aliases={"Actor público": "Actor Público del Sur"},
+                aliases=[{"real_name": "Actor público", "southland_name": "Actor Público del Sur"}],
                 literalizations=["una fórmula retórica se materializa"],
                 fictional_escalations=["la institución instala literalmente el mecanismo"],
                 forbidden_distortions=["no inventar citas", "no cambiar quién hizo qué"],
