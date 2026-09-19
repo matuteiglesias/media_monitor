@@ -42,6 +42,19 @@ def _env_bool(name: str, default: bool = False) -> bool:
         return default
     return v.strip() not in ("0", "false", "False", "")
 
+def _env_int(name: str, default: int) -> int:
+    v = os.getenv(name)
+    if v is None:
+        return default
+    try:
+        value = int(v)
+    except Exception as exc:
+        raise ValueError(f"{name} must be an integer") from exc
+    if value < 2 or value > 168:
+        raise ValueError(f"{name} must be between 2 and 168 hours")
+    return value
+
+
 def _env_float(name: str, default: float | None) -> float | None:
     v = os.getenv(name)
     if v is None:
@@ -71,7 +84,7 @@ def quarantine_path(stage: str, run_id: str) -> Path:
     return QUAR_DIR / f"{stage}_{run_id}.jsonl"
 
 # Slice plan anchored at the hour bucket
-def compute_slices(anchor: datetime) -> List[Tuple[str, datetime, datetime]]:
+def compute_slices(anchor: datetime, recent_window_hours: int = 4) -> List[Tuple[str, datetime, datetime]]:
     # All ranges are [start, end) in UTC.
     out: List[Tuple[str, datetime, datetime]] = []
     hour = anchor.replace(minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
@@ -79,15 +92,15 @@ def compute_slices(anchor: datetime) -> List[Tuple[str, datetime, datetime]]:
     # Always include the deterministic 1-hour window.
     out.append(("1h_window", hour, hour + timedelta(hours=1)))
 
-    # The public selector admits signals up to 180 minutes old. A current-hour-only
-    # sensing run can therefore be publication-starved early in the hour even when
-    # good recent coverage exists. This four-hour bucket guarantees the full
-    # selector horizon is materialized at every minute of the current UTC hour;
-    # downstream deterministic selection still applies the exact age cutoff.
+    # Materialize the configured outlet frontier while leaving the exact
+    # eligibility cutoff to the deterministic selector. The default remains
+    # four hours; low-cadence outlets may request a wider bounded window.
+    if recent_window_hours < 2 or recent_window_hours > 168:
+        raise ValueError("recent_window_hours must be between 2 and 168")
     out.append(
         (
-            "recent_4h_window",
-            hour - timedelta(hours=3),
+            f"recent_{recent_window_hours}h_window",
+            hour - timedelta(hours=recent_window_hours - 1),
             hour + timedelta(hours=1),
         )
     )
@@ -202,6 +215,7 @@ def run() -> int:
     controls = SensingControls.from_env()
     limit = _env_float("LIMIT", None)
     sample = _env_float("SAMPLE", None)
+    recent_window_hours = _env_int("SENSING_RECENT_WINDOW_HOURS", 4)
     null_sink = _env_bool("NULL_SINK", False)
     run_id = os.getenv("RUN_ID")
 
@@ -251,7 +265,7 @@ def run() -> int:
         df_news = df_news.dropna(subset=["Published"]).copy()
 
     # ----- slice plan -----
-    slices = compute_slices(anchor_dt)
+    slices = compute_slices(anchor_dt, recent_window_hours=recent_window_hours)
 
     total_ok = 0
     total_bad = 0
@@ -389,8 +403,13 @@ def run() -> int:
         db.finish_run(run_id, stage=stage_name, ok=total_ok, fail=total_bad, meta={"digest_id": digest_id, "slices": len(slices)})
 
     # Console summary
+    fetched_count = len(df_news)
+    newest_published = ""
+    if not df_news.empty:
+        newest_published = pd.to_datetime(df_news["Published"], utc=True).max().isoformat()
     print(
-        f"[{stage_name}] digest_id={digest_id} ok={total_ok} bad={total_bad} slices={len(slices)} "
+        f"[{stage_name}] digest_id={digest_id} fetched={fetched_count} newest={newest_published or 'none'} "
+        f"recent_window_hours={recent_window_hours} ok={total_ok} bad={total_bad} slices={len(slices)} "
         f"acquire_network={controls.acquire_network} write_artifacts={controls.write_artifacts} "
         f"enqueue_scrape={controls.enqueue_scrape} db_run_bookkeeping={controls.db_run_bookkeeping} "
         f"null_sink={null_sink}"
