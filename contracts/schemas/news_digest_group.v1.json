@@ -31,6 +31,7 @@
         "F",
         "1h_window",
         "recent_4h_window",
+        "recent_window",
         "4h_window",
         "8h_window",
         "2day_window",
@@ -38,7 +39,7 @@
         "weekly_window",
         "fortnight_window"
       ],
-      "description": "Producer-native digest window category. Legacy A..F values remain accepted for backward compatibility; recent_4h_window is the rolling live-publication horizon."
+      "description": "Producer-native digest window category. Legacy A..F values remain accepted for backward compatibility; recent_4h_window is the default rolling horizon and recent_window is the generic configured rolling horizon for low-cadence outlets."
     },
     "topic": {
       "type": "string",
