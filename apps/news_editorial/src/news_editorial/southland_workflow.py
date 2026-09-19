@@ -298,15 +298,31 @@ class SouthlandEditorialWorkflow:
             or not metrics["section_count_ok"]
         )
 
-    def _terminal_accepts(self, state: ReviewedStory) -> bool:
+    def _terminal_failures(self, state: ReviewedStory) -> list[str]:
         metrics = draft_metrics(state.draft, self.editorial_policy)
-        return (
-            state.review.decision == "approve"
-            and self._review_safety_checks(state.review)
-            and self._review_style_checks(state.review)
-            and metrics["hard_length_ok"]
-            and metrics["section_count_ok"]
-        )
+        failed: list[str] = []
+        if state.review.decision != "approve":
+            failed.append(f"review_decision={state.review.decision}")
+        for name in (
+            "topology_preserved",
+            "fiction_separated",
+            "attribution_preserved",
+            "alias_consistent",
+            "mechanism_disciplined",
+            "analysis_leakage_absent",
+            "comic_payoff_present",
+            "concise_enough",
+        ):
+            if not getattr(state.review, name):
+                failed.append(name)
+        if not metrics["hard_length_ok"]:
+            failed.append("hard_length")
+        if not metrics["section_count_ok"]:
+            failed.append("section_count")
+        return failed
+
+    def _terminal_accepts(self, state: ReviewedStory) -> bool:
+        return not self._terminal_failures(state)
 
     async def _call(
         self,
@@ -534,7 +550,8 @@ class SouthlandEditorialWorkflow:
             state: ReviewedStory,
             ctx: WorkflowContext[Never, dict[str, Any]],
         ) -> None:
-            checks_pass = self._terminal_accepts(state)
+            failures = self._terminal_failures(state)
+            checks_pass = not failures
             metrics = draft_metrics(state.draft, self.editorial_policy)
             result = SouthlandWorkflowResult(
                 status="accepted" if checks_pass else "rejected",
@@ -551,7 +568,8 @@ class SouthlandEditorialWorkflow:
                     if checks_pass
                     else (
                         "final editorial quality gate did not approve "
-                        f"(words={metrics['word_count']}, sections={metrics['section_count']})"
+                        f"(words={metrics['word_count']}, sections={metrics['section_count']}, "
+                        f"failed={','.join(failures)})"
                     )
                 ),
             )
