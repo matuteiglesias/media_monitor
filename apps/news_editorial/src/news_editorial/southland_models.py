@@ -70,6 +70,10 @@ class SouthlandReview(StrictModel):
     fiction_separated: bool
     attribution_preserved: bool
     alias_consistent: bool
+    mechanism_disciplined: bool
+    analysis_leakage_absent: bool
+    comic_payoff_present: bool
+    concise_enough: bool
     revision_instruction: str = ""
 
 
