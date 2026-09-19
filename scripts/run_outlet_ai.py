@@ -37,6 +37,7 @@ from apps.news_editorial.src.news_editorial.southland_workflow import (
     SouthlandEditorialPolicy,
     SouthlandRunEvidence,
     ai_result_record,
+    draft_metrics,
 )
 from scripts.build_editorial_access_indexes import build_editorial_index
 from scripts.outlet_runtime import resolve_outlet_runtime
@@ -483,12 +484,35 @@ async def run_outlet_ai(
         else:
             failed += 1
 
+        metrics = (
+            draft_metrics(run.result.draft, editorial_policy)
+            if run.result.draft is not None
+            else None
+        )
+        review = run.result.review
         item_results.append(
             {
                 "index_id": packet.index_id,
                 "status": status,
                 "revisions_used": run.result.revisions_used,
                 "stage_work_ids": run.result.stage_work_ids,
+                "word_count": metrics["word_count"] if metrics else 0,
+                "section_count": metrics["section_count"] if metrics else 0,
+                "review": (
+                    {
+                        "decision": review.decision,
+                        "mechanism_disciplined": review.mechanism_disciplined,
+                        "analysis_leakage_absent": review.analysis_leakage_absent,
+                        "comic_payoff_present": review.comic_payoff_present,
+                        "concise_enough": review.concise_enough,
+                        "topology_preserved": review.topology_preserved,
+                        "fiction_separated": review.fiction_separated,
+                        "attribution_preserved": review.attribution_preserved,
+                        "alias_consistent": review.alias_consistent,
+                    }
+                    if review is not None
+                    else None
+                ),
                 "error": run.result.error,
             }
         )
