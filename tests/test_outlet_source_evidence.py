@@ -74,6 +74,7 @@ def fixture_site(root: Path) -> None:
                 "selection_policy": "config/policy.json",
                 "feed_config": "config/feeds.yaml",
                 "source_name": "La Política Online",
+                "sensing_recent_window_hours": 4,
             },
             "selection": {
                 "topics": ["All Topics"],
@@ -86,7 +87,7 @@ def fixture_site(root: Path) -> None:
     )
 
 
-def test_southland_uses_official_lpo_section_feeds_and_three_hour_frontier() -> None:
+def test_southland_uses_verified_lpo_feeds_and_bounded_low_cadence_frontier() -> None:
     site = json.loads((ROOT / "sites/southland.json").read_text(encoding="utf-8"))
     feeds = yaml.safe_load(
         (ROOT / "config/sensing_feeds.southland.yaml").read_text(encoding="utf-8")
@@ -96,7 +97,8 @@ def test_southland_uses_official_lpo_section_feeds_and_three_hour_frontier() -> 
     assert site["runtime"]["feed_config"] == "config/sensing_feeds.southland.yaml"
     assert site["runtime"]["source_name"] == "La Política Online"
     assert site["runtime"]["storage_dir"] == ".runtime/southland/storage"
-    assert site["selection"]["max_age_hours"] == 3
+    assert site["selection"]["max_age_hours"] == 36
+    assert site["runtime"]["sensing_recent_window_hours"] == 36
     assert topics == [
         "Política",
         "Economía",
@@ -104,13 +106,69 @@ def test_southland_uses_official_lpo_section_feeds_and_three_hour_frontier() -> 
         "Provincia",
         "Conurbano",
         "Santa Fe",
-        "Judiciales",
+        "Justicia",
         "Campo",
         "Medios",
     ]
     assert all(
-        row["url"].startswith("http://www.lapoliticaonline.com.ar/files/rss/")
+        row["url"].startswith("https://www.lapoliticaonline.com/files/rss/")
         for row in feeds["feeds"]
+    )
+
+
+def test_compute_slices_keeps_default_four_hours_and_supports_low_cadence_window() -> None:
+    anchor = datetime(2026, 9, 19, 22, tzinfo=timezone.utc)
+
+    default = stage01.compute_slices(anchor)
+    widened = stage01.compute_slices(anchor, recent_window_hours=36)
+
+    default_recent = next(row for row in default if row[0] == "recent_4h_window")
+    widened_recent = next(row for row in widened if row[0] == "recent_36h_window")
+    assert default_recent[1] == datetime(2026, 9, 19, 19, tzinfo=timezone.utc)
+    assert default_recent[2] == datetime(2026, 9, 19, 23, tzinfo=timezone.utc)
+    assert widened_recent[1] == datetime(2026, 9, 18, 11, tzinfo=timezone.utc)
+    assert widened_recent[2] == datetime(2026, 9, 19, 23, tzinfo=timezone.utc)
+
+
+def test_southland_selector_freshness_dominates_low_cadence_fill(tmp_path: Path) -> None:
+    refs = []
+    times = [
+        ("fresh", "Política", "2026-09-19T21:30:00Z"),
+        ("old-1", "Economía", "2026-09-18T22:30:00Z"),
+        ("old-2", "Provincia", "2026-09-18T21:30:00Z"),
+        ("old-3", "Ciudad", "2026-09-18T20:30:00Z"),
+        ("old-4", "Santa Fe", "2026-09-18T19:30:00Z"),
+        ("old-5", "Justicia", "2026-09-18T18:30:00Z"),
+    ]
+    for idx, (name, topic, published_at) in enumerate(times):
+        refs.append(
+            {
+                "digest_at": "20260919T22",
+                "index_id": f"id-{idx}",
+                "title": name,
+                "topic": topic,
+                "published_at": published_at,
+                "link": f"https://example.test/{name}",
+                "source": "La Política Online",
+            }
+        )
+    refs_path = tmp_path / "refs.jsonl"
+    write_jsonl(refs_path, refs)
+
+    selection = build_selection(
+        refs_path=refs_path,
+        policy_path=ROOT / "config/editorial_selection.southland.json",
+        digest_at="20260919T22",
+        as_of="2026-09-19T22:00:00Z",
+        output=tmp_path / "selection.json",
+    )
+
+    assert selection["metrics"]["selected_count"] == 6
+    assert selection["selected"][0]["index_id"] == "id-0"
+    assert selection["selected"][0]["score_components"]["freshness"] == 30
+    assert all(
+        row["score_components"]["freshness"] <= 6
+        for row in selection["selected"][1:]
     )
 
 
@@ -197,6 +255,7 @@ def test_sensing_pipeline_routes_every_mutable_path_to_outlet_runtime(tmp_path: 
         assert env["STORAGE_DIR"] == str(tmp_path / ".runtime/southland/storage")
         assert env["SENSING_FEED_CONFIG"] == str(tmp_path / "config/feeds.yaml")
         assert env["SENSING_SOURCE_NAME"] == "La Política Online"
+        assert env["SENSING_RECENT_WINDOW_HOURS"] == "4"
         assert env["ENQUEUE_SCRAPE"] == "0"
         assert env["DB_RUN_BOOKKEEPING"] == "0"
         assert env["LIMIT"] == "25"
@@ -209,7 +268,7 @@ def test_sensing_pipeline_routes_every_mutable_path_to_outlet_runtime(tmp_path: 
 
 
 def test_southland_selector_is_deterministic_bounded_and_topic_diverse(tmp_path: Path) -> None:
-    topics = ["Política", "Política", "Política", "Economía", "Economía", "Provincia", "Ciudad", "Conurbano", "Santa Fe", "Judiciales", "Campo", "Medios"]
+    topics = ["Política", "Política", "Política", "Economía", "Economía", "Provincia", "Ciudad", "Conurbano", "Santa Fe", "Justicia", "Campo", "Medios"]
     refs = []
     for idx, topic in enumerate(topics):
         refs.append(
