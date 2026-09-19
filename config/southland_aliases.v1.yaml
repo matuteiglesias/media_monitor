@@ -1,0 +1,8 @@
+schema_version: southland_aliases.v1
+aliases:
+  - real_name: "Javier Milei"
+    southland_name: "Javier Mieli"
+  - real_name: "Luis Caputo"
+    southland_name: "Toto Capuccino"
+  - real_name: "Casa Rosada"
+    southland_name: "Casa Fucsia"
