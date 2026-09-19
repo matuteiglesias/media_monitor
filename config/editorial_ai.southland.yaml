@@ -1,5 +1,5 @@
 schema_version: editorial_ai.v1
-workflow_id: southland-editorial-v1
+workflow_id: southland-editorial-v2
 backend:
   kind: maf_openai
   model_env: MEDIA_MONITOR_AI_MODEL
@@ -11,3 +11,12 @@ execution:
   max_revisions: 1
   minimum_inputs: 5
   publish_candidate_target: 3
+editorial:
+  alias_registry: config/southland_aliases.v1.yaml
+  target_min_words: 450
+  target_max_words: 700
+  hard_min_words: 300
+  hard_max_words: 850
+  max_sections: 4
+  max_literalizations: 2
+  max_fictional_escalations: 2
