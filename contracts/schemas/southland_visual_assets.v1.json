@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/southland_visual_assets.v1.json",
+  "title": "southland_visual_assets.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": { "const": "southland_visual_assets.v1" },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "asset_id": { "type": "string", "pattern": "^southland_[a-z0-9_]+$" },
+          "public_path": { "type": "string", "pattern": "^/southland/visuals/[a-zA-Z0-9._-]+$" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "status": { "type": "string", "enum": ["approved", "hold"] },
+          "identity_status": { "type": "string", "enum": ["pending_lineage", "confirmed", "generic"] },
+          "reuse_scope": {
+            "type": "string",
+            "enum": ["story_specific", "entity_reusable", "topic_reusable", "generic_southland"]
+          },
+          "description": { "type": "string", "minLength": 1 },
+          "alt": { "type": "string", "minLength": 1 },
+          "source_filename_hint": { "type": "string", "minLength": 1 },
+          "source_reference_ids": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "character_tags": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "pattern": "^character:[a-z0-9_]+$" }
+          },
+          "institution_tags": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "pattern": "^institution:[a-z0-9_]+$" }
+          },
+          "topic_tags": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "pattern": "^topic:[a-z0-9_]+$" }
+          },
+          "scene_tags": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "pattern": "^scene:[a-z0-9_]+$" }
+          },
+          "motif_tags": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "pattern": "^motif:[a-z0-9_]+$" }
+          }
+        },
+        "required": [
+          "asset_id",
+          "public_path",
+          "created_at",
+          "status",
+          "identity_status",
+          "reuse_scope",
+          "description",
+          "alt",
+          "source_filename_hint",
+          "source_reference_ids",
+          "character_tags",
+          "institution_tags",
+          "topic_tags",
+          "scene_tags",
+          "motif_tags"
+        ]
+      }
+    }
+  },
+  "required": ["schema_name", "assets"]
+}
