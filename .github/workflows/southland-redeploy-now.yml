@@ -17,7 +17,7 @@ env:
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.SOUTHLAND_VERCEL_PROJECT_ID }}
-  SOUTHLAND_PUBLIC_OUTLET_URL: ${{ vars.SOUTHLAND_PUBLIC_OUTLET_URL }}
+  SOUTHLAND_PUBLIC_OUTLET_URL: ${{ vars.SOUTHLAND_PUBLIC_OUTLET_URL || 'https://southland-news.vercel.app' }}
 
 jobs:
   redeploy:
