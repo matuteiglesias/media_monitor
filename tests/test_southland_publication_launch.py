@@ -174,6 +174,10 @@ def test_promotion_can_target_configured_southland_runtime(tmp_path, monkeypatch
 def test_southland_reader_surface_and_two_step_human_release_are_explicit() -> None:
     home = (ROOT / "apps/news_site/components/SouthlandHome.tsx").read_text()
     article = (ROOT / "apps/news_site/app/articles/[slug]/page.tsx").read_text()
+    southland_article = (ROOT / "apps/news_site/components/southland/SouthlandArticle.tsx").read_text()
+    latest = (ROOT / "apps/news_site/app/latest/page.tsx").read_text()
+    section_page = (ROOT / "apps/news_site/app/seccion/[slug]/page.tsx").read_text()
+    archive_page = (ROOT / "apps/news_site/app/archivo/page.tsx").read_text()
     prepare = (ROOT / ".github/workflows/southland-prepare.yml").read_text()
     publish = (ROOT / ".github/workflows/southland-publish.yml").read_text()
     site = json.loads((ROOT / "sites/southland.json").read_text())
@@ -184,7 +188,15 @@ def test_southland_reader_surface_and_two_step_human_release_are_explicit() -> N
     assert "SouthlandStory" in home
     assert "Cable de realidad" in home
     assert "Fuentes reales / ficción marcada" in trust
-    assert "Qué es real y qué no" in article
+    assert "SouthlandArticle" in article
+    assert "Realidad / Southland" in southland_article
+    assert "Estado editorial" not in southland_article
+    assert "Cable de realidad" in latest
+    assert "SouthlandStory" in section_page
+    assert "Ediciones publicadas" in archive_page
+    assert [item["slug"] for item in site["presentation"]["section_navigation"]] == [
+        "politica", "economia", "provincias", "sociedad", "archivo"
+    ]
     chrome = (ROOT / "apps/news_site/components/southland/SouthlandChrome.tsx").read_text()
     assert "st-nameplate" in chrome
     assert "SouthlandFooter" in chrome

@@ -49,6 +49,44 @@
     "show_signals_feed": true,
     "visual_asset_registry": "config/southland_visual_assets.v1.json",
     "visual_tag_rules": "config/southland_visual_tag_rules.v1.json",
-    "visual_max_matches": 2
+    "visual_max_matches": 2,
+    "section_navigation": [
+      {
+        "slug": "politica",
+        "label": "Política",
+        "topics": [
+          "Política"
+        ]
+      },
+      {
+        "slug": "economia",
+        "label": "Economía",
+        "topics": [
+          "Economía"
+        ]
+      },
+      {
+        "slug": "provincias",
+        "label": "Provincias",
+        "topics": [
+          "Provincia",
+          "Santa Fe",
+          "Conurbano"
+        ]
+      },
+      {
+        "slug": "sociedad",
+        "label": "Sociedad",
+        "topics": [
+          "Sociedad",
+          "Ciudad"
+        ]
+      },
+      {
+        "slug": "archivo",
+        "label": "Archivo",
+        "topics": []
+      }
+    ]
   }
 }

@@ -7,6 +7,7 @@ import { SITE_PRESENTATION } from "@/lib/site_presentation";
 import { ArticleVisual, hasArticleVisual } from "@/components/ArticleVisual";
 import { formatPublicDate } from "@/lib/format";
 import { articleJsonLd, articleMetadata, serializeJsonLd } from "@/lib/seo";
+import { SouthlandArticle } from "@/components/southland/SouthlandArticle";
 
 function ArticleBody({ body }: { body: string }) {
   const blocks = body.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
@@ -38,6 +39,15 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
   const outlet = loadOutlet();
   const editor = EDITORIAL_IDENTITY.editor;
   const publication = SITE_PRESENTATION.mode === "publication";
+
+  if (SITE_PRESENTATION.theme === "southland") {
+    return (
+      <main className="publication-shell st-article-page">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleJsonLd(article)) }} />
+        <SouthlandArticle article={article} outlet={outlet} editor={editor} />
+      </main>
+    );
+  }
 
   return (
     <main className="publication-shell py-8 sm:py-12">

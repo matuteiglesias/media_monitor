@@ -4,8 +4,6 @@ import { SITE_PRESENTATION } from "@/lib/site_presentation";
 import { loadOutlet } from "@/lib/adapter/mappers";
 import { formatPublicDate } from "@/lib/format";
 
-const sections = ["Política", "Economía", "Provincias", "Sociedad", "Archivo"];
-
 export function SouthlandHeader() {
   const routes = EDITORIAL_IDENTITY.routes;
   const outlet = loadOutlet();
@@ -39,8 +37,13 @@ export function SouthlandHeader() {
         </div>
 
         <nav className="st-section-nav" aria-label="Secciones de Southland Times">
-          {sections.map((section) => (
-            <span key={section}>{section}</span>
+          {(SITE_PRESENTATION.section_navigation ?? []).map((section: any) => (
+            <Link
+              key={section.slug}
+              href={section.slug === "archivo" ? "/archivo" : `/seccion/${section.slug}`}
+            >
+              {section.label}
+            </Link>
           ))}
         </nav>
       </div>
