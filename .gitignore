@@ -13,6 +13,11 @@ artifacts/
 *.csv
 *.log
 
+# Local source-image reference corpus
+visuals/references/originals/
+!visuals/references/manifests/
+!visuals/references/manifests/*.jsonl
+
 # Node and local deployment output
 apps/news_site/node_modules/
 apps/news_site/.next/
