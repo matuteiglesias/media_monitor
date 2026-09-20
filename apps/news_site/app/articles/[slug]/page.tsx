@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { findArticle, loadOutlet } from "@/lib/adapter/mappers";
 import { EDITORIAL_IDENTITY } from "@/lib/editorial_identity";
 import { SITE_PRESENTATION } from "@/lib/site_presentation";
-import { ArticleVisual } from "@/components/ArticleVisual";
+import { ArticleVisual, hasArticleVisual } from "@/components/ArticleVisual";
 import { formatPublicDate } from "@/lib/format";
 import { articleJsonLd, articleMetadata, serializeJsonLd } from "@/lib/seo";
 
@@ -50,7 +50,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           <h1 className={publication ? "mt-4 text-5xl font-black leading-[0.98] sm:text-7xl" : "mt-4 text-5xl font-semibold leading-[1.02] sm:text-6xl"}>{article.title}</h1>
           <p className="mt-6 max-w-3xl text-xl leading-8 text-stone-700 sm:text-2xl sm:leading-9">{article.summary}</p>
 
-          {publication ? <ArticleVisual slug={article.slug} title={article.title} className="mt-8 min-h-[23rem] border-2 border-black sm:min-h-[30rem]" /> : null}
+          {publication && hasArticleVisual(article.slug) ? <ArticleVisual slug={article.slug} title={article.title} className="mt-8 min-h-[23rem] border-2 border-black sm:min-h-[30rem]" /> : null}
 
           <div className="mt-7 flex flex-wrap items-center justify-between gap-5 border-y border-stone-300 py-4">
             <p className="text-sm text-stone-700">
@@ -70,6 +70,8 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           ) : null}
 
           <ArticleBody body={article.body_md} />
+
+          {publication && hasArticleVisual(article.slug, 1) ? <ArticleVisual slug={article.slug} title={article.title} slot={1} className="mt-10 min-h-[20rem] border-2 border-black sm:min-h-[26rem]" /> : null}
 
           <section className="mt-14 border-t border-stone-300 pt-8">
             <div className="section-kicker">{publication ? "Realidad documentada" : "Transparencia"}</div>
