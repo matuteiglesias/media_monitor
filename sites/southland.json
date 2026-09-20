@@ -46,6 +46,9 @@
     "source_disclosure": "La sección de evidencia identifica las fuentes reales que sostienen el evento de partida. Los elementos de Southland son ficción y no deben leerse como afirmaciones fácticas adicionales.",
     "show_monitor_pulse": false,
     "show_monitor_sections_on_home": false,
-    "show_signals_feed": true
+    "show_signals_feed": true,
+    "visual_asset_registry": "config/southland_visual_assets.v1.json",
+    "visual_tag_rules": "config/southland_visual_tag_rules.v1.json",
+    "visual_max_matches": 2
   }
 }
