@@ -1,78 +1,96 @@
 import Link from "next/link";
-import { ArticleVisual, hasArticleVisual } from "@/components/ArticleVisual";
-import { SITE_PRESENTATION } from "@/lib/site_presentation";
-import { formatPublicDate } from "@/lib/format";
+import { SouthlandStory } from "@/components/southland/SouthlandStory";
+import { SouthlandTrustMark } from "@/components/southland/SouthlandTrustMark";
 
 export function SouthlandHome({ outlet }: { outlet: any }) {
   const { site, publication, signals } = outlet;
   const featured = publication.featured;
-  const remaining = publication.latest.filter((item: any) => item.slug !== featured?.slug);
-  const featuredHasVisual = featured ? hasArticleVisual(featured.slug) : false;
+  const remaining = publication.latest.filter(
+    (item: any) => item.slug !== featured?.slug,
+  );
+  const rail = remaining.slice(0, 2);
+  const grid = remaining.slice(2, 8);
+  const wire = Array.isArray(signals.latest) ? signals.latest.slice(0, 5) : [];
 
   return (
-    <main className="publication-shell southland-home pb-12 pt-5 sm:pt-7">
+    <main className="publication-shell southland-home pb-10 pt-4 sm:pt-5">
       {featured ? (
-        <section className={`${featuredHasVisual ? "grid gap-6 lg:grid-cols-[1.15fr,0.85fr] lg:items-stretch" : ""} border-b-2 border-black py-8`}>
-          {featuredHasVisual ? <ArticleVisual slug={featured.slug} title={featured.title} className="min-h-[20rem] border-2 border-black sm:min-h-[25rem]" /> : null}
-          <article className="flex flex-col justify-center">
-            <p className="meta-line font-bold">{SITE_PRESENTATION.publication_label} · {featured.topic}</p>
-            <h2 className="southland-headline mt-4 text-4xl font-black leading-[0.98] sm:text-6xl">
-              <Link href={`/articles/${featured.slug}`} className="article-link">{featured.title}</Link>
-            </h2>
-            <p className="mt-5 text-lg font-medium leading-7 text-stone-700">{featured.summary}</p>
-            <div className="mt-6 flex flex-wrap items-center gap-5 text-xs font-bold uppercase tracking-[0.08em]">
-              <span>{formatPublicDate(featured.published_at, site.locale)}</span>
-              <Link href={`/articles/${featured.slug}`} className="underline decoration-2 underline-offset-4">
-                {SITE_PRESENTATION.publication_read_label}
-              </Link>
-            </div>
-          </article>
-        </section>
+        <>
+          <section className="st-front-grid" aria-label="Portada de la edición actual">
+            <SouthlandStory story={featured} locale={site.locale} variant="lead" />
+            <aside className="st-front-rail" aria-label="Más historias principales">
+              {rail.length ? (
+                rail.map((item: any) => (
+                  <SouthlandStory
+                    key={item.article_id}
+                    story={item}
+                    locale={site.locale}
+                    variant="rail"
+                  />
+                ))
+              ) : (
+                <div className="st-rail-note">
+                  <p className="st-kicker">Edición en curso</p>
+                  <p>La portada crece sólo con historias aprobadas por la mesa editorial.</p>
+                </div>
+              )}
+            </aside>
+          </section>
+
+          {grid.length ? (
+            <section className="st-story-band" aria-label="Más de la edición">
+              {grid.map((item: any) => (
+                <SouthlandStory
+                  key={item.article_id}
+                  story={item}
+                  locale={site.locale}
+                  variant="grid"
+                />
+              ))}
+            </section>
+          ) : null}
+        </>
       ) : (
-        <section className="border-b-2 border-black py-12 text-center">
-          <h2 className="text-3xl font-black">La edición todavía no salió.</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-stone-600">
-            Southland no publica automáticamente: una historia llega a portada sólo después de evidencia, transformación editorial y aprobación humana.
-          </p>
+        <section className="st-preissue" aria-label="Primera edición en preparación">
+          <p className="st-kicker">Primera edición</p>
+          <div className="st-preissue-grid">
+            <h1>En preparación.</h1>
+            <p>
+              Southland Times no rellena la portada automáticamente. La primera edición aparece cuando
+              una historia pasa evidencia, transformación editorial y aprobación humana.
+            </p>
+          </div>
         </section>
       )}
 
-      {remaining.length ? (
-        <section className="py-9">
-          <div className="section-kicker">{SITE_PRESENTATION.publication_section_label}</div>
-          <div className="mt-6 grid gap-x-5 gap-y-8 md:grid-cols-2 lg:grid-cols-3">
-            {remaining.slice(0, 8).map((item: any) => (
-              <article key={item.article_id} className="border-b-2 border-black pb-6">
-                {hasArticleVisual(item.slug) ? <ArticleVisual slug={item.slug} title={item.title} className="min-h-[14rem] border-2 border-black" /> : null}
-                <p className="meta-line mt-4 font-bold">{item.topic}</p>
-                <h3 className="southland-headline mt-2 text-2xl font-black leading-tight">
-                  <Link href={`/articles/${item.slug}`} className="article-link">{item.title}</Link>
-                </h3>
-                <p className="mt-3 text-sm leading-6 text-stone-700">{item.summary}</p>
+      <SouthlandTrustMark />
+
+      {wire.length ? (
+        <section className="st-reality-wire" aria-labelledby="reality-wire-heading">
+          <div className="st-wire-header">
+            <div>
+              <p className="st-kicker">Cable de realidad</p>
+              <h2 id="reality-wire-heading">Lo que está pasando afuera de Southland</h2>
+            </div>
+            <Link href="/latest">Ver todo el cable →</Link>
+          </div>
+          <div className="st-wire-grid">
+            {wire.map((item: any, index: number) => (
+              <article key={item.index_id} className="st-wire-item">
+                <span className="st-wire-number">{String(index + 1).padStart(2, "0")}</span>
+                <div>
+                  <p className="st-wire-meta">Fuente externa · {item.source} · {item.topic}</p>
+                  <h3>
+                    <Link href={`/story/${item.index_id}`} className="story-link">
+                      {item.title}
+                    </Link>
+                  </h3>
+                </div>
               </article>
             ))}
           </div>
         </section>
       ) : null}
-
-      <section className="grid gap-6 border-t-4 border-black pt-7 md:grid-cols-[1fr,0.65fr]">
-        <div>
-          <div className="eyebrow">La realidad debajo del pueblo</div>
-          <h2 className="mt-2 text-3xl font-black">Fuentes reales, ficción marcada.</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-700">
-            Cada artículo enlaza la fuente pública que sostiene el evento de partida. Southland puede literalizar una metáfora o exagerar un mecanismo, pero esa ficción se mantiene separada de la evidencia.
-          </p>
-        </div>
-        <div className="border-2 border-black bg-white p-5">
-          <p className="text-xs font-black uppercase tracking-[0.12em]">Cable de realidad</p>
-          <p className="mt-2 text-sm leading-6 text-stone-700">
-            El monitoreo subyacente sigue disponible como superficie separada y nunca se presenta como contenido propio.
-          </p>
-          <Link href="/latest" className="mt-4 inline-block text-xs font-black uppercase tracking-[0.08em] underline underline-offset-4">
-            Ver señales monitoreadas →
-          </Link>
-        </div>
-      </section>
     </main>
   );
 }
