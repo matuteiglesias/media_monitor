@@ -195,19 +195,28 @@ def _gallery_entries(gallery) -> list[dict[str, Any]]:
     if media is None:
         media = gallery.parent
     script = media.find("script") if media is not None else None
-    raw = script.get_text("", strip=False) if script else ""
+    raw = (script.string or script.get_text("", strip=False)) if script else ""
     if not raw:
         return []
-    match = re.search(
-        r"arguments:\s*\['[^']+',\s*(\[\{.*?\}\])\s*,\s*\d+",
+
+    # Locate the second argument to vplfgal: a JSON array of image records.
+    # Use the JSON decoder rather than regex-matching the whole array because
+    # entries can contain nested arrays such as `mq`.
+    prefix = re.search(
+        r"arguments:\s*\[\s*['\"][^'\"]+['\"]\s*,\s*",
         raw,
         flags=re.DOTALL,
     )
-    if not match:
+    if not prefix:
+        return []
+    payload = raw[prefix.end():].lstrip()
+    if not payload.startswith("["):
         return []
     try:
-        value = json.loads(match.group(1))
+        value, _end = json.JSONDecoder().raw_decode(payload)
     except Exception:
+        return []
+    if not isinstance(value, list):
         return []
     return [row for row in value if isinstance(row, dict)]
 
