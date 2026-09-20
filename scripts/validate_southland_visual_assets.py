@@ -23,6 +23,11 @@ def main() -> int:
         type=Path,
         default=ROOT / "contracts/schemas/southland_visual_assets.v1.json",
     )
+    parser.add_argument(
+        "--rules",
+        type=Path,
+        default=ROOT / "config/southland_visual_tag_rules.v1.json",
+    )
     parser.add_argument("--require-files", action="store_true")
     parser.add_argument("--require-ready", action="store_true")
     args = parser.parse_args()
@@ -38,6 +43,15 @@ def main() -> int:
             "visual registry schema errors: "
             + "; ".join(error.message for error in errors)
         )
+
+    rules = json.loads(args.rules.read_text(encoding="utf-8"))
+    if rules.get("schema_name") != "southland_visual_tag_rules.v1":
+        raise SystemExit("unexpected visual tag rules schema")
+    known_tags = {str(row.get("tag") or "") for row in rules.get("rules", [])}
+    if "" in known_tags:
+        raise SystemExit("visual tag rules contain an empty tag")
+    if len(known_tags) != len(rules.get("rules", [])):
+        raise SystemExit("visual tag rules contain duplicate tags")
 
     ids: set[str] = set()
     paths: set[str] = set()
@@ -58,6 +72,20 @@ def main() -> int:
         target = ROOT / "apps/news_site/public" / public_path.lstrip("/")
         if not target.is_file():
             missing.append(asset_id)
+        asset_tags = {
+            tag
+            for field in ("character_tags", "institution_tags", "topic_tags", "scene_tags", "motif_tags")
+            for tag in asset[field]
+        }
+        unknown = sorted(asset_tags - known_tags)
+        if unknown:
+            raise SystemExit(f"{asset_id}: unknown controlled tags: {', '.join(unknown)}")
+
+        if asset["identity_status"] == "confirmed" and not asset["character_tags"]:
+            raise SystemExit(f"{asset_id}: confirmed identity requires at least one character tag")
+        if asset["identity_status"] == "generic" and asset["character_tags"]:
+            raise SystemExit(f"{asset_id}: generic asset must not carry character tags")
+
         if asset["identity_status"] == "pending_lineage":
             pending.append(asset_id)
         elif asset["status"] == "approved":
