@@ -11,17 +11,6 @@ export function SouthlandHome({ outlet }: { outlet: any }) {
 
   return (
     <main className="publication-shell southland-home pb-12 pt-5 sm:pt-7">
-      <section className="southland-masthead border-b-4 border-black pb-7 text-center">
-        <div className="eyebrow">{SITE_PRESENTATION.home_eyebrow}</div>
-        <h1 className="southland-wordmark mt-2 text-6xl font-black uppercase leading-none sm:text-8xl">
-          {site.name}
-        </h1>
-        <p className="mx-auto mt-3 max-w-3xl text-base font-semibold leading-6 sm:text-lg">{site.tagline}</p>
-        <div className="mx-auto mt-5 max-w-3xl border-y border-black/20 py-3 text-xs font-semibold leading-5 text-stone-700">
-          {SITE_PRESENTATION.disclosure_short}
-        </div>
-      </section>
-
       {featured ? (
         <section className={`${featuredHasVisual ? "grid gap-6 lg:grid-cols-[1.15fr,0.85fr] lg:items-stretch" : ""} border-b-2 border-black py-8`}>
           {featuredHasVisual ? <ArticleVisual slug={featured.slug} title={featured.title} className="min-h-[20rem] border-2 border-black sm:min-h-[25rem]" /> : null}
