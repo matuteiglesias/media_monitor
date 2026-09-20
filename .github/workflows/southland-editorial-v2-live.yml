@@ -47,7 +47,7 @@ jobs:
       - name: Summarize editorial v2
         shell: bash
         run: |
-          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          python - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
           import json
           import re
           from pathlib import Path
