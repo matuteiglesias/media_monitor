@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArticleVisual } from "@/components/ArticleVisual";
+import { ArticleVisual, hasArticleVisual } from "@/components/ArticleVisual";
 import { SITE_PRESENTATION } from "@/lib/site_presentation";
 import { formatPublicDate } from "@/lib/format";
 
@@ -7,6 +7,7 @@ export function SouthlandHome({ outlet }: { outlet: any }) {
   const { site, publication, signals } = outlet;
   const featured = publication.featured;
   const remaining = publication.latest.filter((item: any) => item.slug !== featured?.slug);
+  const featuredHasVisual = featured ? hasArticleVisual(featured.slug) : false;
 
   return (
     <main className="publication-shell southland-home pb-12 pt-7 sm:pt-10">
@@ -22,8 +23,8 @@ export function SouthlandHome({ outlet }: { outlet: any }) {
       </section>
 
       {featured ? (
-        <section className="grid gap-6 border-b-2 border-black py-8 lg:grid-cols-[1.15fr,0.85fr] lg:items-stretch">
-          <ArticleVisual slug={featured.slug} title={featured.title} className="min-h-[20rem] border-2 border-black sm:min-h-[25rem]" />
+        <section className={`${featuredHasVisual ? "grid gap-6 lg:grid-cols-[1.15fr,0.85fr] lg:items-stretch" : ""} border-b-2 border-black py-8`}>
+          {featuredHasVisual ? <ArticleVisual slug={featured.slug} title={featured.title} className="min-h-[20rem] border-2 border-black sm:min-h-[25rem]" /> : null}
           <article className="flex flex-col justify-center">
             <p className="meta-line font-bold">{SITE_PRESENTATION.publication_label} · {featured.topic}</p>
             <h2 className="mt-4 text-4xl font-black leading-[1.02] sm:text-6xl">
@@ -53,7 +54,7 @@ export function SouthlandHome({ outlet }: { outlet: any }) {
           <div className="mt-6 grid gap-x-5 gap-y-8 md:grid-cols-2 lg:grid-cols-3">
             {remaining.slice(0, 8).map((item: any) => (
               <article key={item.article_id} className="border-b-2 border-black pb-6">
-                <ArticleVisual slug={item.slug} title={item.title} className="min-h-[14rem] border-2 border-black" />
+                {hasArticleVisual(item.slug) ? <ArticleVisual slug={item.slug} title={item.title} className="min-h-[14rem] border-2 border-black" /> : null}
                 <p className="meta-line mt-4 font-bold">{item.topic}</p>
                 <h3 className="mt-2 text-2xl font-black leading-tight">
                   <Link href={`/articles/${item.slug}`} className="article-link">{item.title}</Link>
