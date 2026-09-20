@@ -1,18 +1,39 @@
 import visuals from "../public/data/article_visuals.json";
 
-type Visual = {
+type LegacyVisual = {
   kind: string;
   seed: number;
   palette: string[];
   alt: string;
 };
 
-type VisualIndex = {
-  schema_name: "article_visuals.v1";
-  articles: Record<string, Visual>;
+type CuratedMatch = {
+  asset_id: string;
+  public_path: string;
+  alt: string;
+  created_at: string;
+  matched_tags: string[];
+  character_match_count: number;
+  match_count: number;
 };
 
-const INDEX = visuals as VisualIndex;
+type CuratedVisual = {
+  kind: "curated_asset_matches";
+  article_tags: string[];
+  matches: CuratedMatch[];
+};
+
+type LegacyIndex = {
+  schema_name: "article_visuals.v1";
+  articles: Record<string, LegacyVisual>;
+};
+
+type CuratedIndex = {
+  schema_name: "article_visuals.v2";
+  articles: Record<string, CuratedVisual>;
+};
+
+const INDEX = visuals as unknown as LegacyIndex | CuratedIndex;
 
 function positions(seed: number) {
   return {
@@ -22,25 +43,54 @@ function positions(seed: number) {
   };
 }
 
+function curatedMatch(slug: string, slot = 0): CuratedMatch | null {
+  if (INDEX.schema_name !== "article_visuals.v2") return null;
+  return INDEX.articles?.[slug]?.matches?.[slot] ?? null;
+}
+
+export function hasArticleVisual(slug: string, slot = 0) {
+  if (INDEX.schema_name === "article_visuals.v2") {
+    return Boolean(curatedMatch(slug, slot));
+  }
+  return Boolean(INDEX.articles?.[slug]);
+}
+
 export function ArticleVisual({
   slug,
   title,
+  slot = 0,
   className = "",
 }: {
   slug: string;
   title: string;
+  slot?: number;
   className?: string;
 }) {
+  if (INDEX.schema_name === "article_visuals.v2") {
+    const match = curatedMatch(slug, slot);
+    if (!match) return null;
+    return (
+      <div className={`southland-visual relative overflow-hidden ${className}`}>
+        <img
+          src={match.public_path}
+          alt={match.alt || `Ilustración de Southland para: ${title}`}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      </div>
+    );
+  }
+
   const visual = INDEX.articles[slug];
-  const palette = visual?.palette ?? ["#f6d44a", "#e95d4f", "#2f6f68", "#f4efe2"];
-  const seed = visual?.seed ?? 17;
+  if (!visual) return null;
+  const palette = visual.palette ?? ["#f6d44a", "#e95d4f", "#2f6f68", "#f4efe2"];
+  const seed = visual.seed ?? 17;
   const pos = positions(seed);
 
   return (
     <div
       className={`southland-visual relative overflow-hidden ${className}`}
       role="img"
-      aria-label={visual?.alt ?? `Ilustración editorial para: ${title}`}
+      aria-label={visual.alt ?? `Ilustración editorial para: ${title}`}
       style={{ background: palette[3] }}
     >
       <div
