@@ -111,6 +111,16 @@ def test_lpo_asset_family_collapses_generated_crop_variant() -> None:
     assert asset_family_key(original) == asset_family_key(crop)
 
 
+def test_best_img_url_prefers_lpo_vsmsrc() -> None:
+    html = '<img src="data:image/png;base64,AAAA" vsmsrc="/files/image/300/300279/original_798_526!.jpg?s=x">'
+    from bs4 import BeautifulSoup
+    from scripts.ingest_lpo_visual_refs import best_img_url
+    img = BeautifulSoup(html, "html.parser").find("img")
+    assert best_img_url(img, ARTICLE_URL).startswith(
+        "https://www.lapoliticaonline.com/files/image/300/300279/"
+    )
+
+
 def test_parse_srcset_prefers_largest_candidate() -> None:
     assert parse_srcset(
         "https://example.test/640.jpg 640w, https://example.test/1600.jpg 1600w",
