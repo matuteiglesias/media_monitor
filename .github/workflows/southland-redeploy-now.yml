@@ -37,7 +37,7 @@ jobs:
       - name: Install bounded runtime and Vercel CLI
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements-ai.txt jsonschema requests PyYAML
+          python -m pip install -r requirements-sensing.txt jsonschema requests
           npm install --global "vercel@${VERCEL_CLI_VERSION}"
 
       - name: Validate deployment configuration
