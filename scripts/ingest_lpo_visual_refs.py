@@ -189,6 +189,47 @@ def _extract_credit(text: str) -> str:
     return match.group(0).strip() if match else ""
 
 
+def _nearby_image_metadata(img) -> tuple[str, str]:
+    """Best-effort caption/credit extraction around a rendered article image."""
+    texts: list[str] = []
+    node = img
+    for _ in range(5):
+        node = getattr(node, "parent", None)
+        if node is None or not hasattr(node, "select"):
+            break
+        for selector in (
+            "figcaption",
+            ".caption",
+            ".epigraph",
+            ".credit",
+            ".credits",
+            ".source",
+            ".author",
+            ".g_author",
+            ".foto",
+            ".photo-credit",
+            ".image-caption",
+        ):
+            for candidate in node.select(selector):
+                value = " ".join(candidate.get_text(" ", strip=True).split())
+                if value and value not in texts:
+                    texts.append(value)
+    caption = texts[0] if texts else ""
+    credit = ""
+    for value in texts:
+        extracted = _extract_credit(value)
+        if extracted:
+            credit = extracted
+            break
+    if not credit:
+        # LPO gallery authors are sometimes exposed as bare text in .g_author.
+        for value in texts:
+            if len(value) <= 120 and value != caption:
+                credit = value
+                break
+    return caption, credit
+
+
 def _gallery_entries(gallery) -> list[dict[str, Any]]:
     """Read LPO's server-rendered gallery metadata from its vplfgal config."""
     media = gallery.find_parent("div", class_=lambda value: value and "media" in value)
