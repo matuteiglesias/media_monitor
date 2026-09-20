@@ -395,8 +395,9 @@ def discover_images(html: str, article_url: str, final_url: str) -> tuple[dict[s
             if not img:
                 continue
             figcaption = figure.find("figcaption")
-            caption = figcaption.get_text(" ", strip=True) if figcaption else ""
-            credit = _extract_credit(caption)
+            nearby_caption, nearby_credit = _nearby_image_metadata(img)
+            caption = figcaption.get_text(" ", strip=True) if figcaption else nearby_caption
+            credit = _extract_credit(caption) or nearby_credit
             url = best_img_url(img, final_url)
             if url:
                 article_surface_families.add(asset_family_key(url))
