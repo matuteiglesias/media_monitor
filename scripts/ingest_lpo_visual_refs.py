@@ -335,7 +335,8 @@ def discover_images(html: str, article_url: str, final_url: str) -> tuple[dict[s
             url = normalize_url(entry_url, base=final_url) or best_img_url(img, final_url)
             caption = str(entry.get("t") or "")
             author = str(entry.get("a") or "")
-            footer = gallery.find("div", class_="media-footer")
+            media = gallery.find_parent("div", class_=lambda value: value and "media" in value)
+            footer = media.find("div", class_="media-footer") if media else None
             if not caption and footer:
                 caption_node = footer.find(class_="caption")
                 caption = caption_node.get_text(" ", strip=True) if caption_node else ""
@@ -354,8 +355,8 @@ def discover_images(html: str, article_url: str, final_url: str) -> tuple[dict[s
     article = (
         soup.find("article")
         or soup.find("main")
-        or soup.select_one("div.bloque1.nota")
         or soup.select_one("div.body.vsmcontent")
+        or soup.select_one("div.bloque1.nota")
     )
     if article:
         for figure_index, figure in enumerate(article.find_all("figure")):
