@@ -1,0 +1,100 @@
+name: Southland Editorial V2 Live
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/southland-editorial-v2-live.yml"
+      - "apps/news_editorial/**"
+      - "config/editorial_ai.southland.yaml"
+      - "config/southland_aliases.v1.yaml"
+      - "scripts/run_outlet_ai.py"
+
+permissions:
+  contents: read
+
+jobs:
+  editorial-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      MEDIA_MONITOR_AI_MODEL: ${{ vars.MEDIA_MONITOR_AI_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-ai.txt
+      - name: Install runtime
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-ai.txt jsonschema requests PyYAML
+      - name: Resolve one digest
+        id: digest
+        shell: bash
+        run: |
+          DIGEST="$(date -u +%Y%m%dT%H)"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+      - name: Build current source evidence
+        run: |
+          python scripts/refresh_outlet_evidence.py             --site-id southland             --digest-at "${{ steps.digest.outputs.digest }}"
+      - name: Run editorial v2 DAG
+        run: |
+          test -n "$OPENAI_API_KEY"
+          test -n "$MEDIA_MONITOR_AI_MODEL"
+          python scripts/run_outlet_ai.py             --site-id southland             --digest-at "${{ steps.digest.outputs.digest }}"
+      - name: Summarize editorial v2
+        shell: bash
+        run: |
+          python - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json
+          import re
+          from pathlib import Path
+
+          root = Path(".runtime/southland")
+          report = json.loads(
+              (root / "storage/observability/editorial_ai_latest.json").read_text()
+          )
+          print("# Southland editorial v2 live calibration")
+          print()
+          print(f"- Digest: `{report['digest_at']}`")
+          print(f"- Workflow: `{report['workflow_id']}`")
+          print(f"- Inputs: {report['input_count']}")
+          print(f"- Accepted: {report['accepted_count']}")
+          print(f"- Rejected: {report['rejected_count']}")
+          print(f"- Failed: {report['failed_count']}")
+          print(f"- Policy: `{report['editorial_policy']}`")
+          print()
+
+          evidence_dir = root / "data/ai_runs" / report["digest_at"]
+          evidence_by_id = {}
+          for path in evidence_dir.glob("*.jsonl"):
+              row = json.loads(path.read_text())
+              evidence_by_id[row["index_id"]] = row["result"]
+
+          print("## Outcomes")
+          for item in report["items"]:
+              result = evidence_by_id.get(item["index_id"], {})
+              draft = result.get("draft") or {}
+              review = result.get("review") or {}
+              words = len(re.findall(r"\b\w+\b", draft.get("body_md", ""), re.UNICODE))
+              print()
+              print(f"### {item['index_id']} — {item['status']}")
+              print(f"- words: {words}")
+              print(f"- revisions: {item['revisions_used']}")
+              if review:
+                  print(
+                      "- review: "
+                      f"mechanism={review.get('mechanism_disciplined')} "
+                      f"leakage_absent={review.get('analysis_leakage_absent')} "
+                      f"payoff={review.get('comic_payoff_present')} "
+                      f"concise={review.get('concise_enough')}"
+                  )
+              if result.get("decision"):
+                  print(f"- mechanism: {result['decision'].get('comic_mechanism','')}")
+              if draft:
+                  print(f"- title: {draft.get('title','')}")
+                  print()
+                  print(draft.get("body_md",""))
+          PY
