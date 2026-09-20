@@ -34,8 +34,11 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Install Vercel CLI
-        run: npm install --global "vercel@${VERCEL_CLI_VERSION}"
+      - name: Install bounded runtime and Vercel CLI
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-ai.txt jsonschema requests PyYAML
+          npm install --global "vercel@${VERCEL_CLI_VERSION}"
 
       - name: Validate deployment configuration
         shell: bash
@@ -48,7 +51,7 @@ jobs:
             fi
           done
 
-      - name: Recover currently published Southland snapshot
+      - name: Resolve safe Southland snapshot
         id: snapshot
         shell: bash
         run: |
@@ -56,7 +59,33 @@ jobs:
           BASE="${SOUTHLAND_PUBLIC_OUTLET_URL%/}"
           TARGET=".runtime/southland/storage/public/site_snapshot.json"
           mkdir -p "$(dirname "$TARGET")"
-          curl --fail --silent --show-error --location --retry 3             "$BASE/data/site_snapshot.json"             --output "$TARGET"
+
+          curl --fail --silent --show-error --location --retry 3             "$BASE/api/health"             --output /tmp/southland-health.json
+
+          CURRENT_PUBLISHED="$(python - <<'PY'
+          import json
+          payload=json.load(open("/tmp/southland-health.json"))
+          if payload.get("site_id") != "southland":
+              raise SystemExit(f"unexpected production site identity: {payload.get('site_id')!r}")
+          print(int(payload.get("published_article_count") or 0))
+          PY
+          )"
+          echo "Current production published_article_count=$CURRENT_PUBLISHED"
+
+          if curl --fail --silent --show-error --location             "$BASE/data/site_snapshot.json"             --output "$TARGET"; then
+            echo "Recovered exact public site_snapshot.json"
+          else
+            rm -f "$TARGET"
+            if [ "$CURRENT_PUBLISHED" != "0" ]; then
+              echo "Production has published articles but exact public snapshot is unavailable; refusing content-changing redeploy." >&2
+              exit 1
+            fi
+
+            DIGEST="$(date -u +%Y%m%dT%H)"
+            echo "No published articles to preserve; compiling fresh Southland source snapshot for $DIGEST"
+            python scripts/refresh_outlet_evidence.py               --site-id southland               --digest-at "$DIGEST"
+            python scripts/compile_outlet.py               --site-id southland               --digest-at "$DIGEST"
+          fi
 
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import json
@@ -76,7 +105,7 @@ jobs:
           print(f"published_article_count={payload.get('metrics', {}).get('published_article_count', 0)}")
           PY
 
-      - name: Materialize current main with recovered snapshot
+      - name: Materialize current main with resolved snapshot
         shell: bash
         run: |
           set -euo pipefail
@@ -88,7 +117,7 @@ jobs:
           source = json.loads(Path(".runtime/southland/storage/public/site_snapshot.json").read_text(encoding="utf-8"))
           target = json.loads(Path("apps/news_site/public/data/site_snapshot.json").read_text(encoding="utf-8"))
           if source.get("snapshot_id") != target.get("snapshot_id"):
-              raise SystemExit("materialized snapshot ID differs from recovered production snapshot")
+              raise SystemExit("materialized snapshot ID differs from resolved Southland snapshot")
           if source.get("digest_at") != target.get("digest_at"):
               raise SystemExit("materialized digest differs from recovered production snapshot")
           print(f"materialized snapshot={target['snapshot_id']} digest={target['digest_at']}")
