@@ -1,3 +1,4 @@
+import Image from "next/image";
 import visuals from "../public/data/article_visuals.json";
 
 type LegacyVisual = {
@@ -71,10 +72,12 @@ export function ArticleVisual({
     if (!match) return null;
     return (
       <div className={`southland-visual relative overflow-hidden ${className}`}>
-        <img
+        <Image
           src={match.public_path}
           alt={match.alt || `Ilustración de Southland para: ${title}`}
-          className="absolute inset-0 h-full w-full object-cover"
+          fill
+          sizes="(max-width: 1024px) 100vw, 60vw"
+          className="object-cover"
         />
       </div>
     );
