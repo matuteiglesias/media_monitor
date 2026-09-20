@@ -112,7 +112,7 @@ def best_img_url(img, base_url: str) -> str:
             picked = parse_srcset(value, base_url)
             if picked:
                 return picked
-    for attr in ("src", "data-src", "data-lazy-src", "data-original"):
+    for attr in ("vsmsrc", "data-vsmsrc", "src", "data-src", "data-lazy-src", "data-original"):
         value = img.get(attr)
         if value:
             picked = normalize_url(value, base=base_url)
@@ -186,6 +186,29 @@ def _extract_credit(text: str) -> str:
         flags=re.IGNORECASE,
     )
     return match.group(0).strip() if match else ""
+
+
+def _gallery_entries(gallery) -> list[dict[str, Any]]:
+    """Read LPO's server-rendered gallery metadata from its vplfgal config."""
+    media = gallery.find_parent("div", class_=lambda value: value and "media" in value)
+    if media is None:
+        media = gallery.parent
+    script = media.find("script") if media is not None else None
+    raw = script.get_text("", strip=False) if script else ""
+    if not raw:
+        return []
+    match = re.search(
+        r"arguments:\s*\['[^']+',\s*(\[\{.*?\}\])\s*,\s*\d+",
+        raw,
+        flags=re.DOTALL,
+    )
+    if not match:
+        return []
+    try:
+        value = json.loads(match.group(1))
+    except Exception:
+        return []
+    return [row for row in value if isinstance(row, dict)]
 
 
 def article_metadata(html: str, requested_url: str, final_url: str) -> dict[str, Any]:
@@ -299,7 +322,41 @@ def discover_images(html: str, article_url: str, final_url: str) -> tuple[dict[s
             elif isinstance(item, dict):
                 add(str(item.get("url") or item.get("contentUrl") or ""), "hero")
 
-    article = soup.find("article") or soup.find("main")
+    # Current LPO pages render the lead gallery with base64 placeholders and
+    # expose the real URL in `vsmsrc`; caption/author live in the adjacent
+    # vplfgal JavaScript config. Capture that before falling back to generic
+    # semantic article markup.
+    for gallery_index, gallery in enumerate(soup.select("div.gallery")):
+        entries = _gallery_entries(gallery)
+        gallery_images = gallery.select("img[vsmsrc], img[data-vsmsrc]")
+        for image_index, img in enumerate(gallery_images):
+            entry = entries[image_index] if image_index < len(entries) else {}
+            entry_url = str(entry.get("i") or "")
+            url = normalize_url(entry_url, base=final_url) or best_img_url(img, final_url)
+            caption = str(entry.get("t") or "")
+            author = str(entry.get("a") or "")
+            footer = gallery.find("div", class_="media-footer")
+            if not caption and footer:
+                caption_node = footer.find(class_="caption")
+                caption = caption_node.get_text(" ", strip=True) if caption_node else ""
+            if not author and footer:
+                author_node = footer.find(class_=lambda value: value and ("g_author" in value or "author" in value))
+                author = author_node.get_text(" ", strip=True) if author_node else ""
+            add(
+                url,
+                "hero" if gallery_index == 0 and image_index == 0 else "inline",
+                caption=caption,
+                credit=author,
+                alt=img.get("alt", ""),
+                title=img.get("title", ""),
+            )
+
+    article = (
+        soup.find("article")
+        or soup.find("main")
+        or soup.select_one("div.bloque1.nota")
+        or soup.select_one("div.body.vsmcontent")
+    )
     if article:
         for figure_index, figure in enumerate(article.find_all("figure")):
             img = figure.find("img")
