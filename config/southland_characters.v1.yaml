@@ -1,0 +1,315 @@
+schema_version: southland_characters.v1
+principles:
+  - "Aliases are stable universe names, not story-by-story jokes."
+  - "Prefer phonetic or lexical wordplay over insults, accusations, or ideological labels."
+  - "If a character has no locked alias, keep the real public name rather than improvising."
+  - "A locked alias may be reused by text and image workflows; candidate aliases are reference-only."
+  - "Character context describes recurrence in the Southland/LPO corpus, not a complete biography."
+
+characters:
+  - character_id: javier_milei
+    real_name: "Javier Milei"
+    southland_name: "Javier Mieli"
+    alias_status: locked
+    corpus_context: "Central recurring national figure across government, economy, electoral, and coalition stories."
+    name_gag: "Near-phonetic shift from Milei to Mieli; simple enough to survive repeated use."
+    visual_motif: "Keep likeness recognizable; the alias itself carries the joke, so no mandatory prop."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/milei-sube-a-los-gobernadores-radicales-a-la-gira-por-paris-para-que-le-voten-la-eliminacion-de-las-paso-2769/"
+      - "https://www.lapoliticaonline.com/politica/se-confirma-la-primicia-de-lpo-milei-militariza-la-quinta-de-olivos-85/"
+
+  - character_id: karina_milei
+    real_name: "Karina Milei"
+    southland_name: "Karina Mieli"
+    alias_status: locked
+    corpus_context: "Recurring member of the presidential inner-circle cast in national political stories."
+    name_gag: "Shares the Mieli family name for universe continuity."
+    visual_motif: "No fixed prop; family-name continuity is the recurring device."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/la-jugada-de-jalil-y-saenz-para-ser-candidatos-y-que-lijo-vaya-a-la-corte-8639/"
+
+  - character_id: luis_caputo
+    real_name: "Luis Caputo"
+    southland_name: "Toto Capuccino"
+    alias_status: locked
+    corpus_context: "Recurring economy/finance character in budget, markets, taxes, debt, and government-allocation stories."
+    name_gag: "Toto Caputo becomes Toto Capuccino: memorable, phonetic, and visually reusable."
+    visual_motif: "Optional tiny espresso/cappuccino cup; avoid making the prop compulsory."
+    source_urls:
+      - "https://www.lapoliticaonline.com/economia/el-punto-debil-del-programa-de-caputo-debera-conseguir-usd-11-000-millones-en-el-mercado-local-en-pleno-ano-electoral/"
+      - "https://www.lapoliticaonline.com/politica/caputo-proyecta-timbear-en-2027-mas-de-113-mil-millones-del-fondo-para-obras-hidricas/"
+
+  - character_id: nicolas_nicky_caputo
+    real_name: "Nicolás "Nicky" Caputo"
+    southland_name: "Nicky Macchiato"
+    alias_status: locked
+    corpus_context: "Appears in the current corpus in stories involving Luis Caputo and business/policy relationships."
+    name_gag: "Coffee-family parallel to Toto Capuccino while remaining a distinct character."
+    visual_motif: "Optional espresso/macchiato visual cue."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/maniobra-de-toto-caputo-con-su-primo-nicky-para-llevarse-usd-160-millones-con-un-pase-de-manos-del-rigi-7815/"
+
+  - character_id: patricia_bullrich
+    real_name: "Patricia Bullrich"
+    southland_name: "Patricia Bulldog"
+    alias_status: locked
+    corpus_context: "Recurring national political character in coalition, congressional, and government-internal stories."
+    name_gag: "Bullrich to Bulldog: immediate sound/animal association without relying on a factual allegation."
+    visual_motif: "Optional tiny bulldog emblem; keep the human character primary."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/bullrich-provoca-a-milei-con-una-cancion-de-lali-no-voy-a-cambiar-por-mucho-que-ladren/"
+      - "https://www.lapoliticaonline.com/politica/patricia-en-llamas-contra-toto-caputo-por-los-discapacitados-si-no-avisan-se-resienten-las-relaciones-7247/"
+
+  - character_id: axel_kicillof
+    real_name: "Axel Kicillof"
+    southland_name: "Axel Kicillofsky"
+    alias_status: locked
+    corpus_context: "Recurring Buenos Aires/prospective national-election character in the current political batch."
+    name_gag: "A slightly over-formal Slavic-sounding extension of the surname."
+    visual_motif: "No mandatory prop; rely on recognizable likeness and the name."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/kicillof-se-lanzo-a-presidente-con-un-gesto-a-cristina-esta-injustamente-presa/"
+      - "https://www.lapoliticaonline.com/provincia/kicillof-planteo-a-2027-una-agenda-de-soberania-trabajo-y-desarrollo-frente-a-la-estafa-de-milei/"
+
+  - character_id: sergio_massa
+    real_name: "Sergio Massa"
+    southland_name: "Sergio Masa Madre"
+    alias_status: locked
+    corpus_context: "Recurring Peronist coalition/electoral character in the current corpus."
+    name_gag: "Massa becomes Masa Madre: strong lexical pun that remains recognizable."
+    visual_motif: "Optional bread-dough motif only when useful; never force it into unrelated scenes."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/massa-eludio-lanzarse-pero-advirtio-se-viene-una-renovacion-en-el-peronismo/"
+
+  - character_id: cristina_fernandez_kirchner
+    real_name: "Cristina Fernández de Kirchner"
+    southland_name: "Cristina Fernández de Kirsch"
+    alias_status: locked
+    corpus_context: "Recurring reference point in Peronist internal and electoral stories."
+    name_gag: "Kirchner becomes Kirsch, preserving family continuity with a subtle lexical shift."
+    visual_motif: "No mandatory prop."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/carteles-de-axel-presidente-cristina-libre-agitaron-la-interna-peronista/"
+      - "https://www.lapoliticaonline.com/politica/kicillof-se-lanzo-a-presidente-con-un-gesto-a-cristina-esta-injustamente-presa/"
+
+  - character_id: maximo_kirchner
+    real_name: "Máximo Kirchner"
+    southland_name: "Máximo Kirsch"
+    alias_status: locked
+    corpus_context: "Recurring Peronist/Cámpora character in internal-party and legislative stories."
+    name_gag: "Uses the same Kirsch family surname as Cristina for universe continuity."
+    visual_motif: "No mandatory prop."
+    source_urls:
+      - "https://www.lapoliticaonline.com/ciudad/maximo-le-intervino-el-distrito-a-recalde-y-hay-tension-en-la-campora/"
+
+  - character_id: mariano_recalde
+    real_name: "Mariano Recalde"
+    southland_name: "Mariano Recalcula"
+    alias_status: locked
+    corpus_context: "Appears in Buenos Aires City/Peronist internal stories in the current batch."
+    name_gag: "Recalde becomes Recalcula: simple verb-based phonetic gag."
+    visual_motif: "Optional calculator/recalculation cue when the scene supports it."
+    source_urls:
+      - "https://www.lapoliticaonline.com/ciudad/maximo-le-intervino-el-distrito-a-recalde-y-hay-tension-en-la-campora/"
+
+  - character_id: paula_penacca
+    real_name: "Paula Penacca"
+    southland_name: "Paula Península"
+    alias_status: locked
+    corpus_context: "Appears in the same Buenos Aires City/Peronist internal-story cluster."
+    name_gag: "Pena-/Península sound association; easy to remember without an evaluative claim."
+    visual_motif: "No mandatory prop."
+    source_urls:
+      - "https://www.lapoliticaonline.com/ciudad/maximo-le-intervino-el-distrito-a-recalde-y-hay-tension-en-la-campora/"
+
+  - character_id: raul_jalil
+    real_name: "Raúl Jalil"
+    southland_name: "Raúl Jalapeño"
+    alias_status: locked
+    corpus_context: "Appears in provincial-election and judicial-route speculation stories in the current batch."
+    name_gag: "Jalil to Jalapeño: strong phonetic cue with an obvious visual identity."
+    visual_motif: "Optional tiny jalapeño lapel pin."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/la-jugada-de-jalil-y-saenz-para-ser-candidatos-y-que-lijo-vaya-a-la-corte-8639/"
+
+  - character_id: gustavo_saenz
+    real_name: "Gustavo Sáenz"
+    southland_name: "Gustavo Sáenzwich"
+    alias_status: locked
+    corpus_context: "Appears in provincial-election and coalition stories in the current batch."
+    name_gag: "Sáenz plus sandwich: a compact bilingual-sounding phonetic gag."
+    visual_motif: "Optional sandwich icon only when compositionally useful."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/la-jugada-de-jalil-y-saenz-para-ser-candidatos-y-que-lijo-vaya-a-la-corte-8639/"
+      - "https://www.lapoliticaonline.com/politica/en-el-peronismo-apuestan-a-un-acuerdo-con-el-intendente-de-salta-si-se-cae-la-candidatura-de-saenz/"
+
+  - character_id: ariel_lijo
+    real_name: "Ariel Lijo"
+    southland_name: "Ariel Legajo"
+    alias_status: locked
+    corpus_context: "Judicial character appearing in court-composition and candidacy-litigation stories."
+    name_gag: "Lijo to Legajo: judicial paperwork wordplay that fits the recurring institutional setting."
+    visual_motif: "Optional overstuffed case-file folder."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/la-jugada-de-jalil-y-saenz-para-ser-candidatos-y-que-lijo-vaya-a-la-corte-8639/"
+
+  - character_id: martin_llaryora
+    real_name: "Martín Llaryora"
+    southland_name: "Martín Llavero"
+    alias_status: locked
+    corpus_context: "Recurring governor/federal-coalition character in the current batch."
+    name_gag: "Llaryora to Llavero: clean phonetic association with an easy recurring object."
+    visual_motif: "Optional keyring."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/llaryora-pullaro-y-nacho-torres-no-descartar-armar-una-primaria-para-presidente-4947/"
+      - "https://www.lapoliticaonline.com/santa-fe/pullaro-llaryora-y-nacho-torres-se-mostraron-juntos-y-confirman-su-coordinacion-para-el-2027/"
+
+  - character_id: maximiliano_pullaro
+    real_name: "Maximiliano Pullaro"
+    southland_name: "Maxi Pulóver"
+    alias_status: locked
+    corpus_context: "Recurring Santa Fe/federal-coalition character in the current batch."
+    name_gag: "Pullaro to Pulóver: strong phonetic clothing gag."
+    visual_motif: "Optional unmistakable sweater."
+    source_urls:
+      - "https://www.lapoliticaonline.com/santa-fe/pullaro-llaryora-y-nacho-torres-se-mostraron-juntos-y-confirman-su-coordinacion-para-el-2027/"
+      - "https://www.lapoliticaonline.com/santa-fe/el-peronismo-denuncia-que-pullaro-llevo-a-santa-fe-al-deficit-mas-alto-de-la-ultima-decada/"
+
+  - character_id: ignacio_nacho_torres
+    real_name: "Ignacio "Nacho" Torres"
+    southland_name: "Nacho Torrejas"
+    alias_status: locked
+    corpus_context: "Recurring Patagonia/federal-coalition character in the current batch."
+    name_gag: "Nacho Torres to Nacho Torrejas: intentionally food-cartoonish while remaining recognizable."
+    visual_motif: "No mandatory prop."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/llaryora-pullaro-y-nacho-torres-no-descartar-armar-una-primaria-para-presidente-4947/"
+      - "https://www.lapoliticaonline.com/santa-fe/pullaro-llaryora-y-nacho-torres-se-mostraron-juntos-y-confirman-su-coordinacion-para-el-2027/"
+
+  - character_id: juan_schiaretti
+    real_name: "Juan Schiaretti"
+    southland_name: "Juan Schiarettini"
+    alias_status: locked
+    corpus_context: "Recurring federal/coalition reference in national political coverage."
+    name_gag: "Italianate diminutive extension that preserves recognizability."
+    visual_motif: "No mandatory prop."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/llaryora-pullaro-y-nacho-torres-no-descartar-armar-una-primaria-para-presidente-4947/"
+
+  - character_id: diego_santilli
+    real_name: "Diego Santilli"
+    southland_name: "Diego Santillín"
+    alias_status: locked
+    corpus_context: "Recurring national/coalition political character."
+    name_gag: "Santilli to Santillín: lightweight cartoon diminutive."
+    visual_motif: "No mandatory prop."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/milei-sube-a-los-gobernadores-radicales-a-la-gira-por-paris-para-que-le-voten-la-eliminacion-de-las-paso-2769/"
+
+  - character_id: manuel_adorni
+    real_name: "Manuel Adorni"
+    southland_name: "Manuel Adorno"
+    alias_status: locked
+    corpus_context: "Recurring communications/government character in current national coverage."
+    name_gag: "One-letter shift to the Spanish word for ornament."
+    visual_motif: "Optional decorative frame motif."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/milei-ya-es-el-presidente-con-mas-pliegos-de-jueces-aprobados-en-un-ano-2497/"
+
+  - character_id: martin_menem
+    real_name: "Martín Menem"
+    southland_name: "Martín Menú"
+    alias_status: locked
+    corpus_context: "Recurring congressional/libertarian character in national political coverage."
+    name_gag: "Menem to Menú: compact visual wordplay."
+    visual_motif: "Optional laminated menu card."
+    source_urls: []
+
+  - character_id: lucia_corpacci
+    real_name: "Lucía Corpacci"
+    southland_name: "Lucía Carpaccio"
+    alias_status: locked
+    corpus_context: "Appears in Catamarca/Peronist internal stories in the current batch."
+    name_gag: "Corpacci to Carpaccio: strong phonetic food pun."
+    visual_motif: "No mandatory prop."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/la-jugada-de-jalil-y-saenz-para-ser-candidatos-y-que-lijo-vaya-a-la-corte-8639/"
+
+  - character_id: emilia_orozco
+    real_name: "Emilia Orozco"
+    southland_name: "Emilia Oráculo"
+    alias_status: locked
+    corpus_context: "Appears in Salta electoral stories in the current batch."
+    name_gag: "Orozco to Oráculo: phonetic shift with a clean cartoon identity."
+    visual_motif: "Optional tiny crystal-ball icon; do not imply supernatural knowledge as fact."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/la-jugada-de-jalil-y-saenz-para-ser-candidatos-y-que-lijo-vaya-a-la-corte-8639/"
+
+  - character_id: santiago_caputo
+    real_name: "Santiago Caputo"
+    southland_name: "Santiago Capucha"
+    alias_status: candidate
+    corpus_context: "Recurring presidential-strategy/communications character in current national coverage."
+    name_gag: "Caputo to Capucha; memorable, but kept provisional because the connotation may overpower the phonetic joke."
+    visual_motif: "None until alias is locked."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/debut-accidentado-para-oria-se-le-descontrolaron-los-bots-y-en-las-redes-ya-piden-que-vuelva-cerimedo/"
+
+  - character_id: guillermo_francos
+    real_name: "Guillermo Francos"
+    southland_name: "Guillermo Franco Suizo"
+    alias_status: candidate
+    corpus_context: "Recurring government/coalition character in current national coverage."
+    name_gag: "Turns the surname into 'franco suizo'; amusing but perhaps too constructed."
+    visual_motif: "None until alias is locked."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/encuesta-milei-quedo-cuarto-abajo-de-francos-bullrich-y-santilli-entre-los-votantes-libertarios/"
+
+  - character_id: miguel_angel_pichetto
+    real_name: "Miguel Ángel Pichetto"
+    southland_name: "Miguel Ángel Piquete"
+    alias_status: candidate
+    corpus_context: "Recurring coalition/opposition character in national political stories."
+    name_gag: "Pichetto to Piquete; phonetically strong, but held as candidate because the word has political associations."
+    visual_motif: "None until alias is locked."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/pichetto-pide-un-frente-del-peronismo-con-los-radicales-y-el-pro-para-ganarle-a-milei-2650/"
+
+  - character_id: jorge_macri
+    real_name: "Jorge Macri"
+    southland_name: "Jorge McCree"
+    alias_status: candidate
+    corpus_context: "Recurring Buenos Aires City/national-coalition character."
+    name_gag: "Family-name phonetic transformation shared with Mauricio."
+    visual_motif: "None until alias is locked."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/jorge-macri-busca-pisarle-a-milei-la-relacion-con-estados-unidos/"
+
+  - character_id: mauricio_macri
+    real_name: "Mauricio Macri"
+    southland_name: "Mauricio McCree"
+    alias_status: candidate
+    corpus_context: "Recurring former-president/PRO reference in national coalition stories."
+    name_gag: "Family-name phonetic transformation shared with Jorge."
+    visual_motif: "None until alias is locked."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/encuesta-milei-quedo-cuarto-abajo-de-francos-bullrich-y-santilli-entre-los-votantes-libertarios/"
+
+  - character_id: juan_bautista_mahiques
+    real_name: "Juan Bautista Mahiques"
+    southland_name: "Juan Bautista Maniquí"
+    alias_status: candidate
+    corpus_context: "Judicial/government character in current court-appointment coverage."
+    name_gag: "Mahiques to Maniquí: strong sound gag, kept provisional pending repeated use."
+    visual_motif: "None until alias is locked."
+    source_urls:
+      - "https://www.lapoliticaonline.com/politica/milei-ya-es-el-presidente-con-mas-pliegos-de-jueces-aprobados-en-un-ano-2497/"
+
+  - character_id: horacio_rosatti
+    real_name: "Horacio Rosatti"
+    southland_name: "Horacio Rosetti"
+    alias_status: candidate
+    corpus_context: "Supreme-court character in judicial/institutional coverage."
+    name_gag: "Minimal phonetic deformation; deliberately restrained."
+    visual_motif: "None until alias is locked."
+    source_urls: []
