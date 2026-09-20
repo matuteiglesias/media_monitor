@@ -131,6 +131,7 @@ jobs:
             tests/test_editorial_selection.py \
             tests/test_story_contexts.py \
             tests/test_surface_boundaries.py
+          python scripts/validate_southland_visual_assets.py
 
   news-site-contracts:
     runs-on: ubuntu-latest
@@ -151,6 +152,7 @@ jobs:
           npm run test:refresh-data
           npm run test:site-snapshot
           npm run test:freshness
+          npm run test:visuals
           node --check scripts/validate_site_snapshot.mjs
           npm run typecheck
           node scripts/prepare_ci_build_fixture.mjs
