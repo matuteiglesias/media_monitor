@@ -180,7 +180,10 @@ def test_southland_reader_surface_and_two_step_human_release_are_explicit() -> N
 
     assert site["presentation"]["mode"] == "publication"
     assert site["name"] == "Southland Times"
-    assert "Fuentes reales, ficción marcada" in home
+    trust = (ROOT / "apps/news_site/components/southland/SouthlandTrustMark.tsx").read_text()
+    assert "SouthlandStory" in home
+    assert "Cable de realidad" in home
+    assert "Fuentes reales / ficción marcada" in trust
     assert "Qué es real y qué no" in article
     chrome = (ROOT / "apps/news_site/components/southland/SouthlandChrome.tsx").read_text()
     assert "st-nameplate" in chrome
