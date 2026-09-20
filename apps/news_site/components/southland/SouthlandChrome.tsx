@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { EDITORIAL_IDENTITY } from "@/lib/editorial_identity";
 import { SITE_PRESENTATION } from "@/lib/site_presentation";
+import { loadOutlet } from "@/lib/adapter/mappers";
+import { formatPublicDate } from "@/lib/format";
 
 const sections = ["Política", "Economía", "Provincias", "Sociedad", "Archivo"];
 
 export function SouthlandHeader() {
   const routes = EDITORIAL_IDENTITY.routes;
+  const outlet = loadOutlet();
+  const editionDate = outlet.publication.featured?.published_at
+    ? formatPublicDate(outlet.publication.featured.published_at, outlet.site.locale)
+    : null;
   return (
     <header className="st-header">
       <div className="st-shell">
@@ -26,7 +32,7 @@ export function SouthlandHeader() {
           <div className="st-edition-line">
             <span>{SITE_PRESENTATION.location_label}</span>
             <span aria-hidden>·</span>
-            <span>Edición actual</span>
+            <span>{editionDate ? `Edición actual · ${editionDate}` : "Primera edición en preparación"}</span>
             <span aria-hidden>·</span>
             <span className="st-trust-inline">Fuentes reales / ficción marcada</span>
           </div>
