@@ -200,6 +200,11 @@ def test_southland_reader_surface_and_two_step_human_release_are_explicit() -> N
     chrome = (ROOT / "apps/news_site/components/southland/SouthlandChrome.tsx").read_text()
     assert "st-nameplate" in chrome
     assert "SouthlandFooter" in chrome
+    assert "st-preview-banner" in chrome
+    preview_script = (ROOT / "scripts/materialize_southland_prepared_preview.py").read_text()
+    assert "PREVIEW_UNPUBLISHED_DRAFTS" in preview_script
+    assert "published_bus_mutated" in preview_script
+    assert "ai_preview_unapproved" in preview_script
     assert "run_outlet_ai.py" in prepare
     assert "upload-artifact@v4" in prepare
     assert "draft_ids" in publish
