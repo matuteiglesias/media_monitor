@@ -192,19 +192,33 @@ Also check editorial quality:
 - ONE dominant mechanism carries the piece;
 - the mechanism has an actual comic payoff rather than merely translating the source into metaphor;
 - the writer does not introduce multiple competing conceits;
-- source-analysis/caveat language does not leak repeatedly into the prose;
-- the draft is compact and within the supplied target whenever practical;
+- process/meta-analysis language does not leak repeatedly into the prose;
 - the joke stops before it is exhausted.
 
-Use the deterministic draft metrics supplied with the prompt. A draft outside hard word/section
-bounds cannot be approved. If the story is fundamentally weak, reject it. If it is good but bloated,
-over-explained, or mechanically repetitive, request ONE concrete rewrite rather than approving it."""
+Be precise about analysis_leakage_absent. Ordinary journalism is NOT leakage: concise attribution
+("según X", "el informe estima"), a necessary statement that something is conditional, or one brief
+uncertainty qualifier is allowed. Mark leakage false only when the article repeatedly sounds like an
+analyst/reviewer talking about evidence quality, methodology, unsupported propositions, or the
+writing process itself (for example "según el material analizado", repeated "no está confirmado",
+"no implica", "no existe evidencia", or defensive caveats that interrupt the story).
+
+Concision is primarily determined by the supplied word/section metrics. The concise_enough field is
+editorial feedback, not a license to contradict those metrics. If the story is fundamentally weak,
+reject it. If it is good but over-explained or mechanically repetitive, request ONE concrete rewrite."""
 
 REVISER_INSTRUCTIONS = """Rewrite the Southland draft decisively in response to the review.
 Do not merely patch individual sentences. Preserve the approved single comic mechanism and the real
-event topology, but cut aggressively. Remove repeated caveats, duplicate explanations, extra comic
-devices, and unnecessary sections. Hit the target word range if possible and stay inside the hard
-bounds. Use only canonical approved aliases. Return a complete replacement draft."""
+event topology, but cut aggressively. Remove repeated defensive caveats, meta-analysis language,
+duplicate explanations, extra comic devices, and unnecessary sections. Keep concise ordinary
+attribution where it is genuinely needed; do not erase attribution just to sound smoother. Hit the
+target word range if possible and stay inside the hard bounds. Use only canonical approved aliases.
+Return a complete replacement draft."""
+
+FINAL_REVIEWER_INSTRUCTIONS = REVIEWER_INSTRUCTIONS + """
+
+This is the terminal review after the one permitted revision. Do NOT request another revision.
+Set decision to approve if the draft is publishable now, otherwise reject. Evaluate the actual
+revised prose, not whether an even better rewrite could theoretically exist."""
 
 
 class SouthlandEditorialWorkflow:
@@ -275,7 +289,6 @@ class SouthlandEditorialWorkflow:
             review.mechanism_disciplined
             and review.analysis_leakage_absent
             and review.comic_payoff_present
-            and review.concise_enough
         )
 
     def _review_safety_checks(self, review: SouthlandReview) -> bool:
@@ -294,6 +307,7 @@ class SouthlandEditorialWorkflow:
             state.review.decision == "revise"
             or not self._review_safety_checks(state.review)
             or not self._review_style_checks(state.review)
+            or not metrics["target_length_ok"]
             or not metrics["hard_length_ok"]
             or not metrics["section_count_ok"]
         )
@@ -311,7 +325,6 @@ class SouthlandEditorialWorkflow:
             "mechanism_disciplined",
             "analysis_leakage_absent",
             "comic_payoff_present",
-            "concise_enough",
         ):
             if not getattr(state.review, name):
                 failed.append(name)
@@ -462,13 +475,16 @@ class SouthlandEditorialWorkflow:
             state: DraftedStory,
             *,
             stage: str,
+            final: bool = False,
         ) -> ReviewedStory:
             metrics = draft_metrics(state.draft, self.editorial_policy)
             review = await self._call(
                 packet=state.packet,
                 stage=stage,
                 revision=state.revisions_used,
-                instructions=REVIEWER_INSTRUCTIONS,
+                instructions=(
+                    FINAL_REVIEWER_INSTRUCTIONS if final else REVIEWER_INSTRUCTIONS
+                ),
                 prompt=json.dumps(
                     {
                         "analysis": state.analysis.model_dump(mode="json"),
@@ -542,7 +558,11 @@ class SouthlandEditorialWorkflow:
             ctx: WorkflowContext[ReviewedStory],
         ) -> None:
             await ctx.send_message(
-                await run_review(state, stage="southland_review_final")
+                await run_review(
+                    state,
+                    stage="southland_review_final",
+                    final=True,
+                )
             )
 
         @executor(id="southland_review_terminal")
