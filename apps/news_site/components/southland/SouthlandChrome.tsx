@@ -12,6 +12,14 @@ export function SouthlandHeader() {
     : null;
   return (
     <header className="st-header">
+      {SITE_PRESENTATION.preview_mode === "prepared_issue" ? (
+        <div className="st-preview-banner" role="status">
+          <strong>{SITE_PRESENTATION.preview_label ?? "BORRADORES IA · NO PUBLICADO"}</strong>
+          <span>
+            Digest {SITE_PRESENTATION.preview_digest_at} · {SITE_PRESENTATION.preview_draft_count ?? 0} piezas · vista previa local
+          </span>
+        </div>
+      ) : null}
       <div className="st-shell">
         <div className="st-utility-bar">
           <span>Ficción satírica basada en hechos públicos</span>
