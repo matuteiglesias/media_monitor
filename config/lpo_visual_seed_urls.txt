@@ -1,0 +1,6 @@
+# First successful Southland issue references.
+# The RSS mode can grow this into a few-dozen-article corpus automatically.
+https://www.lapoliticaonline.com/economia/el-punto-debil-del-programa-de-caputo-debera-conseguir-usd-11-000-millones-en-el-mercado-local-en-pleno-ano-electoral/
+https://www.lapoliticaonline.com/politica/la-jugada-de-jalil-y-saenz-para-ser-candidatos-y-que-lijo-vaya-a-la-corte-8639/
+https://www.lapoliticaonline.com/ciudad/maximo-le-intervino-el-distrito-a-recalde-y-hay-tension-en-la-campora/
+https://www.lapoliticaonline.com/economia/fix-anticipa-una-fuerte-dolarizacion-en-2027-y-advierte-que-el-dolar-puede-llegar-a-2-256/
