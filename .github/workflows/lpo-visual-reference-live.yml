@@ -47,10 +47,15 @@ jobs:
                   if node is None: break
                   chain.append(f"{getattr(node,'name','')}."+".".join(node.get("class",[])))
               src=img.get("src") or img.get("data-src") or ""
-              print("IMG",i,"src=",src,"alt=",img.get("alt",""),"parent_chain="," > ".join(chain))
+              print("IMG",i,"src=",src,"alt=",img.get("alt",""),"attrs=",dict(img.attrs),"parent_chain="," > ".join(chain))
               parent=img.parent
               if parent:
                   print("TEXT", " ".join(parent.get_text(" ",strip=True).split())[:500])
+          gallery=soup.select_one("div.gallery")
+          if gallery:
+              print("GALLERY_HTML", str(gallery.parent)[:8000])
+          for node in soup.find_all(string=lambda s: s and any(k in s.lower() for k in ("foto", "crédito", "credito", "gentileza"))):
+              print("CREDIT_TEXT", repr(" ".join(str(node).split())), "PARENT", getattr(node.parent,"name",None), node.parent.get("class",[]))
           PY
       - name: Ingest current LPO reference batch
         run: |
