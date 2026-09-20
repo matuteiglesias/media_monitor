@@ -165,6 +165,29 @@ def test_lpo_vsmsrc_gallery_enriches_same_asset_with_alt_and_credit() -> None:
     assert images[0].alt_text == "Una escena política"
 
 
+def test_lpo_gallery_config_captures_multiple_images() -> None:
+    html = """
+    <html><body>
+      <div class="media">
+        <script>
+          vsm.load.check('window.vplfgal',{arguments:['gallery1',[
+            {"i":"/files/image/1/2/a.jpg","w":"1200","h":"800","id":"a","t":"Uno","a":"Agencia Uno","mq":[]},
+            {"i":"/files/image/1/2/b.jpg","w":"1200","h":"800","id":"b","t":"Dos","a":"Agencia Dos","mq":[]}
+          ],2,'','',false,'',],variable:'x'});
+        </script>
+        <div class="gallery">
+          <img src="data:image/png;base64,AAA" vsmsrc="/files/image/1/2/a.jpg" alt="Primera">
+        </div>
+      </div>
+    </body></html>
+    """
+    _meta, images = discover_images(html, ARTICLE_URL, ARTICLE_URL)
+
+    assert [row.role for row in images] == ["hero", "inline"]
+    assert [row.caption for row in images] == ["Uno", "Dos"]
+    assert [row.credit for row in images] == ["Agencia Uno", "Agencia Dos"]
+
+
 def test_ingest_downloads_manifests_and_is_idempotent(tmp_path: Path) -> None:
     hero = jpeg_bytes()
     inline = jpeg_bytes(900, 600)
