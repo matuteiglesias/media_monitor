@@ -35,6 +35,7 @@ LPO_HOSTS = {"lapoliticaonline.com", "www.lapoliticaonline.com"}
 NOISE_TOKENS = (
     "logo", "icon", "avatar", "favicon", "sprite", "banner", "social",
     "facebook", "twitter", "instagram", "youtube", "whatsapp", "pixel",
+    "horizontal-pieza-noticia",
 )
 IMAGE_MIME_EXT = {
     "image/jpeg": ".jpg",
@@ -399,6 +400,15 @@ def discover_images(html: str, article_url: str, final_url: str) -> tuple[dict[s
                 title=img.get("title", ""),
             )
         for img in article.find_all("img"):
+            related = img.find_parent(
+                class_=lambda value: value and (
+                    "noticia-ar" in value
+                    if isinstance(value, (list, tuple))
+                    else "noticia-ar" in str(value)
+                )
+            )
+            if related is not None and img.find_parent("figure", class_="vsmimage") is None:
+                continue
             url = best_img_url(img, final_url)
             if url:
                 article_surface_families.add(asset_family_key(url))
@@ -595,7 +605,10 @@ def ingest(
             try:
                 response = request(session, article_url, timeout)
                 article_row["http_status"] = response.status_code
-                html = response.text
+                try:
+                    html = response.content.decode("utf-8")
+                except UnicodeDecodeError:
+                    html = response.content.decode("utf-8", errors="replace")
                 article_row["html_sha256"] = hashlib.sha256(response.content).hexdigest()
                 meta, candidates = discover_images(html, article_url, response.url)
                 article_row.update({key: meta.get(key, "") for key in (
