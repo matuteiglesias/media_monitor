@@ -94,6 +94,7 @@ def fixture_html() -> str:
             <figcaption>Dos dirigentes reunidos. Foto: Agencia Prueba</figcaption>
           </figure>
           <p>Texto de la noticia.</p>
+          <div class="item noticia-ar"><img src="https://cdn.example.test/photos/related-horizontal-pieza-noticia_400_225!.jpg" alt="Otra noticia"></div>
           <figure>
             <img src="{INLINE_URL}" alt="Una segunda escena">
             <figcaption>Segunda escena de la reunión.</figcaption>
@@ -129,6 +130,7 @@ def test_discover_images_extracts_article_metadata_credit_and_skips_logo() -> No
     assert images[0].credit == "Foto: Agencia Prueba"
     assert images[0].alt_text == "Dos dirigentes durante una reunión"
     assert all("logo" not in row.url for row in images)
+    assert all("horizontal-pieza-noticia" not in row.url for row in images)
 
 
 def test_lpo_vsmsrc_gallery_enriches_same_asset_with_alt_and_credit() -> None:
@@ -243,6 +245,7 @@ def test_ingest_downloads_manifests_and_is_idempotent(tmp_path: Path) -> None:
     assert {row["publish_original"] for row in images} == {False}
     assert {row["download_status"] for row in images} == {"ok"}
     assert {row["width"] for row in images} == {1200, 900}
+    assert any(row["alt_text"] == "Dos dirigentes durante una reunión" for row in images)
     assert len(session.calls) == calls_after_first
     assert second["processed_article_count"] == 0
     assert second["reused_count"] == 1
