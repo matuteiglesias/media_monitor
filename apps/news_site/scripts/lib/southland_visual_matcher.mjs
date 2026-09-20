@@ -98,11 +98,7 @@ export function rankSouthlandVisualAssets({
 
     // If both sides name people, a generic topic overlap cannot override
     // a person mismatch.
-    if (
-      articleCharacters.length &&
-      assetCharacters.length &&
-      !characterMatches.length
-    ) {
+    if (assetCharacters.length && !characterMatches.length) {
       continue;
     }
 
