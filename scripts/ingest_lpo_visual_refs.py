@@ -266,6 +266,7 @@ def discover_images(html: str, article_url: str, final_url: str) -> tuple[dict[s
     soup: BeautifulSoup = meta.pop("soup")
     jsonld = meta.pop("jsonld")
     candidate_index: dict[str, int] = {}
+    article_surface_families: set[str] = set()
     candidates: list[Candidate] = []
 
     def add(url: str, role: str, *, caption: str = "", credit: str = "", alt: str = "", title: str = "") -> None:
@@ -328,15 +329,35 @@ def discover_images(html: str, article_url: str, final_url: str) -> tuple[dict[s
     # semantic article markup.
     for gallery_index, gallery in enumerate(soup.select("div.gallery")):
         entries = _gallery_entries(gallery)
+        media = gallery.find_parent("div", class_=lambda value: value and "media" in value)
+        footer = media.find("div", class_="media-footer") if media else None
+
+        # The JavaScript config is authoritative for all gallery images, even
+        # when only the first image is rendered into static HTML.
+        for entry_index, entry in enumerate(entries):
+            url = normalize_url(str(entry.get("i") or ""), base=final_url)
+            if not url:
+                continue
+            article_surface_families.add(asset_family_key(url))
+            add(
+                url,
+                "hero" if gallery_index == 0 and entry_index == 0 else "inline",
+                caption=str(entry.get("t") or ""),
+                credit=str(entry.get("a") or ""),
+            )
+
+        # Rendered lazy-image elements add alt/title and act as a fallback when
+        # LPO changes the gallery config shape.
         gallery_images = gallery.select("img[vsmsrc], img[data-vsmsrc]")
         for image_index, img in enumerate(gallery_images):
             entry = entries[image_index] if image_index < len(entries) else {}
             entry_url = str(entry.get("i") or "")
             url = normalize_url(entry_url, base=final_url) or best_img_url(img, final_url)
+            if not url:
+                continue
+            article_surface_families.add(asset_family_key(url))
             caption = str(entry.get("t") or "")
             author = str(entry.get("a") or "")
-            media = gallery.find_parent("div", class_=lambda value: value and "media" in value)
-            footer = media.find("div", class_="media-footer") if media else None
             if not caption and footer:
                 caption_node = footer.find(class_="caption")
                 caption = caption_node.get_text(" ", strip=True) if caption_node else ""
@@ -367,6 +388,8 @@ def discover_images(html: str, article_url: str, final_url: str) -> tuple[dict[s
             caption = figcaption.get_text(" ", strip=True) if figcaption else ""
             credit = _extract_credit(caption)
             url = best_img_url(img, final_url)
+            if url:
+                article_surface_families.add(asset_family_key(url))
             add(
                 url,
                 "hero" if figure_index == 0 and not candidates else "inline",
@@ -376,8 +399,11 @@ def discover_images(html: str, article_url: str, final_url: str) -> tuple[dict[s
                 title=img.get("title", ""),
             )
         for img in article.find_all("img"):
+            url = best_img_url(img, final_url)
+            if url:
+                article_surface_families.add(asset_family_key(url))
             add(
-                best_img_url(img, final_url),
+                url,
                 "inline",
                 alt=img.get("alt", ""),
                 title=img.get("title", ""),
@@ -386,14 +412,16 @@ def discover_images(html: str, article_url: str, final_url: str) -> tuple[dict[s
     # An og/jsonld image that never appears in article markup is still useful as
     # reference evidence, but mark it explicitly.
     if candidates:
-        first_article_urls = {
-            best_img_url(img, final_url)
-            for img in (article.find_all("img") if article else [])
-        }
         candidates = [
             Candidate(
                 url=row.url,
-                role=("og_only" if row.role == "hero" and row.url not in first_article_urls and len(candidates) > 1 else row.role),
+                role=(
+                    "og_only"
+                    if row.role == "hero"
+                    and asset_family_key(row.url) not in article_surface_families
+                    and len(candidates) > 1
+                    else row.role
+                ),
                 ordinal=row.ordinal,
                 caption=row.caption,
                 credit=row.credit,
