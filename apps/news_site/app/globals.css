@@ -1377,3 +1377,38 @@ a {
     gap: 0.2rem;
   }
 }
+
+
+/* Explicit local editorial-preview state. Never used for production publication. */
+.st-preview-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem 1.2rem;
+  padding: 0.52rem 1rem;
+  border-bottom: 2px solid var(--st-rule);
+  background: var(--st-red);
+  color: #fff9e8;
+  font-family: var(--st-sans);
+  font-size: 0.65rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.st-preview-banner strong {
+  font-weight: 950;
+}
+
+.st-preview-banner span {
+  opacity: 0.88;
+  font-weight: 750;
+}
+
+@media (max-width: 640px) {
+  .st-preview-banner {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding-inline: 0.65rem;
+  }
+}
