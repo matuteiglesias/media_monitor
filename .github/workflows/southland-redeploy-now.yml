@@ -134,9 +134,16 @@ jobs:
         id: deploy
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          set +e
           OUTPUT="$(vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN" 2>&1)"
+          STATUS=$?
+          set -e
           printf '%s\n' "$OUTPUT"
+          if [ "$STATUS" -ne 0 ]; then
+            echo "Vercel prebuilt deploy failed with exit $STATUS" >&2
+            exit "$STATUS"
+          fi
 
           HOST="$(printf '%s\n' "$OUTPUT" | python -c '
           import re, sys
