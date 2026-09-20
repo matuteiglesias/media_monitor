@@ -1,11 +1,11 @@
 {
   "schema_name": "editorial_identity.v1",
-  "outlet_name": "Southland",
-  "endorsement_line": "Ficción satírica basada en hechos públicos · edición humana explícita",
+  "outlet_name": "Southland Times",
+  "endorsement_line": "Noticias de un país sospechosamente parecido al nuestro.",
   "editor": {
     "name": "Matías Iglesias",
     "role": "Editor responsable",
-    "bio_short": "Editor responsable de Southland, un experimento editorial satírico construido sobre evidencia pública, separación explícita entre hechos y ficción y aprobación humana antes de publicar.",
+    "bio_short": "Editor responsable de Southland Times, un diario satírico de universo paralelo construido sobre hechos públicos, fuentes enlazadas y edición humana antes de publicar.",
     "location": "Buenos Aires, Argentina",
     "credentials": [
       "PhD en Economía",
