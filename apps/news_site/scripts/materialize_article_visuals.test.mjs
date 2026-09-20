@@ -50,7 +50,7 @@ test("article visual tags are deterministic and recognize Southland aliases", ()
   ]);
 });
 
-test("wrong named character is rejected despite generic topic overlap", () => {
+test("character-bearing asset requires an explicit matching article character", () => {
   const result = rankSouthlandVisualAssets({
     articleTags: ["character:javier_milei", "topic:politica"],
     assets: [
@@ -62,6 +62,18 @@ test("wrong named character is rejected despite generic topic overlap", () => {
     ],
   });
   assert.deepEqual(result, []);
+
+  const unnamed = rankSouthlandVisualAssets({
+    articleTags: ["topic:politica"],
+    assets: [
+      asset({
+        asset_id: "named-person",
+        character_tags: ["character:luis_caputo"],
+        topic_tags: ["topic:politica"],
+      }),
+    ],
+  });
+  assert.deepEqual(unnamed, []);
 });
 
 test("character match outranks generic asset, then tag count, then recency", () => {
