@@ -1,0 +1,4 @@
+-r requirements-sensing.txt
+beautifulsoup4==4.14.3
+Pillow==12.1.1
+requests==2.32.5
