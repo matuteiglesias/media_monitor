@@ -222,13 +222,17 @@ feeds:
     )
 
     class Entry:
-        def __init__(self, link: str) -> None:
+        def __init__(self, link: str, published_parsed=None) -> None:
             self.link = link
+            self.published_parsed = published_parsed
+
+    newer = (2026, 9, 19, 15, 0, 0, 5, 262, 0)
+    older = (2026, 9, 19, 14, 0, 0, 5, 262, 0)
 
     def parse(url: str):
         if "politica" in url:
-            return type("Feed", (), {"entries": [Entry(ARTICLE_URL), Entry("https://example.test/not-lpo")]})()
-        return type("Feed", (), {"entries": [Entry(ARTICLE_URL), Entry("https://www.lapoliticaonline.com/economia/otra/")]})()
+            return type("Feed", (), {"entries": [Entry(ARTICLE_URL, newer), Entry("https://example.test/not-lpo", newer)]})()
+        return type("Feed", (), {"entries": [Entry(ARTICLE_URL, newer), Entry("https://www.lapoliticaonline.com/economia/otra/", older)]})()
 
     monkeypatch.setattr("scripts.ingest_lpo_visual_refs.feedparser.parse", parse)
 
