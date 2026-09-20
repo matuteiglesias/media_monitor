@@ -64,8 +64,16 @@ def atomic_json(path: Path, payload: dict[str, Any]) -> None:
 
 def resolve_draft_path(root: Path, storage_dir: Path, value: str) -> Path:
     raw = Path(value)
-    candidates = [raw] if raw.is_absolute() else [root / raw, storage_dir / raw]
     draft_bus = (storage_dir / "buses/news_article_draft/v1").resolve()
+    # Prepared artifacts may be downloaded onto a different machine. The report
+    # can therefore contain an absolute GitHub-runner path that is no longer
+    # valid locally. The stable draft filename remains sufficient inside the
+    # isolated draft bus.
+    candidates = (
+        [raw, draft_bus / raw.name]
+        if raw.is_absolute()
+        else [root / raw, storage_dir / raw, draft_bus / raw.name]
+    )
 
     for candidate in candidates:
         resolved = candidate.resolve()
@@ -136,6 +144,8 @@ def materialize_preview(
     report_file = report_path or (
         runtime.storage_dir / "observability/editorial_ai_latest.json"
     )
+    if not report_file.is_absolute():
+        report_file = root / report_file
     report_file = report_file.resolve()
     report = read_json(report_file)
 
