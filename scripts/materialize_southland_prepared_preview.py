@@ -22,6 +22,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from build_site_snapshot import canonical_id, validate_schema
+from compile_outlet import compile_outlet
 from materialize_outlet_site import materialize
 from outlet_runtime import resolve_outlet_runtime
 from promote_draft_to_published import (
@@ -159,12 +160,30 @@ def materialize_preview(
     if int(report.get("accepted_count") or 0) != len(draft_paths):
         raise ValueError(f"{report_file}: accepted_count does not match draft_paths")
 
+    digest_at = str(report.get("digest_at") or "").strip()
+    if not digest_at:
+        raise ValueError(f"{report_file}: missing digest_at")
+
+    # Recompile the source snapshot from the same downloaded prepared runtime.
+    # This prevents an AI cohort from being previewed on top of stale monitored
+    # signals from an older local digest. It only mutates derived runtime indexes
+    # and the runtime public snapshot; it never writes the published article bus.
+    compile_result = compile_outlet(
+        repo_root=root,
+        site_id=site_id,
+        digest_at=digest_at,
+    )
+
     if not runtime.snapshot_path.is_file():
+        raise ValueError("matching source snapshot was not produced")
+    base_snapshot = read_json(runtime.snapshot_path)
+    if base_snapshot.get("digest_at") != digest_at:
         raise ValueError(
-            "compile the current Southland source snapshot before previewing prepared drafts"
+            f"compiled snapshot digest {base_snapshot.get('digest_at')!r} "
+            f"does not match prepared AI digest {digest_at!r}"
         )
 
-    # Materialize canonical identity/presentation and the current governed source
+    # Materialize canonical identity/presentation and that same-digest source
     # snapshot first. The preview overlay happens only inside apps/news_site.
     materialize(repo_root=root, site_id=site_id)
 
@@ -220,7 +239,8 @@ def materialize_preview(
         "schema_name": "southland_prepared_issue_preview.v1",
         "status": "ok",
         "site_id": site_id,
-        "digest_at": report["digest_at"],
+        "digest_at": digest_at,
+        "base_snapshot_id": compile_result["snapshot_id"],
         "workflow_id": report.get("workflow_id"),
         "model": report.get("model"),
         "accepted_count": len(previews),
