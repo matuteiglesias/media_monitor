@@ -26,6 +26,32 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements-visuals.txt
+      - name: Inspect one current LPO image DOM
+        shell: bash
+        run: |
+          python - <<'PY'
+          import feedparser, requests, yaml
+          from bs4 import BeautifulSoup
+          from pathlib import Path
+
+          cfg=yaml.safe_load(Path("config/sensing_feeds.southland.yaml").read_text())
+          first=feedparser.parse(cfg["feeds"][0]["url"]).entries[0].link
+          html=requests.get(first, timeout=20, headers={"User-Agent":"media-monitor-visual-dom-diagnostic/1"}).text
+          soup=BeautifulSoup(html,"html.parser")
+          print("ARTICLE", first)
+          for i,img in enumerate(soup.find_all("img")[:30]):
+              chain=[]
+              node=img
+              for _ in range(4):
+                  node=getattr(node,"parent",None)
+                  if node is None: break
+                  chain.append(f"{getattr(node,'name','')}."+".".join(node.get("class",[])))
+              src=img.get("src") or img.get("data-src") or ""
+              print("IMG",i,"src=",src,"alt=",img.get("alt",""),"parent_chain="," > ".join(chain))
+              parent=img.parent
+              if parent:
+                  print("TEXT", " ".join(parent.get_text(" ",strip=True).split())[:500])
+          PY
       - name: Ingest current LPO reference batch
         run: |
           python scripts/ingest_lpo_visual_refs.py             --from-rss-config config/sensing_feeds.southland.yaml             --limit 20             --output-root /tmp/lpo-visual-reference             --verbose             | tee /tmp/lpo-visual-reference-report.json
