@@ -10,7 +10,7 @@ export function SouthlandHome({ outlet }: { outlet: any }) {
   const featuredHasVisual = featured ? hasArticleVisual(featured.slug) : false;
 
   return (
-    <main className="publication-shell southland-home pb-12 pt-7 sm:pt-10">
+    <main className="publication-shell southland-home pb-12 pt-5 sm:pt-7">
       <section className="southland-masthead border-b-4 border-black pb-7 text-center">
         <div className="eyebrow">{SITE_PRESENTATION.home_eyebrow}</div>
         <h1 className="southland-wordmark mt-2 text-6xl font-black uppercase leading-none sm:text-8xl">
@@ -27,7 +27,7 @@ export function SouthlandHome({ outlet }: { outlet: any }) {
           {featuredHasVisual ? <ArticleVisual slug={featured.slug} title={featured.title} className="min-h-[20rem] border-2 border-black sm:min-h-[25rem]" /> : null}
           <article className="flex flex-col justify-center">
             <p className="meta-line font-bold">{SITE_PRESENTATION.publication_label} · {featured.topic}</p>
-            <h2 className="mt-4 text-4xl font-black leading-[1.02] sm:text-6xl">
+            <h2 className="southland-headline mt-4 text-4xl font-black leading-[0.98] sm:text-6xl">
               <Link href={`/articles/${featured.slug}`} className="article-link">{featured.title}</Link>
             </h2>
             <p className="mt-5 text-lg font-medium leading-7 text-stone-700">{featured.summary}</p>
@@ -56,7 +56,7 @@ export function SouthlandHome({ outlet }: { outlet: any }) {
               <article key={item.article_id} className="border-b-2 border-black pb-6">
                 {hasArticleVisual(item.slug) ? <ArticleVisual slug={item.slug} title={item.title} className="min-h-[14rem] border-2 border-black" /> : null}
                 <p className="meta-line mt-4 font-bold">{item.topic}</p>
-                <h3 className="mt-2 text-2xl font-black leading-tight">
+                <h3 className="southland-headline mt-2 text-2xl font-black leading-tight">
                   <Link href={`/articles/${item.slug}`} className="article-link">{item.title}</Link>
                 </h3>
                 <p className="mt-3 text-sm leading-6 text-stone-700">{item.summary}</p>
