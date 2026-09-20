@@ -7,6 +7,7 @@ from pathlib import Path
 from PIL import Image
 
 from scripts.ingest_lpo_visual_refs import (
+    asset_family_key,
     collect_urls_from_rss,
     discover_images,
     ingest,
@@ -101,6 +102,12 @@ def fixture_html() -> str:
       </body>
     </html>
     """
+
+
+def test_lpo_asset_family_collapses_generated_crop_variant() -> None:
+    original = "https://www.lapoliticaonline.com/files/image/289/289253/6a1f2281e9429.jpg"
+    crop = "https://www.lapoliticaonline.com/files/image/289/289253/6a1f2281e9429_1200_630!.jpg?s=abc&d=123"
+    assert asset_family_key(original) == asset_family_key(crop)
 
 
 def test_parse_srcset_prefers_largest_candidate() -> None:
