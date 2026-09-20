@@ -222,23 +222,40 @@ def discover_images(html: str, article_url: str, final_url: str) -> tuple[dict[s
     meta = article_metadata(html, article_url, final_url)
     soup: BeautifulSoup = meta.pop("soup")
     jsonld = meta.pop("jsonld")
-    seen: set[str] = set()
+    candidate_index: dict[str, int] = {}
     candidates: list[Candidate] = []
 
     def add(url: str, role: str, *, caption: str = "", credit: str = "", alt: str = "", title: str = "") -> None:
         normalized = normalize_url(url, base=final_url)
-        if not normalized or normalized in seen or looks_like_noise(normalized, alt):
+        if not normalized or looks_like_noise(normalized, alt):
             return
-        seen.add(normalized)
+        caption = " ".join((caption or "").split())
+        credit = " ".join((credit or "").split())
+        alt = " ".join((alt or "").split())
+        title = " ".join((title or "").split())
+        if normalized in candidate_index:
+            idx = candidate_index[normalized]
+            previous = candidates[idx]
+            candidates[idx] = Candidate(
+                url=previous.url,
+                role="hero" if "hero" in {previous.role, role} else previous.role,
+                ordinal=previous.ordinal,
+                caption=previous.caption or caption,
+                credit=previous.credit or credit,
+                alt_text=previous.alt_text or alt,
+                title_text=previous.title_text or title,
+            )
+            return
+        candidate_index[normalized] = len(candidates)
         candidates.append(
             Candidate(
                 url=normalized,
                 role=role,
                 ordinal=len(candidates),
-                caption=" ".join((caption or "").split()),
-                credit=" ".join((credit or "").split()),
-                alt_text=" ".join((alt or "").split()),
-                title_text=" ".join((title or "").split()),
+                caption=caption,
+                credit=credit,
+                alt_text=alt,
+                title_text=title,
             )
         )
 
@@ -354,25 +371,39 @@ def dimensions(data: bytes) -> tuple[int | None, int | None]:
 
 
 def collect_urls_from_rss(config_path: Path, *, limit: int | None = None) -> list[str]:
+    """Collect a cross-section, recency-sorted set of LPO article URLs."""
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     feeds = config.get("feeds") if isinstance(config, dict) else None
     if not isinstance(feeds, list):
         raise ValueError(f"{config_path}: expected feeds list")
-    urls: list[str] = []
-    seen: set[str] = set()
+
+    by_url: dict[str, float] = {}
     for feed in feeds:
         if not isinstance(feed, dict) or not feed.get("url"):
             continue
         parsed = feedparser.parse(str(feed["url"]))
         for entry in getattr(parsed, "entries", []):
             url = normalize_url(str(getattr(entry, "link", "") or ""))
-            if not url or not is_lpo_article_url(url) or url in seen:
+            if not url or not is_lpo_article_url(url):
                 continue
-            seen.add(url)
-            urls.append(url)
-            if limit is not None and len(urls) >= limit:
-                return urls
-    return urls
+            stamp = 0.0
+            parsed_time = getattr(entry, "published_parsed", None) or getattr(entry, "updated_parsed", None)
+            if parsed_time:
+                try:
+                    import calendar
+                    stamp = float(calendar.timegm(parsed_time))
+                except Exception:
+                    stamp = 0.0
+            by_url[url] = max(by_url.get(url, 0.0), stamp)
+
+    ordered = [
+        url
+        for url, _stamp in sorted(
+            by_url.items(),
+            key=lambda item: (-item[1], item[0]),
+        )
+    ]
+    return ordered[:limit] if limit is not None else ordered
 
 
 def request(session: requests.Session, url: str, timeout: float) -> requests.Response:
