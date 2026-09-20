@@ -51,41 +51,17 @@ jobs:
             fi
           done
 
-      - name: Resolve safe Southland snapshot
+      - name: Compile fresh Southland monitored-source snapshot
         id: snapshot
         shell: bash
         run: |
           set -euo pipefail
-          BASE="${SOUTHLAND_PUBLIC_OUTLET_URL%/}"
-          TARGET=".runtime/southland/storage/public/site_snapshot.json"
-          mkdir -p "$(dirname "$TARGET")"
+          DIGEST="$(date -u +%Y%m%dT%H)"
+          echo "Compiling Southland source snapshot for $DIGEST"
 
-          curl --fail --silent --show-error --location --retry 3             "$BASE/api/health"             --output /tmp/southland-health.json
+          python scripts/refresh_outlet_evidence.py             --site-id southland             --digest-at "$DIGEST"
 
-          CURRENT_PUBLISHED="$(python - <<'PY'
-          import json
-          payload=json.load(open("/tmp/southland-health.json"))
-          if payload.get("site_id") != "southland":
-              raise SystemExit(f"unexpected production site identity: {payload.get('site_id')!r}")
-          print(int(payload.get("published_article_count") or 0))
-          PY
-          )"
-          echo "Current production published_article_count=$CURRENT_PUBLISHED"
-
-          if curl --fail --silent --show-error --location             "$BASE/data/site_snapshot.json"             --output "$TARGET"; then
-            echo "Recovered exact public site_snapshot.json"
-          else
-            rm -f "$TARGET"
-            if [ "$CURRENT_PUBLISHED" != "0" ]; then
-              echo "Production has published articles but exact public snapshot is unavailable; refusing content-changing redeploy." >&2
-              exit 1
-            fi
-
-            DIGEST="$(date -u +%Y%m%dT%H)"
-            echo "No published articles to preserve; compiling fresh Southland source snapshot for $DIGEST"
-            python scripts/refresh_outlet_evidence.py               --site-id southland               --digest-at "$DIGEST"
-            python scripts/compile_outlet.py               --site-id southland               --digest-at "$DIGEST"
-          fi
+          python scripts/compile_outlet.py             --site-id southland             --digest-at "$DIGEST"
 
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import json
@@ -97,12 +73,14 @@ jobs:
               raise SystemExit(f"unexpected snapshot schema: {payload.get('schema_name')!r}")
           if payload.get("site", {}).get("site_id") != "southland":
               raise SystemExit(f"unexpected site identity: {payload.get('site')!r}")
+          if int(payload.get("metrics", {}).get("published_article_count") or 0) != 0:
+              raise SystemExit("fresh code-only materialization unexpectedly contains published articles")
           for key in ("snapshot_id", "digest_at"):
               value = str(payload.get(key) or "").strip()
               if not value:
                   raise SystemExit(f"snapshot missing {key}")
               print(f"{key}={value}")
-          print(f"published_article_count={payload.get('metrics', {}).get('published_article_count', 0)}")
+          print("published_article_count=0")
           PY
 
       - name: Materialize current main with resolved snapshot
@@ -117,7 +95,7 @@ jobs:
           source = json.loads(Path(".runtime/southland/storage/public/site_snapshot.json").read_text(encoding="utf-8"))
           target = json.loads(Path("apps/news_site/public/data/site_snapshot.json").read_text(encoding="utf-8"))
           if source.get("snapshot_id") != target.get("snapshot_id"):
-              raise SystemExit("materialized snapshot ID differs from resolved Southland snapshot")
+              raise SystemExit("materialized snapshot ID differs from fresh Southland snapshot")
           if source.get("digest_at") != target.get("digest_at"):
               raise SystemExit("materialized digest differs from recovered production snapshot")
           print(f"materialized snapshot={target['snapshot_id']} digest={target['digest_at']}")
@@ -221,7 +199,7 @@ jobs:
             echo "# Southland code-only redeploy"
             echo
             echo "- Git SHA: `$GITHUB_SHA`"
-            echo "- Reused snapshot: `${{ steps.snapshot.outputs.snapshot_id }}`"
+            echo "- Snapshot: `${{ steps.snapshot.outputs.snapshot_id }}`"
             echo "- Digest: `${{ steps.snapshot.outputs.digest_at }}`"
             echo "- Published articles preserved: `${{ steps.snapshot.outputs.published_article_count }}`"
             echo "- Deployment host: `${{ steps.deploy.outputs.host }}`"
