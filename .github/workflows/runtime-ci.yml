@@ -154,6 +154,7 @@ jobs:
           npm run test:freshness
           npm run test:visuals
           node --check scripts/prepare_southland_design_fixture.mjs
+          python -m py_compile ../../scripts/materialize_southland_prepared_preview.py
           node --check scripts/validate_site_snapshot.mjs
           npm run typecheck
           node scripts/prepare_ci_build_fixture.mjs
