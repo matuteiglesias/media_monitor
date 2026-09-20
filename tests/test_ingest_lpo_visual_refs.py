@@ -131,6 +131,40 @@ def test_discover_images_extracts_article_metadata_credit_and_skips_logo() -> No
     assert all("logo" not in row.url for row in images)
 
 
+def test_lpo_vsmsrc_gallery_enriches_same_asset_with_alt_and_credit() -> None:
+    html = """
+    <html><head>
+      <meta property="og:image" content="https://www.lapoliticaonline.com/files/image/1/2/abc123.jpg">
+    </head><body>
+      <div class="media">
+        <script>
+          var x=null;vsm.load.check('window.vplfgal',{arguments:['gallery1',[
+            {"i":"/files/image/1/2/abc123_940_529!.jpg?s=token","w":"1544","h":"1032","id":"2","t":"Escena principal","a":"Agencia Demo","mq":[]}
+          ],2,'','',false,'',],variable:'x'});
+        </script>
+        <div class="gallery">
+          <div class="g_controls"><div class="image"><picture>
+            <img src="data:image/png;base64,AAA" vsmsrc="/files/image/1/2/abc123_940_529!.jpg?s=token" alt="Una escena política">
+          </picture></div></div>
+          <div class="media-footer"><div class="caption"></div><div class="g_source_author"><span class="author g_author"></span></div></div>
+        </div>
+      </div>
+    </body></html>
+    """
+    _meta, images = discover_images(
+        html,
+        ARTICLE_URL,
+        "https://www.lapoliticaonline.com/politica/nota-prueba/",
+    )
+
+    assert len(images) == 1
+    assert images[0].url == "https://www.lapoliticaonline.com/files/image/1/2/abc123.jpg"
+    assert images[0].role == "hero"
+    assert images[0].caption == "Escena principal"
+    assert images[0].credit == "Agencia Demo"
+    assert images[0].alt_text == "Una escena política"
+
+
 def test_ingest_downloads_manifests_and_is_idempotent(tmp_path: Path) -> None:
     hero = jpeg_bytes()
     inline = jpeg_bytes(900, 600)
