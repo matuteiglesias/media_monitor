@@ -1,0 +1,33 @@
+{
+  "schema_name": "southland_visual_tag_rules.v1",
+  "rules": [
+    {"tag":"character:javier_milei","kind":"character","keywords":["javier milei","javier mieli"]},
+    {"tag":"character:luis_caputo","kind":"character","keywords":["luis caputo","toto caputo","toto capuccino"]},
+    {"tag":"character:patricia_bullrich","kind":"character","keywords":["patricia bullrich","patricia bulldog"]},
+    {"tag":"character:axel_kicillof","kind":"character","keywords":["axel kicillof","axel kicillofsky"]},
+    {"tag":"character:martin_llaryora","kind":"character","keywords":["martin llaryora","martín llaryora","martin llavero","martín llavero"]},
+
+    {"tag":"institution:national_government","kind":"institution","keywords":["gobierno nacional","casa rosada","presidencia","presidente","gabinete"]},
+    {"tag":"institution:provincial_government","kind":"institution","keywords":["gobernador","gobernadores","provincia","gobierno provincial"]},
+    {"tag":"institution:armed_forces","kind":"institution","keywords":["fuerzas armadas","ejercito","ejército","armada","militar","militares"]},
+    {"tag":"institution:security_forces","kind":"institution","keywords":["policia","policía","seguridad","custodia","gendarm"]},
+
+    {"tag":"topic:politica","kind":"topic","keywords":["política","politica","elecciones","electoral","coalicion","coalición","congreso","gobierno"]},
+    {"tag":"topic:economia","kind":"topic","keywords":["economía","economia","dolar","dólar","bonos","deuda","presupuesto","mercado","inflacion","inflación"]},
+    {"tag":"topic:federalismo","kind":"topic","keywords":["gobernador","gobernadores","provincias","federal","coparticip"]},
+    {"tag":"topic:defensa","kind":"topic","keywords":["militar","militares","fuerzas armadas","ejército","ejercito","armada","defensa"]},
+    {"tag":"topic:seguridad","kind":"topic","keywords":["seguridad","policia","policía","custodia","operativo"]},
+
+    {"tag":"scene:government_meeting","kind":"scene","keywords":["reunión","reunion","mesa política","mesa politica","gabinete"]},
+    {"tag":"scene:press_conference","kind":"scene","keywords":["conferencia","anuncio","declaró","declaro","presentó","presento"]},
+    {"tag":"scene:arrival","kind":"scene","keywords":["llegó","llego","arribó","arribo","visita","recibió","recibio"]},
+    {"tag":"scene:official_visit","kind":"scene","keywords":["visita oficial","gira","viaje","recorrida"]},
+    {"tag":"scene:security","kind":"scene","keywords":["custodia","seguridad","operativo","policia","policía"]},
+    {"tag":"scene:military","kind":"scene","keywords":["militar","militares","ejército","ejercito","armada","fuerzas armadas"]},
+    {"tag":"scene:office","kind":"scene","keywords":["despacho","oficina","escritorio"]},
+
+    {"tag":"motif:argentina_flag","kind":"motif","keywords":["argentina","argentino","argentina"]},
+    {"tag":"motif:official_vehicle","kind":"motif","keywords":["auto oficial","vehículo oficial","vehiculo oficial","comitiva"]},
+    {"tag":"motif:aircraft","kind":"motif","keywords":["avión","avion","aeronave","aeropuerto"]}
+  ]
+}

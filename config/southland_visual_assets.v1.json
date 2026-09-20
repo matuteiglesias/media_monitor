@@ -1,0 +1,197 @@
+{
+  "schema_name": "southland_visual_assets.v1",
+  "assets": [
+    {
+      "asset_id": "southland_seed_001_outdoor_security",
+      "public_path": "/southland/visuals/southland_seed_001_outdoor_security.png",
+      "created_at": "2026-09-20T01:50:05Z",
+      "status": "approved",
+      "identity_status": "pending_lineage",
+      "reuse_scope": "entity_reusable",
+      "description": "Southland cut-paper scene with a central suited public figure outdoors, police/security personnel, barriers, landscaping and government-building steps.",
+      "alt": "Ilustración de Southland de una escena oficial al aire libre con custodia.",
+      "source_filename_hint": "ChatGPT Image Sep 19, 2026, 10_50_05 PM.png",
+      "source_reference_ids": [],
+      "character_tags": [],
+      "institution_tags": [
+        "institution:national_government",
+        "institution:security_forces"
+      ],
+      "topic_tags": [
+        "topic:politica",
+        "topic:seguridad"
+      ],
+      "scene_tags": [
+        "scene:security"
+      ],
+      "motif_tags": [],
+      "width": 1461,
+      "height": 1076
+    },
+    {
+      "asset_id": "southland_seed_002_car_arrival",
+      "public_path": "/southland/visuals/southland_seed_002_car_arrival.png",
+      "created_at": "2026-09-20T01:49:58Z",
+      "status": "approved",
+      "identity_status": "pending_lineage",
+      "reuse_scope": "entity_reusable",
+      "description": "Southland cut-paper scene of a grey-haired public figure stepping away from a black official car toward a government building.",
+      "alt": "Ilustración de Southland de una llegada en auto oficial.",
+      "source_filename_hint": "ChatGPT Image Sep 19, 2026, 10_49_58 PM.png",
+      "source_reference_ids": [],
+      "character_tags": [],
+      "institution_tags": [
+        "institution:national_government"
+      ],
+      "topic_tags": [
+        "topic:politica"
+      ],
+      "scene_tags": [
+        "scene:arrival"
+      ],
+      "motif_tags": [
+        "motif:official_vehicle"
+      ],
+      "width": 1554,
+      "height": 1012
+    },
+    {
+      "asset_id": "southland_seed_003_government_meeting",
+      "public_path": "/southland/visuals/southland_seed_003_government_meeting.png",
+      "created_at": "2026-09-20T01:49:53Z",
+      "status": "approved",
+      "identity_status": "pending_lineage",
+      "reuse_scope": "entity_reusable",
+      "description": "Southland cut-paper government meeting with three public figures at microphones, papers and water bottles beside an Argentine flag.",
+      "alt": "Ilustración de Southland de una reunión de gobierno con micrófonos.",
+      "source_filename_hint": "ChatGPT Image Sep 19, 2026, 10_49_53 PM.png",
+      "source_reference_ids": [],
+      "character_tags": [],
+      "institution_tags": [
+        "institution:national_government"
+      ],
+      "topic_tags": [
+        "topic:politica"
+      ],
+      "scene_tags": [
+        "scene:government_meeting",
+        "scene:press_conference"
+      ],
+      "motif_tags": [
+        "motif:argentina_flag"
+      ],
+      "width": 1536,
+      "height": 1024
+    },
+    {
+      "asset_id": "southland_seed_004_government_entrance",
+      "public_path": "/southland/visuals/southland_seed_004_government_entrance.png",
+      "created_at": "2026-09-20T01:49:44Z",
+      "status": "approved",
+      "identity_status": "pending_lineage",
+      "reuse_scope": "entity_reusable",
+      "description": "Southland cut-paper arrival scene at a formal government entrance with suited officials, close security and a ceremonial guard.",
+      "alt": "Ilustración de Southland de una llegada a un edificio oficial con custodia.",
+      "source_filename_hint": "ChatGPT Image Sep 19, 2026, 10_49_44 PM.png",
+      "source_reference_ids": [],
+      "character_tags": [],
+      "institution_tags": [
+        "institution:national_government",
+        "institution:security_forces"
+      ],
+      "topic_tags": [
+        "topic:politica",
+        "topic:seguridad"
+      ],
+      "scene_tags": [
+        "scene:arrival",
+        "scene:security"
+      ],
+      "motif_tags": [],
+      "width": 1558,
+      "height": 1010
+    },
+    {
+      "asset_id": "southland_seed_005_official_exterior",
+      "public_path": "/southland/visuals/southland_seed_005_official_exterior.png",
+      "created_at": "2026-09-20T01:49:37Z",
+      "status": "approved",
+      "identity_status": "pending_lineage",
+      "reuse_scope": "entity_reusable",
+      "description": "Southland cut-paper portrait scene of a grey-haired public figure greeting or departing outside a formal government building.",
+      "alt": "Ilustración de Southland de una figura pública frente a un edificio oficial.",
+      "source_filename_hint": "ChatGPT Image Sep 19, 2026, 10_49_37 PM.png",
+      "source_reference_ids": [],
+      "character_tags": [],
+      "institution_tags": [
+        "institution:national_government"
+      ],
+      "topic_tags": [
+        "topic:politica"
+      ],
+      "scene_tags": [
+        "scene:arrival"
+      ],
+      "motif_tags": [],
+      "width": 1564,
+      "height": 1006
+    },
+    {
+      "asset_id": "southland_seed_006_office_desk",
+      "public_path": "/southland/visuals/southland_seed_006_office_desk.png",
+      "created_at": "2026-09-20T01:49:29Z",
+      "status": "approved",
+      "identity_status": "pending_lineage",
+      "reuse_scope": "entity_reusable",
+      "description": "Southland cut-paper office scene with a public figure seated at a desk with laptop, tablet, papers and an Argentine flag.",
+      "alt": "Ilustración de Southland de una funcionaria trabajando en un despacho oficial.",
+      "source_filename_hint": "ChatGPT Image Sep 19, 2026, 10_49_29 PM.png",
+      "source_reference_ids": [],
+      "character_tags": [],
+      "institution_tags": [
+        "institution:national_government"
+      ],
+      "topic_tags": [
+        "topic:politica"
+      ],
+      "scene_tags": [
+        "scene:office"
+      ],
+      "motif_tags": [
+        "motif:argentina_flag"
+      ],
+      "width": 1655,
+      "height": 950
+    },
+    {
+      "asset_id": "southland_seed_007_military_airfield",
+      "public_path": "/southland/visuals/southland_seed_007_military_airfield.png",
+      "created_at": "2026-09-20T01:49:13Z",
+      "status": "approved",
+      "identity_status": "pending_lineage",
+      "reuse_scope": "entity_reusable",
+      "description": "Southland cut-paper airfield scene with two suited public figures, armed military personnel and an aircraft.",
+      "alt": "Ilustración de Southland de una visita oficial a un aeródromo con personal militar.",
+      "source_filename_hint": "ChatGPT Image Sep 19, 2026, 10_49_13 PM.png",
+      "source_reference_ids": [],
+      "character_tags": [],
+      "institution_tags": [
+        "institution:national_government",
+        "institution:armed_forces"
+      ],
+      "topic_tags": [
+        "topic:politica",
+        "topic:defensa"
+      ],
+      "scene_tags": [
+        "scene:official_visit",
+        "scene:military"
+      ],
+      "motif_tags": [
+        "motif:aircraft"
+      ],
+      "width": 1636,
+      "height": 961
+    }
+  ]
+}
