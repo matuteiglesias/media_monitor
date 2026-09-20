@@ -98,3 +98,11 @@ jobs:
                   print()
                   print(draft.get("body_md",""))
           PY
+
+      - name: Upload prepared runtime for local sync
+        uses: actions/upload-artifact@v4
+        with:
+          name: southland-prepared-sync-${{ github.run_id }}
+          retention-days: 7
+          include-hidden-files: true
+          path: .runtime/southland/**
