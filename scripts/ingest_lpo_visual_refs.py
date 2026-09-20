@@ -126,6 +126,26 @@ def looks_like_noise(url: str, alt: str = "") -> bool:
     return any(token in combined for token in NOISE_TOKENS)
 
 
+def asset_family_key(url: str) -> str:
+    """Collapse LPO generated crops back to their underlying image family."""
+    parsed = urlparse(url)
+    path = parsed.path
+    if parsed.netloc.lower() in LPO_HOSTS and "/files/image/" in path:
+        path = re.sub(r"_\d+_\d+!?(?=\.[A-Za-z0-9]+$)", "", path)
+        return f"{parsed.netloc.lower()}{path}"
+    return normalize_url(url)
+
+
+def _prefer_asset_url(existing: str, incoming: str) -> str:
+    """Prefer the uncropped LPO source asset over generated social/card crops."""
+    crop = re.compile(r"_\d+_\d+!?(?=\.[A-Za-z0-9]+$)")
+    existing_crop = bool(crop.search(urlparse(existing).path))
+    incoming_crop = bool(crop.search(urlparse(incoming).path))
+    if existing_crop != incoming_crop:
+        return incoming if not incoming_crop else existing
+    return incoming if len(urlparse(incoming).query) < len(urlparse(existing).query) else existing
+
+
 def _jsonld_objects(soup: BeautifulSoup) -> Iterable[dict[str, Any]]:
     for node in soup.find_all("script", attrs={"type": "application/ld+json"}):
         raw = node.string or node.get_text("", strip=True)
@@ -229,15 +249,16 @@ def discover_images(html: str, article_url: str, final_url: str) -> tuple[dict[s
         normalized = normalize_url(url, base=final_url)
         if not normalized or looks_like_noise(normalized, alt):
             return
+        family = asset_family_key(normalized)
         caption = " ".join((caption or "").split())
         credit = " ".join((credit or "").split())
         alt = " ".join((alt or "").split())
         title = " ".join((title or "").split())
-        if normalized in candidate_index:
-            idx = candidate_index[normalized]
+        if family in candidate_index:
+            idx = candidate_index[family]
             previous = candidates[idx]
             candidates[idx] = Candidate(
-                url=previous.url,
+                url=_prefer_asset_url(previous.url, normalized),
                 role="hero" if "hero" in {previous.role, role} else previous.role,
                 ordinal=previous.ordinal,
                 caption=previous.caption or caption,
@@ -246,7 +267,7 @@ def discover_images(html: str, article_url: str, final_url: str) -> tuple[dict[s
                 title_text=previous.title_text or title,
             )
             return
-        candidate_index[normalized] = len(candidates)
+        candidate_index[family] = len(candidates)
         candidates.append(
             Candidate(
                 url=normalized,
