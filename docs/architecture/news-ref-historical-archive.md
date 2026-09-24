@@ -77,7 +77,7 @@ news_ref_archive/v1/
   manifests/<legacy-filename>.json
   record_versions/part-*.parquet
   snapshot_events/part-*.parquet
-  checkpoints/<ordinal>.parquet.zst
+  checkpoints/<ordinal>.parquet
   quarantine/<content-sha256>.jsonl.zst
 ```
 
@@ -88,7 +88,9 @@ unknown historical keys; `canonical_payload` or the quarantine object preserves
 losslessly any row that cannot safely project. Statuses are `current-valid`,
 `migratable`, `legacy-preserved`, and `malformed-quarantined`.
 
-`snapshot_events` is an event log keyed by snapshot ordinal: `add`, `change`,
+Parquet files use Parquet's internal Zstd compression and retain the `.parquet`
+suffix; do not wrap them in an external `.zst` stream, so Arrow/DuckDB can use
+their normal metadata and random-access behavior. `snapshot_events` is an event log keyed by snapshot ordinal: `add`, `change`,
 and `remove`, with the target version hash. A manifest retains original filename,
 raw SHA-256, canonical state SHA-256, source byte/row counts, and event range.
 An event log is sufficient for exact logical state replay; SCD2 intervals alone
