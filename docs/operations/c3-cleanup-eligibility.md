@@ -4,6 +4,10 @@
 
 Evidence basis: host C1 census plus the 2026-09-06 C2 acceptance/replay-governance study, the canonical artifact/state architecture, and the C2 producer/consumer trace.
 
+The follow-on [historical archive strategy](../architecture/news-ref-historical-archive.md)
+defines the required cold-copy shape and verification gates. It does not make
+any legacy payload deletion-eligible.
+
 The purpose of this file is to make later cleanup mechanical and reviewable. Before any `apply`, the host must regenerate exact path/byte counts from the then-current estate and satisfy the replay/durability gates below.
 
 ## Eligibility table

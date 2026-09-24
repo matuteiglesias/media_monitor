@@ -1,0 +1,25 @@
+{
+  "schema_name": "news_ref_historical_archive_sample.v1",
+  "status": "supporting_evidence_not_full_estate_extrapolation",
+  "captured_at": "2026-09-23",
+  "legacy_glob_exact_census": {"files": 3330, "bytes": 38393640146},
+  "sample": {
+    "files": ["news_ref_20260314T001702Z.jsonl", "news_ref_20260408T035813Z.jsonl", "news_ref_20260825T050926Z.jsonl"],
+    "bytes": 54746355,
+    "rows": 70869,
+    "unique_index_ids": 56055,
+    "unique_index_id_content_versions": 56395,
+    "unique_canonical_row_bytes": 42201500,
+    "row_reuse_ratio": 0.20423598,
+    "schema_signatures": 1,
+    "malformed_rows": 0
+  },
+  "latest_snapshot_benchmark": {
+    "source_bytes": 24930725,
+    "gzip_level_6_bytes": 10627641,
+    "zstd_level_6_bytes": 10000769,
+    "parquet_zstd_6_bytes": 9837965,
+    "parquet_note": "meta was serialized as meta_json; direct Arrow write rejected an empty struct"
+  },
+  "known_malformed_file": {"filename": "news_ref_20260423T210615Z.jsonl", "line": 16515, "reason": "truncated final JSON row"}
+}
