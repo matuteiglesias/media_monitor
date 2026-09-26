@@ -1,6 +1,6 @@
 # `news_ref` historical archive strategy
 
-> **Status:** designed from local-corpus evidence; archive construction and C3 deletion remain separate, human-reviewed work.
+> **Status:** implemented and locally verified on 2026-09-26; the 3,330-file source estate is retired locally after Elements safety-copy verification. The Elements copy remains a recoverable safety archive; its eventual deletion is a separate reviewed decision.
 > **Verified against:** local estate on 2026-09-23; current producer `scripts/export_pr3a_buses.py`, resolver `scripts/build_news_access_indexes.py`, and `contracts/schemas/news_ref.v1.json`.
 
 ## Decision
