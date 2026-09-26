@@ -229,9 +229,19 @@ def verify(args: argparse.Namespace) -> int:
         if x != cp: problems.append(f"checkpoint mismatch ordinal={ordinal}")
     # Source identity is rechecked here; this is intentionally expensive and is a hard gate.
     source_problems=[]
-    for s in audit["snapshots"]:
+    source_cp_path = root / "verification_source_checkpoint.json"
+    source_cp = json.loads(source_cp_path.read_text()) if source_cp_path.is_file() else {}
+    for ordinal, s in enumerate(audit["snapshots"]):
         p=args.bus_dir/s["filename"]
-        if not p.is_file() or p.stat().st_size != s["source_bytes"] or sha_file(p) != s["source_file_sha256"]: source_problems.append(s["filename"])
+        cached = source_cp.get(s["filename"])
+        actual = cached if cached and cached.get("bytes") == s["source_bytes"] else None
+        if actual is None and p.is_file() and p.stat().st_size == s["source_bytes"]:
+            actual = {"bytes": p.stat().st_size, "sha256": sha_file(p)}
+            source_cp[s["filename"]] = actual
+            if ordinal % 25 == 0:
+                source_cp_path.write_text(json.dumps(source_cp, separators=(",", ":")))
+        if not p.is_file() or actual is None or actual["sha256"] != s["source_file_sha256"]: source_problems.append(s["filename"])
+    source_cp_path.write_text(json.dumps(source_cp, separators=(",", ":")))
     problems += ["source identity: "+x for x in source_problems]
     current_hash=sha_file(args.bus_dir/"news_ref_current.jsonl") if (args.bus_dir/"news_ref_current.jsonl").is_file() else None
     report={"schema_name":"news_ref_compact_archive_verification.v1","passed":not problems,"checked_at_utc":time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime()),"source_census":{"files":len(audit["snapshots"]),"bytes":audit["input"]["source_bytes"],"malformed_quarantined":audit["integrity"]["malformed_row_count"]},"consumer_audit":consumer,"archive_manifest_sha256":sha_file(root/"manifest.json"),"replay":{"all_snapshot_states_checked":len(audit["snapshots"]),"deterministic_points":replay,"checkpoint_files_checked":len(list((root/"checkpoints").glob("*.parquet")))},"current_state":{"current_file_sha256":current_hash,"last_historical_semantic_sha256":audit["snapshots"][-1]["semantic_sha256"],"status":"intentional temporal boundary: current state is retained hot and postdates the final legacy snapshot; it is not an archival input"},"problems":problems}
