@@ -94,13 +94,18 @@ def write_parquet(db: sqlite3.Connection, root: Path) -> list[Path]:
         ("snapshot_events.parquet", "SELECT ordinal,sequence,operation,index_id,content_sha256 FROM events ORDER BY ordinal,sequence", ["ordinal","sequence","operation","index_id","content_sha256"]),
         ("source_files.parquet", "SELECT ordinal,filename,source_sha256,source_bytes,semantic_sha256 FROM source_files ORDER BY ordinal", ["ordinal","filename","source_sha256","source_bytes","semantic_sha256"]),
     ]
+    types = {"content_sha256": pa.string(), "index_id": pa.string(), "canonical_payload": pa.binary(), "migration_status": pa.string(), "ordinal": pa.int64(), "sequence": pa.int64(), "operation": pa.string(), "filename": pa.string(), "source_sha256": pa.string(), "source_bytes": pa.int64(), "semantic_sha256": pa.string(), "first_ordinal": pa.int64()}
     for name, query, names in specs:
-        target = out / name; tmp = target.with_suffix(".tmp")
+        target = out / name
+        # PyArrow treats unknown extensions inconsistently across writers; a
+        # temporary name which still ends in .parquet gives rename its exact
+        # promised source path.
+        tmp = target.with_name(target.stem + ".part.parquet")
         if target.exists(): target.unlink()
         writer = None; cur = db.execute(query)
         while rows := cur.fetchmany(10000):
             cols = list(zip(*rows))
-            table = pa.table({name: pa.array(value) for name, value in zip(names, cols)})
+            table = pa.table({name: pa.array(value, type=types[name]) for name, value in zip(names, cols)})
             if writer is None: writer = pq.ParquetWriter(tmp, table.schema, compression="zstd", compression_level=9)
             writer.write_table(table)
         if writer is None:
