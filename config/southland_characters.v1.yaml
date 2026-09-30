@@ -40,7 +40,7 @@ characters:
       - "https://www.lapoliticaonline.com/politica/caputo-proyecta-timbear-en-2027-mas-de-113-mil-millones-del-fondo-para-obras-hidricas/"
 
   - character_id: nicolas_nicky_caputo
-    real_name: "Nicolás "Nicky" Caputo"
+    real_name: 'Nicolás "Nicky" Caputo'
     southland_name: "Nicky Macchiato"
     alias_status: locked
     corpus_context: "Appears in the current corpus in stories involving Luis Caputo and business/policy relationships."
@@ -176,7 +176,7 @@ characters:
       - "https://www.lapoliticaonline.com/santa-fe/el-peronismo-denuncia-que-pullaro-llevo-a-santa-fe-al-deficit-mas-alto-de-la-ultima-decada/"
 
   - character_id: ignacio_nacho_torres
-    real_name: "Ignacio "Nacho" Torres"
+    real_name: 'Ignacio "Nacho" Torres'
     southland_name: "Nacho Torrejas"
     alias_status: locked
     corpus_context: "Recurring Patagonia/federal-coalition character in the current batch."
