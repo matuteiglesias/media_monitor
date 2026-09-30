@@ -32,6 +32,7 @@ from apps.news_editorial.src.news_editorial.southland_workflow import (
 from scripts.run_outlet_ai import run_outlet_ai
 
 
+ROOT = Path(__file__).resolve().parents[1]
 DIGEST = "20260918T21"
 CREATED_AT = "2026-09-18T21:40:00Z"
 
