@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 
+import yaml
+
 from pydantic import BaseModel
 
 from apps.news_editorial.src.news_editorial.ai_runtime import (
