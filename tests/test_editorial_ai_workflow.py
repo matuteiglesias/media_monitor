@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 
+import yaml
+
 from pydantic import BaseModel
 
 from apps.news_editorial.src.news_editorial.ai_runtime import (
@@ -30,6 +32,7 @@ from apps.news_editorial.src.news_editorial.southland_workflow import (
 from scripts.run_outlet_ai import run_outlet_ai
 
 
+ROOT = Path(__file__).resolve().parents[1]
 DIGEST = "20260918T21"
 CREATED_AT = "2026-09-18T21:40:00Z"
 
@@ -182,6 +185,30 @@ def _assert_no_open_ended_objects(schema: dict) -> None:
             for item in value:
                 if isinstance(item, dict):
                     _assert_no_open_ended_objects(item)
+
+
+def test_locked_character_bible_aliases_match_runtime_registry() -> None:
+    bible = yaml.safe_load((ROOT / "config/southland_characters.v1.yaml").read_text(encoding="utf-8"))
+    registry = yaml.safe_load((ROOT / "config/southland_aliases.v1.yaml").read_text(encoding="utf-8"))
+
+    assert bible["schema_version"] == "southland_characters.v1"
+    assert registry["schema_version"] == "southland_aliases.v1"
+
+    locked = {
+        row["real_name"]: row["southland_name"]
+        for row in bible["characters"]
+        if row["alias_status"] == "locked"
+    }
+    runtime = {
+        row["real_name"]: row["southland_name"]
+        for row in registry["aliases"]
+        if row["real_name"] != "Casa Rosada"
+    }
+
+    assert locked == runtime
+    assert len(locked) == len(set(locked))
+    assert len(locked.values()) == len(set(locked.values()))
+    assert all(row.get("source_urls") is not None for row in bible["characters"])
 
 
 def test_live_structured_models_do_not_expose_open_ended_object_maps() -> None:
