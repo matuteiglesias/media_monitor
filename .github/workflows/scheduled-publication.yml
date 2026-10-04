@@ -33,6 +33,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Capture producer receipt start
+        run: |
+          echo "PRODUCER_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
+      - name: Reset mutable publication-cycle evidence
+        run: |
+          rm -f \
+            storage/observability/publication_cycle_guard_latest.json \
+            storage/observability/site_roll_latest_${SITE_ID}.json \
+            storage/observability/public_deployment_check_latest.json \
+            storage/observability/crawler_surface_check_latest.json
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -124,6 +136,27 @@ jobs:
           python scripts/verify_crawler_surface.py --base-url "$PUBLIC_URL" \
             | tee storage/observability/crawler_surface_check_latest.json
 
+      - name: Emit governed producer receipt
+        if: always()
+        env:
+          PRODUCER_JOB_STATUS: ${{ job.status }}
+          PRODUCER_EVENT_NAME: ${{ github.event_name }}
+          PRODUCER_RUN_ID: ${{ github.run_id }}
+          PRODUCER_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          STARTED_AT="${PRODUCER_STARTED_AT:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
+          RECEIPT_PATH="storage/runs/producer_receipts/media-publication-${PRODUCER_RUN_ID}-${PRODUCER_RUN_ATTEMPT}.json"
+          python3 scripts/emit_media_publication_receipt.py \
+            --scheduler-run-id "$PRODUCER_RUN_ID" \
+            --run-attempt "$PRODUCER_RUN_ATTEMPT" \
+            --event-name "$PRODUCER_EVENT_NAME" \
+            --job-status "$PRODUCER_JOB_STATUS" \
+            --started-at "$STARTED_AT" \
+            --site-id "$SITE_ID" \
+            --digest-at "${DIGEST_AT:-}" \
+            --output "$RECEIPT_PATH" \
+            --latest storage/observability/media_publication_receipt_latest.json
+
       - name: Publish cycle summary
         if: always()
         run: |
@@ -136,6 +169,7 @@ jobs:
               ("Site roll", Path("storage/observability/site_roll_latest_argentina-general.json")),
               ("Public check", Path("storage/observability/public_deployment_check_latest.json")),
               ("Crawler/social check", Path("storage/observability/crawler_surface_check_latest.json")),
+              ("Producer receipt", Path("storage/observability/media_publication_receipt_latest.json")),
           ):
               if not path.exists():
                   print(f"- **{label}:** no record (cycle stopped earlier)")
