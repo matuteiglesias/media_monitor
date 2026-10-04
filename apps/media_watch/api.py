@@ -24,6 +24,7 @@ class MediaWatchReadModel:
     def overview(self) -> dict:
         sources = self.store.list_source_states()
         text_assets = self.enrichment.list_text_assets()
+        summaries = self.enrichment.list_summaries()
         appearances = self.enrichment.list_appearances()
         return {
             "schema_name": "media_intelligence_overview.m4.v1",
@@ -31,6 +32,7 @@ class MediaWatchReadModel:
             "item_count": len(self.store.list_items()),
             "snapshot_count": self.store.snapshot_count(),
             "text_asset_count": len(text_assets),
+            "summary_count": len(summaries),
             "segment_count": len(self.enrichment.list_segments()),
             "appearance_count": len(appearances),
             "person_count": len(self.people_config),
@@ -53,11 +55,13 @@ class MediaWatchReadModel:
             if source_id and item["source_id"] != source_id:
                 continue
             text_state = self.enrichment.text_status(item["item_uid"])
+            summaries = self.enrichment.list_summaries(item["item_uid"])
             rows.append({
                 **item,
                 "outlet": source_by_id.get(item["source_id"]),
                 "text_status": text_state["status"],
                 "text_available": text_state["available"],
+                "summary_available": bool(summaries),
                 "appearance_count": len(self.enrichment.list_appearances(item_uid=item["item_uid"])),
                 "segment_count": len(self.enrichment.list_segments(item["item_uid"])),
             })
@@ -73,6 +77,7 @@ class MediaWatchReadModel:
         snapshots = self.store.list_snapshots(item["item_uid"])
         text_state = self.enrichment.text_status(item["item_uid"])
         text_assets = self.enrichment.list_text_assets(item["item_uid"])
+        summaries = self.enrichment.list_summaries(item["item_uid"])
         segments = self.enrichment.list_segments(item["item_uid"])
         appearances = self.enrichment.list_appearances(item_uid=item["item_uid"])
         if text_state["status"] == "not_attempted":
@@ -86,6 +91,8 @@ class MediaWatchReadModel:
             "snapshot_count": len(snapshots),
             "text_enrichment": text_enrichment,
             "text_assets": text_assets,
+            "summary": summaries[0] if summaries else None,
+            "summaries": summaries,
             "segments": segments,
             "appearances": appearances,
         }
