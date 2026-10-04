@@ -43,6 +43,7 @@ class MediaEnrichmentStore:
         self.text_assets_dir = self.root / "text_assets"
         self.segments_dir = self.root / "segments"
         self.appearances_dir = self.root / "appearances"
+        self.summaries_dir = self.root / "summaries"
         self.indexes_dir = self.root / "indexes"
 
     def list_text_assets(self, item_uid: str | None = None) -> list[dict]:
@@ -64,6 +65,78 @@ class MediaEnrichmentStore:
         if person_id:
             rows = [row for row in rows if row["person_id"] == person_id]
         return sorted(rows, key=lambda row: (row["observed_at"], row["appearance_id"]), reverse=True)
+
+    @staticmethod
+    def summary_id(*, item_uid: str, provider: str, model: str, prompt_version: str) -> str:
+        semantic = {
+            "schema_name": "media_summary.v1",
+            "item_uid": item_uid,
+            "provider": provider,
+            "model": model,
+            "prompt_version": prompt_version,
+        }
+        return f"media-summary:{sha256_text(canonical_json(semantic))[:32]}"
+
+    def load_summary(
+        self,
+        *,
+        item_uid: str,
+        provider: str,
+        model: str,
+        prompt_version: str,
+    ) -> dict | None:
+        summary_id = self.summary_id(
+            item_uid=item_uid,
+            provider=provider,
+            model=model,
+            prompt_version=prompt_version,
+        )
+        path = self.summaries_dir / f"{safe_name(summary_id)}.json"
+        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
+    def list_summaries(self, item_uid: str | None = None) -> list[dict]:
+        rows = _read_rows(self.summaries_dir)
+        if item_uid:
+            rows = [row for row in rows if row["item_uid"] == item_uid]
+        return sorted(rows, key=lambda row: (row["generated_at"], row["summary_id"]), reverse=True)
+
+    def put_summary(
+        self,
+        *,
+        item_uid: str,
+        summary: str,
+        key_points: list[str],
+        provider: str,
+        model: str,
+        prompt_version: str,
+        generated_at: str,
+    ) -> dict:
+        if self.store.load_item(item_uid) is None:
+            raise ValueError(f"unknown item {item_uid}")
+        summary_id = self.summary_id(
+            item_uid=item_uid,
+            provider=provider,
+            model=model,
+            prompt_version=prompt_version,
+        )
+        path = self.summaries_dir / f"{safe_name(summary_id)}.json"
+        if path.exists():
+            return json.loads(path.read_text(encoding="utf-8"))
+        payload = {
+            "schema_name": "media_summary.v1",
+            "schema_status": "experimental",
+            "summary_id": summary_id,
+            "item_uid": item_uid,
+            "summary": summary,
+            "key_points": key_points,
+            "provider": provider,
+            "model": model,
+            "prompt_version": prompt_version,
+            "generated_at": generated_at,
+        }
+        _validate("media_summary.v1.json", payload)
+        _write_json_once(path, payload)
+        return payload
 
     def put_text_asset(
         self,
