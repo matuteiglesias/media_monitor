@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/media_summary.v1.json",
+  "title": "media_summary.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": {"const": "media_summary.v1"},
+    "schema_status": {"const": "experimental"},
+    "summary_id": {"type": "string", "pattern": "^media-summary:[0-9a-f]{32}$"},
+    "item_uid": {"type": "string", "pattern": "^youtube:[A-Za-z0-9_-]{6,32}$"},
+    "summary": {"type": "string", "minLength": 1},
+    "key_points": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "provider": {"type": "string", "minLength": 1},
+    "model": {"type": "string", "minLength": 1},
+    "prompt_version": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "format": "date-time"}
+  },
+  "required": [
+    "schema_name", "schema_status", "summary_id", "item_uid", "summary", "key_points",
+    "provider", "model", "prompt_version", "generated_at"
+  ]
+}
