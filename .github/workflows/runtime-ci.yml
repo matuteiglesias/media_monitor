@@ -103,6 +103,7 @@ jobs:
             tests/test_validate_site_snapshot.py \
             tests/test_roll_site.py \
             tests/test_publication_cycle_guard.py \
+            tests/test_media_publication_receipt.py \
             tests/test_verify_public_deployment.py \
             tests/test_verify_crawler_surface.py \
             tests/test_social_metadata.py \
