@@ -37,7 +37,7 @@ jobs:
       - name: Install minimal media-watch test dependencies
         run: python -m pip install pytest jsonschema requests PyYAML
       - name: Verify monitoring, enrichment, appearances and read models
-        run: python -m pytest -q tests/test_media_watch_m1.py tests/test_media_watch_m2_m4.py
+        run: python -m pytest -q tests/test_media_watch_m1.py tests/test_media_watch_m2_m4.py tests/test_media_watch_m5_summary.py
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
