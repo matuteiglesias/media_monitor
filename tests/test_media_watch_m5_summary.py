@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from apps.media_watch.api import MediaWatchReadModel
 from apps.media_watch.enrichment import MediaEnrichmentStore
 from apps.media_watch.fixture import seed
 from apps.media_watch.store import MediaWatchStore
@@ -90,6 +91,10 @@ def test_summary_is_structured_persistent_provenanced_and_idempotent(tmp_path: P
     assert first["prompt_version"] == PROMPT_VERSION
     assert first["generated_at"] == "2026-10-04T19:00:00Z"
     assert len(MediaEnrichmentStore(store).list_summaries(before["item_uid"])) == 1
+    detail = MediaWatchReadModel(store).item("fixtureA01")
+    assert detail is not None
+    assert detail["summary"]["summary_id"] == first["summary_id"]
+    assert detail["summaries"] == [first]
     assert store.load_item(before["item_uid"]) == before
 
 
