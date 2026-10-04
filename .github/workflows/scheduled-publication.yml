@@ -169,7 +169,6 @@ jobs:
               ("Site roll", Path("storage/observability/site_roll_latest_argentina-general.json")),
               ("Public check", Path("storage/observability/public_deployment_check_latest.json")),
               ("Crawler/social check", Path("storage/observability/crawler_surface_check_latest.json")),
-              ("Producer receipt", Path("storage/observability/media_publication_receipt_latest.json")),
           ):
               if not path.exists():
                   print(f"- **{label}:** no record (cycle stopped earlier)")
