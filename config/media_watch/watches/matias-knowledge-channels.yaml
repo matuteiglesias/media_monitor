@@ -1,0 +1,24 @@
+schema_version: 1
+source_registry: ../sources.yaml
+
+watch:
+  schema_name: media_watch_spec.v1
+  schema_status: experimental
+  monitor_id: matias-knowledge-channels
+  source_ids:
+    - el-destape-youtube
+    - futurock-youtube
+  people: []
+  cadence: manual
+  processing:
+    metadata: always
+    text_policy: permitted_sources_only
+    publisher_chapters: true
+    description_timestamps: true
+    transcript_derived_segments: false
+
+groups:
+  public-affairs:
+    - el-destape-youtube
+  knowledge-and-culture:
+    - futurock-youtube
