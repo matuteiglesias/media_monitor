@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${PROJECTS_ROOT:?PROJECTS_ROOT is required}"
+
+output="${MEDIA_WATCH_DIGEST_ROOT:-artifacts/channel-watch/matias-knowledge-channels/digests}"
+digest_id="${DIGEST_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
+manifest="${output}/${digest_id}/manifest.json"
+
+exec python3 "${PROJECTS_ROOT}/scripts/producer_local_receipt.py" \
+  --producer producer.manual.media-channel-watch-digest \
+  --cwd "$(pwd)" \
+  --evidence-manifest "${manifest}" \
+  --evidence-changed "${manifest}" \
+  --enforce-evidence \
+  -- env \
+    MEDIA_WATCH_DIGEST_ROOT="${output}" \
+    DIGEST_ID="${digest_id}" \
+    bin/channel-watch-digest

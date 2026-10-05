@@ -19,6 +19,15 @@ def load_config(path: Path) -> dict:
     config = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(config, dict) or config.get("schema_version") != 1:
         raise ValueError("media-watch config must have schema_version: 1")
+    registry_ref = config.get("source_registry")
+    if registry_ref:
+        registry_path = (path.parent / str(registry_ref)).resolve()
+        registry = yaml.safe_load(registry_path.read_text(encoding="utf-8"))
+        registry_sources = registry.get("sources") if isinstance(registry, dict) else None
+        if not isinstance(registry_sources, list):
+            raise ValueError(f"source registry {registry_path} has no sources list")
+        requested = set((config.get("watch") or {}).get("source_ids") or [])
+        config["sources"] = [row for row in registry_sources if not requested or row.get("source_id") in requested]
     sources = [row for row in (config.get("sources") or []) if row.get("active", True)]
     if len(sources) < 1:
         raise ValueError("media-watch config has no active sources")
