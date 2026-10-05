@@ -26,6 +26,12 @@ def _int_or_none(value: object) -> int | None:
     return int(str(value))
 
 
+def _availability(item: dict) -> str:
+    status = item.get("status") or {}
+    privacy = str(status.get("privacyStatus") or "unknown")
+    return "public" if privacy == "public" else privacy if privacy in {"private"} else "unknown"
+
+
 @dataclass(frozen=True)
 class ChannelInfo:
     channel_id: str
@@ -45,6 +51,21 @@ class UploadRef:
 @dataclass(frozen=True)
 class VideoObservation:
     video_id: str
+    title: str
+    description: str
+    published_at: str
+    duration_seconds: int | None
+    view_count: int | None
+    like_count: int | None
+    comment_count: int | None
+    availability: str
+
+
+@dataclass(frozen=True)
+class VideoDetail:
+    video_id: str
+    channel_id: str
+    channel_title: str
     title: str
     description: str
     published_at: str
@@ -133,6 +154,45 @@ class YouTubeDataClient:
             unique.append(ref)
         return unique
 
+    def fetch_video(self, video_id: str) -> VideoDetail:
+        payload = self._get(
+            "videos",
+            {
+                "part": "snippet,contentDetails,statistics,status",
+                "id": video_id,
+                "maxResults": 1,
+            },
+        )
+        items = payload.get("items") or []
+        if len(items) != 1:
+            raise LookupError(f"YouTube video {video_id!r} was not returned")
+        item = items[0]
+        returned_id = str(item.get("id") or "")
+        if returned_id != video_id:
+            raise ValueError(f"video identity mismatch: requested {video_id}, got {returned_id}")
+        snippet = item.get("snippet") or {}
+        content = item.get("contentDetails") or {}
+        statistics = item.get("statistics") or {}
+        title = str(snippet.get("title") or "").strip()
+        published_at = str(snippet.get("publishedAt") or "").strip()
+        channel_id = str(snippet.get("channelId") or "").strip()
+        channel_title = str(snippet.get("channelTitle") or "").strip()
+        if not title or not published_at or not channel_id or not channel_title:
+            raise ValueError(f"YouTube video {video_id!r} lacks canonical snippet identity")
+        return VideoDetail(
+            video_id=video_id,
+            channel_id=channel_id,
+            channel_title=channel_title,
+            title=title,
+            description=str(snippet.get("description") or ""),
+            published_at=published_at,
+            duration_seconds=parse_iso8601_duration(content.get("duration")),
+            view_count=_int_or_none(statistics.get("viewCount")),
+            like_count=_int_or_none(statistics.get("likeCount")),
+            comment_count=_int_or_none(statistics.get("commentCount")),
+            availability=_availability(item),
+        )
+
     def fetch_videos(self, refs: Iterable[UploadRef]) -> list[VideoObservation]:
         ordered = list(refs)
         details: dict[str, dict] = {}
@@ -152,8 +212,5 @@ class YouTubeDataClient:
             snippet = item.get("snippet") or {}
             content = item.get("contentDetails") or {}
             statistics = item.get("statistics") or {}
-            status = item.get("status") or {}
-            privacy = str(status.get("privacyStatus") or "unknown")
-            availability = "public" if privacy == "public" else privacy if privacy in {"private"} else "unknown"
-            observations.append(VideoObservation(ref.video_id, str(snippet.get("title") or ref.title).strip() or ref.title, str(snippet.get("description") if snippet.get("description") is not None else ref.description), str(snippet.get("publishedAt") or ref.published_at), parse_iso8601_duration(content.get("duration")), _int_or_none(statistics.get("viewCount")), _int_or_none(statistics.get("likeCount")), _int_or_none(statistics.get("commentCount")), availability))
+            observations.append(VideoObservation(ref.video_id, str(snippet.get("title") or ref.title).strip() or ref.title, str(snippet.get("description") if snippet.get("description") is not None else ref.description), str(snippet.get("publishedAt") or ref.published_at), parse_iso8601_duration(content.get("duration")), _int_or_none(statistics.get("viewCount")), _int_or_none(statistics.get("likeCount")), _int_or_none(statistics.get("commentCount")), _availability(item)))
         return observations
