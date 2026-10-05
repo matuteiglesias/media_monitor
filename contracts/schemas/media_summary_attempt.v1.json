@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://media-monitor/contracts/media_summary_attempt.v1.json",
+  "title": "media_summary_attempt.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_name": {"const": "media_summary_attempt.v1"},
+    "schema_status": {"const": "experimental"},
+    "attempt_id": {"type": "string", "pattern": "^media-summary-attempt:[0-9a-f]{32}$"},
+    "item_uid": {"type": "string", "pattern": "^youtube:[A-Za-z0-9_-]{6,32}$"},
+    "derivation_key": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "provider": {"type": "string", "minLength": 1},
+    "model": {"type": "string", "minLength": 1},
+    "prompt_version": {"type": "string", "minLength": 1},
+    "adapter_version": {"type": "string", "minLength": 1},
+    "processing_mode": {"type": "string", "minLength": 1},
+    "attempted_at": {"type": "string", "format": "date-time"},
+    "state": {"enum": ["generated","provider_limit","failed"]},
+    "retryable": {"type": "boolean"},
+    "error_class": {"type": ["string","null"]},
+    "error_message": {"type": ["string","null"], "maxLength": 1000}
+  },
+  "required": ["schema_name","schema_status","attempt_id","item_uid","derivation_key","provider","model","prompt_version","adapter_version","processing_mode","attempted_at","state","retryable","error_class","error_message"]
+}

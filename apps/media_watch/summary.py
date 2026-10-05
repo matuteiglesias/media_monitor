@@ -14,6 +14,8 @@ from .store import MediaWatchStore, utc_now
 DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
 PROMPT_VERSION = "youtube-summary.v1"
 PROVIDER_NAME = "google-gemini"
+ADAPTER_VERSION = "gemini-youtube-url.v1"
+PROCESSING_MODE = "static"
 
 SUMMARY_RESPONSE_SCHEMA = {
     "type": "object",
@@ -61,16 +63,40 @@ def _validate_response(payload: object) -> dict:
     return payload
 
 
+def classify_summary_failure(exc: Exception) -> tuple[str, bool]:
+    message = str(exc).casefold()
+    provider_limit_markers = (
+        "maximum number of tokens",
+        "token limit",
+        "input token limit",
+        "context window",
+        "1048576",
+    )
+    if any(marker in message for marker in provider_limit_markers):
+        return "provider_limit", False
+    return "failed", True
+
+
 class GeminiSummaryProvider:
     """Thin adapter over Gemini's native public YouTube URL understanding."""
 
     provider_name = PROVIDER_NAME
 
-    def __init__(self, *, api_key: str, model: str = DEFAULT_GEMINI_MODEL, client: Any | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        api_key: str,
+        model: str = DEFAULT_GEMINI_MODEL,
+        adapter_version: str = ADAPTER_VERSION,
+        processing_mode: str = PROCESSING_MODE,
+        client: Any | None = None,
+    ) -> None:
         if not api_key.strip() and client is None:
             raise ValueError("GEMINI_API_KEY is required")
         self.api_key = api_key.strip()
         self.model = model.strip() or DEFAULT_GEMINI_MODEL
+        self.adapter_version = adapter_version.strip() or ADAPTER_VERSION
+        self.processing_mode = processing_mode.strip() or PROCESSING_MODE
         self._client = client
 
     def _client_or_create(self) -> Any:
@@ -80,7 +106,7 @@ class GeminiSummaryProvider:
             except ImportError as exc:
                 raise RuntimeError(
                     "google-genai is required for live YouTube summary generation; "
-                    "install the repository AI requirements"
+                    "install requirements-media-watch-ai.txt"
                 ) from exc
             self._client = genai.Client(api_key=self.api_key)
         return self._client
@@ -97,6 +123,7 @@ class GeminiSummaryProvider:
                 "mime_type": "application/json",
                 "schema": SUMMARY_RESPONSE_SCHEMA,
             },
+            store=False,
         )
         output_text = getattr(interaction, "output_text", None)
         if not output_text:
@@ -127,11 +154,32 @@ def ensure_summary(
         provider=provider.provider_name,
         model=provider.model,
         prompt_version=PROMPT_VERSION,
+        adapter_version=provider.adapter_version,
+        processing_mode=provider.processing_mode,
     )
     if existing is not None:
         return existing, "existing"
 
-    result = provider.summarize_youtube(item["canonical_url"])
+    attempted_at = generated_at or utc_now()
+    try:
+        result = provider.summarize_youtube(item["canonical_url"])
+    except Exception as exc:
+        state, retryable = classify_summary_failure(exc)
+        enrichment.put_summary_attempt(
+            item_uid=item_uid,
+            provider=provider.provider_name,
+            model=provider.model,
+            prompt_version=PROMPT_VERSION,
+            adapter_version=provider.adapter_version,
+            processing_mode=provider.processing_mode,
+            attempted_at=attempted_at,
+            state=state,
+            retryable=retryable,
+            error_class=type(exc).__name__,
+            error_message=" ".join(str(exc).split())[:1000] or type(exc).__name__,
+        )
+        raise
+
     artifact = enrichment.put_summary(
         item_uid=item_uid,
         summary=result["summary"],
@@ -139,7 +187,20 @@ def ensure_summary(
         provider=provider.provider_name,
         model=provider.model,
         prompt_version=PROMPT_VERSION,
-        generated_at=generated_at or utc_now(),
+        adapter_version=provider.adapter_version,
+        processing_mode=provider.processing_mode,
+        generated_at=attempted_at,
+    )
+    enrichment.put_summary_attempt(
+        item_uid=item_uid,
+        provider=provider.provider_name,
+        model=provider.model,
+        prompt_version=PROMPT_VERSION,
+        adapter_version=provider.adapter_version,
+        processing_mode=provider.processing_mode,
+        attempted_at=attempted_at,
+        state="generated",
+        retryable=False,
     )
     return artifact, "generated"
 
