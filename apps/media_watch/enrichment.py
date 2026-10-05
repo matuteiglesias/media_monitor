@@ -43,6 +43,8 @@ class MediaEnrichmentStore:
         self.text_assets_dir = self.root / "text_assets"
         self.segments_dir = self.root / "segments"
         self.appearances_dir = self.root / "appearances"
+        self.summaries_dir = self.root / "summaries"
+        self.summary_attempts_dir = self.root / "summary_attempts"
         self.indexes_dir = self.root / "indexes"
 
     def list_text_assets(self, item_uid: str | None = None) -> list[dict]:
@@ -64,6 +66,179 @@ class MediaEnrichmentStore:
         if person_id:
             rows = [row for row in rows if row["person_id"] == person_id]
         return sorted(rows, key=lambda row: (row["observed_at"], row["appearance_id"]), reverse=True)
+
+    @staticmethod
+    def summary_derivation_key(
+        *,
+        item_uid: str,
+        provider: str,
+        model: str,
+        prompt_version: str,
+        adapter_version: str,
+        processing_mode: str,
+    ) -> str:
+        semantic = {
+            "schema_name": "media_summary.v1",
+            "item_uid": item_uid,
+            "provider": provider,
+            "model": model,
+            "prompt_version": prompt_version,
+            "adapter_version": adapter_version,
+            "processing_mode": processing_mode,
+        }
+        return sha256_text(canonical_json(semantic))
+
+    @classmethod
+    def summary_id(
+        cls,
+        *,
+        item_uid: str,
+        provider: str,
+        model: str,
+        prompt_version: str,
+        adapter_version: str,
+        processing_mode: str,
+    ) -> str:
+        derivation_key = cls.summary_derivation_key(
+            item_uid=item_uid,
+            provider=provider,
+            model=model,
+            prompt_version=prompt_version,
+            adapter_version=adapter_version,
+            processing_mode=processing_mode,
+        )
+        return f"media-summary:{derivation_key[:32]}"
+
+    def load_summary(
+        self,
+        *,
+        item_uid: str,
+        provider: str,
+        model: str,
+        prompt_version: str,
+        adapter_version: str,
+        processing_mode: str,
+    ) -> dict | None:
+        summary_id = self.summary_id(
+            item_uid=item_uid,
+            provider=provider,
+            model=model,
+            prompt_version=prompt_version,
+            adapter_version=adapter_version,
+            processing_mode=processing_mode,
+        )
+        path = self.summaries_dir / f"{safe_name(summary_id)}.json"
+        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
+    def list_summaries(self, item_uid: str | None = None) -> list[dict]:
+        rows = _read_rows(self.summaries_dir)
+        if item_uid:
+            rows = [row for row in rows if row["item_uid"] == item_uid]
+        return sorted(rows, key=lambda row: (row["generated_at"], row["summary_id"]), reverse=True)
+
+    def list_summary_attempts(self, item_uid: str | None = None) -> list[dict]:
+        rows = _read_rows(self.summary_attempts_dir)
+        if item_uid:
+            rows = [row for row in rows if row["item_uid"] == item_uid]
+        return sorted(rows, key=lambda row: (row["attempted_at"], row["attempt_id"]), reverse=True)
+
+    def put_summary(
+        self,
+        *,
+        item_uid: str,
+        summary: str,
+        key_points: list[str],
+        provider: str,
+        model: str,
+        prompt_version: str,
+        adapter_version: str,
+        processing_mode: str,
+        generated_at: str,
+    ) -> dict:
+        if self.store.load_item(item_uid) is None:
+            raise ValueError(f"unknown item {item_uid}")
+        summary_id = self.summary_id(
+            item_uid=item_uid,
+            provider=provider,
+            model=model,
+            prompt_version=prompt_version,
+            adapter_version=adapter_version,
+            processing_mode=processing_mode,
+        )
+        path = self.summaries_dir / f"{safe_name(summary_id)}.json"
+        if path.exists():
+            return json.loads(path.read_text(encoding="utf-8"))
+        payload = {
+            "schema_name": "media_summary.v1",
+            "schema_status": "experimental",
+            "summary_id": summary_id,
+            "item_uid": item_uid,
+            "summary": summary,
+            "key_points": key_points,
+            "provider": provider,
+            "model": model,
+            "prompt_version": prompt_version,
+            "adapter_version": adapter_version,
+            "processing_mode": processing_mode,
+            "generated_at": generated_at,
+        }
+        _validate("media_summary.v1.json", payload)
+        _write_json_once(path, payload)
+        return payload
+
+    def put_summary_attempt(
+        self,
+        *,
+        item_uid: str,
+        provider: str,
+        model: str,
+        prompt_version: str,
+        adapter_version: str,
+        processing_mode: str,
+        attempted_at: str,
+        state: str,
+        retryable: bool,
+        error_class: str | None = None,
+        error_message: str | None = None,
+    ) -> dict:
+        if self.store.load_item(item_uid) is None:
+            raise ValueError(f"unknown item {item_uid}")
+        derivation_key = self.summary_derivation_key(
+            item_uid=item_uid,
+            provider=provider,
+            model=model,
+            prompt_version=prompt_version,
+            adapter_version=adapter_version,
+            processing_mode=processing_mode,
+        )
+        semantic = {
+            "derivation_key": derivation_key,
+            "attempted_at": attempted_at,
+            "state": state,
+            "error_class": error_class,
+            "error_message": error_message,
+        }
+        attempt_id = f"media-summary-attempt:{sha256_text(canonical_json(semantic))[:32]}"
+        payload = {
+            "schema_name": "media_summary_attempt.v1",
+            "schema_status": "experimental",
+            "attempt_id": attempt_id,
+            "item_uid": item_uid,
+            "derivation_key": derivation_key,
+            "provider": provider,
+            "model": model,
+            "prompt_version": prompt_version,
+            "adapter_version": adapter_version,
+            "processing_mode": processing_mode,
+            "attempted_at": attempted_at,
+            "state": state,
+            "retryable": retryable,
+            "error_class": error_class,
+            "error_message": error_message,
+        }
+        _validate("media_summary_attempt.v1.json", payload)
+        _write_json_once(self.summary_attempts_dir / f"{safe_name(attempt_id)}.json", payload)
+        return payload
 
     def put_text_asset(
         self,
