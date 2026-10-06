@@ -36,7 +36,7 @@ The bridge uses these server-side variables:
 
 On Cloud Run the process refuses to silently fall back to the container-local default store when `MEDIA_WATCH_STORE_ROOT` is missing. The current `MediaWatchStore` is filesystem-backed, so a production deployment must mount the same durable POSIX-compatible state expected by Media Watch. An unmounted Cloud Run container filesystem is not an authoritative persistence layer.
 
-The current store is not a transactional multi-writer backend. For this v1 bridge, deploy one instance with request concurrency 1 unless/until storage concurrency semantics are deliberately redesigned. The bridge also serializes mutation operations inside its process.
+The current store is not a transactional multi-writer backend. For this v1 bridge, use Cloud Run manual scaling with exactly one service instance and set per-instance request concurrency to 1 unless/until storage concurrency semantics are deliberately redesigned. Do not rely only on autoscaling `max instances = 1` as a single-writer guarantee. The bridge also serializes mutation operations inside its process.
 
 ## Authentication boundary
 
