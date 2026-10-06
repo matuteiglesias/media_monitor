@@ -42,7 +42,7 @@ The current store is not a transactional multi-writer backend. For this v1 bridg
 
 Keep the Cloud Run service private and use Cloud Run IAM. Do not add an application bearer token or shared secret.
 
-The calling `youtube-following` service identity should receive `roles/run.invoker` on this service and send a short-lived Google-signed identity token. The token audience should be the receiving service's `*.run.app` URL unless a Cloud Run custom audience is explicitly configured.
+Attach a dedicated user-managed service account to the calling `youtube-following` service, grant that identity `roles/run.invoker` on this service, and send a short-lived Google-signed identity token. The token audience should be the receiving service's `*.run.app` URL unless a Cloud Run custom audience is explicitly configured.
 
 The application does not bind itself to a caller service-account name. IAM authorization remains a deployment concern outside the Python handler.
 
