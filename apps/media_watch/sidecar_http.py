@@ -128,6 +128,13 @@ class YouTubeSidecarBridge:
         except BridgeError as exc:
             self._log_result(path=path, status=exc.status, code=exc.code)
             return exc.response()
+        except Exception as exc:
+            self._log_exception(path, "internal_error", exc)
+            return BridgeError(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                "internal_error",
+                "Media Monitor could not complete the request",
+            ).response()
 
     def _ensure(self, video_id: str) -> dict:
         item_uid = f"youtube:{video_id}"
