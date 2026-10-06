@@ -1,0 +1,20 @@
+FROM python:3.12.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    PORT=8080
+
+WORKDIR /app
+
+COPY requirements-media-watch-ai.txt /app/requirements-media-watch-ai.txt
+COPY requirements-media-watch-sidecar.txt /app/requirements-media-watch-sidecar.txt
+RUN pip install --no-cache-dir --requirement /app/requirements-media-watch-sidecar.txt \
+    && useradd --create-home --uid 10001 --shell /usr/sbin/nologin mediawatch
+
+COPY --chown=mediawatch:mediawatch apps/__init__.py /app/apps/__init__.py
+COPY --chown=mediawatch:mediawatch apps/media_watch /app/apps/media_watch
+COPY --chown=mediawatch:mediawatch contracts /app/contracts
+
+USER mediawatch
+CMD ["python", "-m", "apps.media_watch.sidecar_http"]
