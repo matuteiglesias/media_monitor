@@ -1,5 +1,7 @@
 # Private YouTube sidecar HTTP bridge
 
+> **Status:** implemented and CI-validated private-service contract; not deployed/operated evidence · **Owner:** Media Watch / platform operator · **Verified against:** PR #135 sidecar contracts and `youtube-following` R1/R3 integration heads
+
 ## Purpose and scope
 
 This service is a thin private HTTP projection over the existing governed Media Watch YouTube sidecar. It does not own follow state, channel watch membership, scheduling, upload-frontier discovery, or summary semantics.
