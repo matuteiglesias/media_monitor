@@ -214,11 +214,20 @@ class YouTubeSidecarBridge:
                     "Video is not present in governed Media Monitor state",
                 )
             current = build_sidecar(self.store, video_id)
-            if current["summary"]["state"] == "available":
+            summary_state = current["summary"]
+            if summary_state["state"] == "available":
                 self._log_result(
                     path=SUMMARY_PATH,
                     status=HTTPStatus.OK,
                     code="cached_summary",
+                    video_id=video_id,
+                )
+                return current
+            if summary_state["state"] != "not_attempted" and summary_state["retryable"] is False:
+                self._log_result(
+                    path=SUMMARY_PATH,
+                    status=HTTPStatus.OK,
+                    code=f"cached_{summary_state['state']}",
                     video_id=video_id,
                 )
                 return current
@@ -339,9 +348,12 @@ def _read_json_body(handler: BaseHTTPRequestHandler) -> object:
         ) from None
 
 
-def serve(*, store_root: Path, host: str, port: int) -> None:
-    bridge = YouTubeSidecarBridge(MediaWatchStore(store_root))
-
+def make_server(
+    *,
+    bridge: YouTubeSidecarBridge,
+    host: str,
+    port: int,
+) -> ThreadingHTTPServer:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
             if self.path == "/healthz":
@@ -363,7 +375,12 @@ def serve(*, store_root: Path, host: str, port: int) -> None:
         def log_message(self, format: str, *args: object) -> None:
             return
 
-    ThreadingHTTPServer((host, port), Handler).serve_forever()
+    return ThreadingHTTPServer((host, port), Handler)
+
+
+def serve(*, store_root: Path, host: str, port: int) -> None:
+    bridge = YouTubeSidecarBridge(MediaWatchStore(store_root))
+    make_server(bridge=bridge, host=host, port=port).serve_forever()
 
 
 def main(argv: list[str] | None = None) -> int:
