@@ -1,6 +1,6 @@
 # Private YouTube sidecar HTTP bridge
 
-> **Status:** implemented and CI-validated private-service bridge; not deployed or operated · **Owner:** Media Watch YouTube sidecar / platform operator · **Verified against:** `youtube_video_sidecar.v1`, PR #135, and `youtube-following` R1/R3 integration heads
+> **Status:** implemented and CI-validated private-service bridge; not deployed or operated · **Owner:** Media Watch YouTube sidecar / platform operator · **Verified against:** `youtube_video_sidecar.v1`, PR #135, and `youtube-following` main after merged R1/R3
 
 ## Purpose and scope
 
