@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import logging
+import threading
 from pathlib import Path
 
+import requests
 from jsonschema import Draft202012Validator, FormatChecker
 
 from apps.media_watch.enrichment import MediaEnrichmentStore, load_watch_config
@@ -11,6 +14,7 @@ from apps.media_watch.sidecar_http import (
     INSPECT_PATH,
     SUMMARY_PATH,
     YouTubeSidecarBridge,
+    make_server,
 )
 from apps.media_watch.store import MediaWatchStore
 from apps.media_watch.summary import ADAPTER_VERSION, PROCESSING_MODE, PROMPT_VERSION
@@ -173,12 +177,17 @@ def test_provider_limit_state_is_returned_without_partial_summary(tmp_path: Path
     ensure_video(target)
 
     response = target.post(SUMMARY_PATH, {"video_id": VIDEO_ID})
+    repeated = target.post(SUMMARY_PATH, {"video_id": VIDEO_ID})
 
     assert response.status == 200
+    assert repeated.payload == response.payload
     assert response.payload["summary"]["state"] == "provider_limit"
     assert response.payload["summary"]["summary"] is None
     assert response.payload["summary"]["retryable"] is False
-    assert MediaEnrichmentStore(target.store).list_summaries(f"youtube:{VIDEO_ID}") == []
+    assert len(summary.calls) == 1
+    enrichment = MediaEnrichmentStore(target.store)
+    assert enrichment.list_summaries(f"youtube:{VIDEO_ID}") == []
+    assert len(enrichment.list_summary_attempts(f"youtube:{VIDEO_ID}")) == 1
 
 
 def test_failed_summary_state_is_safe_and_persists_no_fake_summary(tmp_path: Path) -> None:
@@ -252,7 +261,8 @@ def test_success_responses_validate_against_sidecar_schema(tmp_path: Path) -> No
         assert list(validator.iter_errors(payload)) == []
 
 
-def test_safe_metadata_error_does_not_expose_exception_text(tmp_path: Path) -> None:
+def test_safe_metadata_error_does_not_expose_exception_text(tmp_path: Path, caplog) -> None:
+    caplog.set_level(logging.WARNING, logger="media_watch.youtube_sidecar_http")
     secret = "AIza-not-a-real-key raw-provider-payload /tmp/private-store"
     youtube = FakeYouTubeClient(error=RuntimeError(secret))
     target = bridge(tmp_path, youtube=youtube)
@@ -265,6 +275,55 @@ def test_safe_metadata_error_does_not_expose_exception_text(tmp_path: Path) -> N
     assert secret not in rendered
     assert "AIza" not in rendered
     assert "/tmp/" not in rendered
+    assert secret not in caplog.text
+    assert "RuntimeError" in caplog.text
+
+
+def test_http_transport_round_trip_uses_exact_paths(tmp_path: Path) -> None:
+    target = bridge(tmp_path, youtube=FakeYouTubeClient(), summary=FakeSummaryProvider())
+    server = make_server(bridge=target, host="127.0.0.1", port=0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    host, port = server.server_address[:2]
+    base = f"http://{host}:{port}"
+
+    try:
+        health = requests.get(f"{base}/healthz", timeout=2)
+        ensured = requests.post(
+            f"{base}{ENSURE_PATH}",
+            json={"video_id": VIDEO_ID},
+            timeout=2,
+        )
+        inspected = requests.post(
+            f"{base}{INSPECT_PATH}",
+            json={"video_id": VIDEO_ID},
+            timeout=2,
+        )
+        summarized = requests.post(
+            f"{base}{SUMMARY_PATH}",
+            json={"video_id": VIDEO_ID},
+            timeout=2,
+        )
+        malformed = requests.post(
+            f"{base}{ENSURE_PATH}",
+            data="{",
+            headers={"content-type": "application/json"},
+            timeout=2,
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+    assert health.status_code == 200
+    assert health.json() == {"status": "ok"}
+    assert ensured.status_code == inspected.status_code == summarized.status_code == 200
+    assert ensured.json()["item_uid"] == f"youtube:{VIDEO_ID}"
+    assert inspected.json()["item_uid"] == f"youtube:{VIDEO_ID}"
+    assert summarized.json()["summary"]["state"] == "available"
+    assert summarized.headers["cache-control"] == "no-store"
+    assert malformed.status_code == 400
+    assert malformed.json()["error"]["code"] == "invalid_json"
 
 
 def test_summary_unknown_and_unconfigured_provider_are_bounded(tmp_path: Path) -> None:
