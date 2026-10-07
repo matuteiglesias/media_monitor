@@ -86,6 +86,30 @@ def materialize_channels(config: dict, store: MediaWatchStore, output_root: Path
     return {"channels": rows}
 
 
+def _summary_state(enrichment: MediaEnrichmentStore, item_uid: str) -> dict:
+    summaries = enrichment.list_summaries(item_uid)
+    if not summaries:
+        return {
+            "state": "unavailable",
+            "summary_id": None,
+            "summary": None,
+            "key_points": [],
+            "provider": None,
+            "model": None,
+            "generated_at": None,
+        }
+    summary = summaries[0]
+    return {
+        "state": "available",
+        "summary_id": summary["summary_id"],
+        "summary": summary["summary"],
+        "key_points": summary["key_points"],
+        "provider": summary["provider"],
+        "model": summary["model"],
+        "generated_at": summary["generated_at"],
+    }
+
+
 def _text_state(enrichment: MediaEnrichmentStore, item_uid: str) -> dict:
     state = enrichment.text_status(item_uid)
     asset = state.get("asset") or {}
@@ -112,6 +136,7 @@ def build_digest_input(config: dict, store: MediaWatchStore, *, limit_per_channe
         for item in source_rows:
             snapshots = store.list_snapshots(item["item_uid"])
             text = _text_state(enrichment, item["item_uid"])
+            summary = _summary_state(enrichment, item["item_uid"])
             selected.append({
                 "item_uid": item["item_uid"],
                 "source_id": source_id,
@@ -126,6 +151,13 @@ def build_digest_input(config: dict, store: MediaWatchStore, *, limit_per_channe
                 "text_asset_id": text["text_asset_id"],
                 "timing_available": text["timing_available"],
                 "text_excerpt": _excerpt(text.get("text") or "", 1400) if text["available"] else None,
+                "summary_state": summary["state"],
+                "summary_id": summary["summary_id"],
+                "summary": summary["summary"],
+                "summary_key_points": summary["key_points"],
+                "summary_provider": summary["provider"],
+                "summary_model": summary["model"],
+                "summary_generated_at": summary["generated_at"],
                 "segment_ids": [row["segment_id"] for row in enrichment.list_segments(item["item_uid"])],
                 "observed_at": item["last_seen"],
                 "snapshot_id": snapshots[0]["snapshot_id"] if snapshots else None,
@@ -152,8 +184,16 @@ def annotate(row: dict) -> dict:
     evidence = [{"kind": "metadata", "ref": f"snapshot:{row['snapshot_id']}"}] if row.get("snapshot_id") else []
     if row.get("text_asset_id"):
         evidence.append({"kind": "text_asset", "ref": row["text_asset_id"]})
-    source_text = row.get("text_excerpt") or row.get("description_excerpt") or row["title"]
-    source_label = "the governed text" if row.get("text_excerpt") else "the published metadata"
+    if row.get("summary_id"):
+        evidence.append({"kind": "summary", "ref": row["summary_id"]})
+    source_text = row.get("summary") or row.get("text_excerpt") or row.get("description_excerpt") or row["title"]
+    source_label = (
+        "the governed summary"
+        if row.get("summary")
+        else "the governed text"
+        if row.get("text_excerpt")
+        else "the published metadata"
+    )
     abstract = f"{row['title']}. {source_label.capitalize()} presents this item as: {source_text}"
     if len(abstract) > 900:
         abstract = abstract[:899].rstrip() + "…"
@@ -212,7 +252,12 @@ def render_digest(config: dict, rows: list[dict], annotations: list[dict], *, ou
         lines.extend([f"## {label}", ""])
         for annotation in groups[decision]:
             row = by_id[annotation["item_uid"]]
-            lines.extend([f"### {row['channel_name']} — {row['title']}", "", f"- Published: {row['published_at']}", f"- Duration: {_fmt_duration(row.get('duration_seconds'))}", f"- Text: `{row['text_status']}`", f"- Topics: {', '.join(annotation['topics'])}", f"- Decision: **{decision}** — {annotation['decision_reason']}", f"- Abstract ({annotation['abstract_source_quality']}): {annotation['abstract']}", f"- URL: {row['canonical_url']}", ""])
+            lines.extend([f"### {row['channel_name']} — {row['title']}", "", f"- Published: {row['published_at']}", f"- Duration: {_fmt_duration(row.get('duration_seconds'))}", f"- Text: `{row['text_status']}`", f"- Summary: `{row['summary_state']}`" + (f" via {row['summary_model']}" if row.get("summary_model") else ""), f"- Topics: {', '.join(annotation['topics'])}", f"- Decision: **{decision}** — {annotation['decision_reason']}"])
+            if row.get("summary"):
+                lines.extend([f"- Governed summary: {row['summary']}"])
+                if row.get("summary_key_points"):
+                    lines.extend(["- Key points: " + " | ".join(row["summary_key_points"])])
+            lines.extend([f"- Abstract ({annotation['abstract_source_quality']}): {annotation['abstract']}", f"- URL: {row['canonical_url']}", ""])
     lines.extend(["## BY CHANNEL", ""])
     for source_id in sorted({row["source_id"] for row in rows}):
         lines.append(f"- `{source_id}`: {sum(row['source_id'] == source_id for row in rows)} items")
@@ -220,7 +265,11 @@ def render_digest(config: dict, rows: list[dict], annotations: list[dict], *, ou
     cards = []
     for annotation in annotations:
         row = by_id[annotation["item_uid"]]
-        cards.append(f"<article><h2>{html.escape(row['channel_name'])} — {html.escape(row['title'])}</h2><p>{html.escape(row['published_at'])} · {html.escape(_fmt_duration(row.get('duration_seconds')))} · text: <code>{html.escape(row['text_status'])}</code></p><p><strong>{annotation['decision']}</strong> — {html.escape(annotation['decision_reason'])}</p><p>{html.escape(annotation['abstract'])}</p><p>{', '.join(html.escape(t) for t in annotation['topics'])} · <a href='{html.escape(row['canonical_url'])}'>Open on YouTube</a></p></article>")
+        summary_html = ""
+        if row.get("summary"):
+            points = "".join(f"<li>{html.escape(point)}</li>" for point in row.get("summary_key_points", []))
+            summary_html = f"<h3>Governed summary</h3><p>{html.escape(row['summary'])}</p>" + (f"<ul>{points}</ul>" if points else "")
+        cards.append(f"<article><h2>{html.escape(row['channel_name'])} — {html.escape(row['title'])}</h2><p>{html.escape(row['published_at'])} · {html.escape(_fmt_duration(row.get('duration_seconds')))} · text: <code>{html.escape(row['text_status'])}</code> · summary: <code>{html.escape(row['summary_state'])}</code></p><p><strong>{annotation['decision']}</strong> — {html.escape(annotation['decision_reason'])}</p>{summary_html}<p>{html.escape(annotation['abstract'])}</p><p>{', '.join(html.escape(t) for t in annotation['topics'])} · <a href='{html.escape(row['canonical_url'])}'>Open on YouTube</a></p></article>")
     page = "<!doctype html><meta charset='utf-8'><title>Custom YouTube Watch</title><style>body{font:16px system-ui;max-width:1000px;margin:2rem auto;padding:0 1rem}article{border-top:1px solid #ccc;padding:1rem 0}code{color:#555}</style><h1>Custom YouTube Watch</h1>" + f"<p>{len(rows)} items · {html.escape(str(manifest['generated_at']))}</p>" + "".join(cards)
     (digest_dir / "digest.html").write_text(page, encoding="utf-8")
     index_path = output_root / "index.json"

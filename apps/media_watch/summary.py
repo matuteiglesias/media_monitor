@@ -63,6 +63,19 @@ def _validate_response(payload: object) -> dict:
     return payload
 
 
+def _exception_status_code(exc: Exception) -> int | None:
+    for value in (
+        getattr(exc, "status_code", None),
+        getattr(exc, "code", None),
+        getattr(getattr(exc, "response", None), "status_code", None),
+    ):
+        if isinstance(value, int):
+            return value
+        if isinstance(value, str) and value.isdigit():
+            return int(value)
+    return None
+
+
 def classify_summary_failure(exc: Exception) -> tuple[str, bool]:
     message = str(exc).casefold()
     provider_limit_markers = (
@@ -74,6 +87,33 @@ def classify_summary_failure(exc: Exception) -> tuple[str, bool]:
     )
     if any(marker in message for marker in provider_limit_markers):
         return "provider_limit", False
+
+    # Invalid structured output is a deterministic model/contract failure for
+    # this exact attempt.  Retrying it blindly is not the transient-recovery
+    # policy exercised by the sidecar.
+    if isinstance(exc, ValueError):
+        return "failed", False
+
+    status = _exception_status_code(exc)
+    if status in {408, 429, 500, 502, 503, 504}:
+        return "failed", True
+    if status is not None and 400 <= status < 500:
+        return "failed", False
+
+    nonretryable_markers = (
+        "permission denied",
+        "forbidden",
+        "unauthorized",
+        "invalid argument",
+        "invalid_argument",
+        "policy block",
+        "safety block",
+    )
+    if any(marker in message for marker in nonretryable_markers):
+        return "failed", False
+
+    # Preserve the existing conservative retryable default for opaque upstream
+    # availability/network failures that do not expose a structured status.
     return "failed", True
 
 
