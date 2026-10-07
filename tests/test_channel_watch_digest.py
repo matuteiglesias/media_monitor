@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from apps.media_watch.digest import build_digest_input, render_digest, validate_watch_config
+from apps.media_watch.digest import annotate, build_digest_input, render_digest, validate_watch_config
 from apps.media_watch.enrichment import MediaEnrichmentStore
 from apps.media_watch.enrichment_fixture import seed_enriched
 from apps.media_watch.store import MediaWatchStore
