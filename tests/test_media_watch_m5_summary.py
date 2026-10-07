@@ -15,6 +15,7 @@ from apps.media_watch.summary import (
     PROCESSING_MODE,
     PROMPT_VERSION,
     GeminiSummaryProvider,
+    classify_summary_failure,
     ensure_summary,
 )
 from apps.media_watch.youtube_api import VideoDetail
@@ -245,8 +246,21 @@ def test_invalid_structured_output_records_failed_attempt_without_summary(tmp_pa
     attempts = enrichment.list_summary_attempts(before["item_uid"])
     assert len(attempts) == 1
     assert attempts[0]["state"] == "failed"
-    assert attempts[0]["retryable"] is True
+    assert attempts[0]["retryable"] is False
     assert store.load_item(before["item_uid"]) == before
+
+
+def test_failure_classification_distinguishes_transient_and_nonretryable_statuses() -> None:
+    class StatusError(RuntimeError):
+        def __init__(self, status_code: int, message: str) -> None:
+            super().__init__(message)
+            self.status_code = status_code
+
+    assert classify_summary_failure(StatusError(503, "service unavailable")) == ("failed", True)
+    assert classify_summary_failure(StatusError(429, "too many requests")) == ("failed", True)
+    assert classify_summary_failure(StatusError(403, "forbidden")) == ("failed", False)
+    assert classify_summary_failure(StatusError(400, "invalid argument")) == ("failed", False)
+    assert classify_summary_failure(ValueError("invalid structured output")) == ("failed", False)
 
 
 def test_provider_limit_is_explicit_sidecar_state_and_not_immediately_retryable(tmp_path: Path) -> None:
