@@ -169,3 +169,47 @@ jobs:
           name: media-watch-m1-live-gate
           path: artifacts/runs/media-watch-m1-live
           if-no-files-found: warn
+
+  live-summary-recovery-proof:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Require live summary credentials
+        shell: bash
+        run: |
+          if [ -z "$YOUTUBE_API_KEY" ] || [ -z "$GEMINI_API_KEY" ]; then
+            echo "YOUTUBE_API_KEY and GEMINI_API_KEY are required for the live summary gate."
+            exit 1
+          fi
+      - name: Install governed sidecar runtime
+        run: python -m pip install -r requirements-media-watch-sidecar.txt
+      - name: Reconcile recent configured channel state
+        run: |
+          mkdir -p artifacts/runs/media-watch-live-summary
+          python -m apps.media_watch.monitor \
+            --limit 5 \
+            --store-root artifacts/runs/media-watch-live-summary/store \
+            --evidence-root artifacts/runs/media-watch-live-summary/acquisition
+      - name: Generate summaries serially and prove cache plus digest visibility
+        run: |
+          python -m apps.media_watch.live_summary_acceptance \
+            --store-root artifacts/runs/media-watch-live-summary/store \
+            --output-root artifacts/runs/media-watch-live-summary/acceptance \
+            --min-successes 2 \
+            --limit-per-source 3
+      - name: Upload live summary acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: media-watch-live-summary-acceptance
+          path: artifacts/runs/media-watch-live-summary
+          if-no-files-found: warn
+
