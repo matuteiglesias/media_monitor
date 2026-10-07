@@ -47,6 +47,7 @@ def _record(store: MediaWatchStore, summary: dict) -> dict:
             "canonical_url": item["canonical_url"],
             "published_at": item["published_at"],
             "summary_id": summary["summary_id"],
+            "key_points": key_points,
             "summary_generated_at": summary["generated_at"],
             "provider": summary["provider"],
             "model": summary["model"],
