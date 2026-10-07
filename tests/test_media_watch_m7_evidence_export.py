@@ -27,6 +27,7 @@ def test_media_monitor_owns_generic_evidence_projection(tmp_path: Path) -> None:
     assert all(row["timestamp"].endswith("Z") for row in rows)
     assert all(row["meta"]["producer"] == "media-monitor" for row in rows)
     assert all(row["meta"]["artifact_family"] == "media_summary" for row in rows)
+    assert all(len(row["meta"]["key_points"]) >= 2 for row in rows)
     assert all(row["meta"]["canonical_url"].startswith("https://www.youtube.com/watch?v=") for row in rows)
     assert {row["meta"]["source_id"] for row in rows} == {
         store.load_item("youtube:fixtureA01")["source_id"],
