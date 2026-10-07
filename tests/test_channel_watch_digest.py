@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from apps.media_watch.digest import build_digest_input, render_digest, validate_watch_config
+from apps.media_watch.enrichment import MediaEnrichmentStore
 from apps.media_watch.enrichment_fixture import seed_enriched
 from apps.media_watch.store import MediaWatchStore
 
@@ -43,6 +44,51 @@ def test_digest_references_only_real_items_and_replays_with_new_digest_id(tmp_pa
     assert json.loads((tmp_path / "digests/index.json").read_text())
     assert all(annotation["item_uid"] in {row["item_uid"] for row in rows} for annotation in annotations)
 
+
+
+def test_digest_projects_governed_summary_without_changing_decision_semantics(tmp_path: Path) -> None:
+    root = tmp_path / "store"
+    seed_enriched(root)
+    store = MediaWatchStore(root)
+    enrichment = MediaEnrichmentStore(store)
+    artifact = enrichment.put_summary(
+        item_uid="youtube:fixtureA01",
+        summary="Resumen gobernado sobre inflación, actividad y política económica.",
+        key_points=["Inflación desacelera", "Actividad sigue débil", "Política fiscal en debate"],
+        provider="google-gemini",
+        model="gemini-test",
+        prompt_version="youtube-summary.v1",
+        adapter_version="gemini-youtube-url.v1",
+        processing_mode="static",
+        generated_at="2026-09-13T00:00:00Z",
+    )
+
+    config = validate_watch_config(config_path())
+    rows = build_digest_input(config, store, limit_per_channel=5)
+    row = next(item for item in rows if item["item_uid"] == "youtube:fixtureA01")
+    assert row["summary_state"] == "available"
+    assert row["summary_id"] == artifact["summary_id"]
+    assert row["summary"].startswith("Resumen gobernado")
+    assert row["summary_key_points"][0] == "Inflación desacelera"
+
+    annotations = [annotate(item) for item in rows]
+    target = next(item for item in annotations if item["item_uid"] == "youtube:fixtureA01")
+    assert any(
+        evidence["kind"] == "summary" and evidence["ref"] == artifact["summary_id"]
+        for evidence in target["evidence"]
+    )
+
+    render_digest(
+        config,
+        rows,
+        annotations,
+        output_root=tmp_path / "digests",
+        digest_id="20260913T020000Z",
+        since=None,
+    )
+    rendered = (tmp_path / "digests" / "20260913T020000Z" / "digest.md").read_text(encoding="utf-8")
+    assert "Governed summary: Resumen gobernado" in rendered
+    assert "Inflación desacelera" in rendered
 
 def test_incremental_since_watermark_excludes_old_items(tmp_path: Path) -> None:
     root = tmp_path / "store"
