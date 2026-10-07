@@ -5,43 +5,14 @@ import json
 from pathlib import Path
 
 from apps.media_watch.evidence_export import CONTRACT, export_evidence
-from apps.media_watch.enrichment import MediaEnrichmentStore
-from apps.media_watch.enrichment_fixture import seed_enriched
+from apps.media_watch.evidence_fixture import seed_evidence_fixture
 from apps.media_watch.store import MediaWatchStore
-
-
-def _seed_summaries(root: Path) -> MediaWatchStore:
-    seed_enriched(root)
-    store = MediaWatchStore(root)
-    enrichment = MediaEnrichmentStore(store)
-    enrichment.put_summary(
-        item_uid="youtube:fixtureA01",
-        summary="El canal describe una desaceleración de la inflación y debate sobre actividad.",
-        key_points=["Inflación desacelera", "Actividad débil"],
-        provider="google-gemini",
-        model="gemini-test",
-        prompt_version="youtube-summary.v1",
-        adapter_version="gemini-youtube-url.v1",
-        processing_mode="static",
-        generated_at="2026-09-13T00:00:00Z",
-    )
-    enrichment.put_summary(
-        item_uid="youtube:fixtureB01",
-        summary="El segundo canal también discute inflación, salarios y consumo.",
-        key_points=["Salarios rezagados", "Consumo en debate"],
-        provider="google-gemini",
-        model="gemini-test",
-        prompt_version="youtube-summary.v1",
-        adapter_version="gemini-youtube-url.v1",
-        processing_mode="static",
-        generated_at="2026-09-13T00:05:00Z",
-    )
-    return store
 
 
 def test_media_monitor_owns_generic_evidence_projection(tmp_path: Path) -> None:
     root = tmp_path / "store"
-    store = _seed_summaries(root)
+    seed_evidence_fixture(root)
+    store = MediaWatchStore(root)
     output = tmp_path / "media.evidence.jsonl"
 
     receipt = export_evidence(root, output)
@@ -67,7 +38,7 @@ def test_media_monitor_owns_generic_evidence_projection(tmp_path: Path) -> None:
 
 def test_export_is_byte_deterministic_for_same_store(tmp_path: Path) -> None:
     root = tmp_path / "store"
-    _seed_summaries(root)
+    seed_evidence_fixture(root)
     first = tmp_path / "first.jsonl"
     second = tmp_path / "second.jsonl"
 
