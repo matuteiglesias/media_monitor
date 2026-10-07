@@ -288,7 +288,7 @@ def test_http_transport_round_trip_uses_exact_paths(tmp_path: Path) -> None:
     base = f"http://{host}:{port}"
 
     try:
-        health = requests.get(f"{base}/healthz", timeout=2)
+        health = requests.get(f"{base}/health", timeout=2)
         ensured = requests.post(
             f"{base}{ENSURE_PATH}",
             json={"video_id": VIDEO_ID},

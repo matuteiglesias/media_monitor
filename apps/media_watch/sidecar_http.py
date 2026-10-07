@@ -356,7 +356,7 @@ def make_server(
 ) -> ThreadingHTTPServer:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
-            if self.path == "/healthz":
+            if self.path == "/health":
                 _json_response(self, BridgeResponse(HTTPStatus.OK, {"status": "ok"}))
                 return
             _json_response(

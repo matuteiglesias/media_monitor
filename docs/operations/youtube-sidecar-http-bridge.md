@@ -8,6 +8,7 @@ This service is a thin private HTTP projection over the existing governed Media 
 
 Exact routes:
 
+- `GET /health`
 - `POST /v1/youtube/videos/ensure`
 - `POST /v1/youtube/videos/inspect`
 - `POST /v1/youtube/videos/summary`
@@ -19,6 +20,11 @@ Each POST accepts only:
 ```
 
 Successful responses are the existing `youtube_video_sidecar.v1` object. The summary route therefore exposes the same `available`, `not_attempted`, `provider_limit`, and `failed` states already governed by Media Watch.
+
+`GET /health` is an operator smoke endpoint. Use this non-`z` path for Cloud Run
+checks because Cloud Run reserves some URL paths ending in `z` at its front door.
+It is separate from the governed media API routes and does not read or mutate
+Media Watch state.
 
 ## Runtime configuration
 
