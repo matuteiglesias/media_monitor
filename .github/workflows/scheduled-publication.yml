@@ -16,6 +16,7 @@ concurrency:
 
 permissions:
   contents: read
+  id-token: write  # Keyless, narrowly restricted Cloud Logging receipt export
 
 env:
   SITE_ID: argentina-general
@@ -137,6 +138,7 @@ jobs:
             | tee storage/observability/crawler_surface_check_latest.json
 
       - name: Emit governed producer receipt
+        id: publication_receipt
         if: always()
         env:
           PRODUCER_JOB_STATUS: ${{ job.status }}
@@ -156,6 +158,52 @@ jobs:
             --digest-at "${DIGEST_AT:-}" \
             --output "$RECEIPT_PATH" \
             --latest storage/observability/media_publication_receipt_latest.json
+
+      # Transport is deliberately separate from publication acceptance:
+      # neither cloud auth nor write failure may turn a served snapshot red.
+      # The canonical receipt is emitted above, including on failed cycles,
+      # and retained as a 14-day Actions artifact below for recovery.
+      - name: Authenticate metadata receipt exporter (keyless)
+        id: gcp_auth
+        if: always() && steps.publication_receipt.outcome == 'success'
+        continue-on-error: true
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: estate-observability-510700
+          workload_identity_provider: projects/456183330588/locations/global/workloadIdentityPools/estate-producer-github/providers/media-publication-main-oidc
+          service_account: estate-media-receipt-writer@estate-observability-510700.iam.gserviceaccount.com
+
+      - name: Export canonical publication receipt to GCP
+        id: gcp_export
+        if: always() && steps.publication_receipt.outcome == 'success' && steps.gcp_auth.outcome == 'success'
+        continue-on-error: true
+        env:
+          PRODUCER_RUN_ID: ${{ github.run_id }}
+          PRODUCER_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          python -m pip install 'google-auth>=2.30,<3' 'requests>=2.31,<3'
+          python3 scripts/export_media_publication_gcp.py \
+            --receipt "storage/runs/producer_receipts/media-publication-${PRODUCER_RUN_ID}-${PRODUCER_RUN_ATTEMPT}.json" \
+            --scheduler-run-id "$PRODUCER_RUN_ID" \
+            --run-attempt "$PRODUCER_RUN_ATTEMPT" \
+            --write
+
+      - name: Report receipt transport separately from publication
+        if: always()
+        env:
+          RECEIPT_OUTCOME: ${{ steps.publication_receipt.outcome }}
+          GCP_AUTH_OUTCOME: ${{ steps.gcp_auth.outcome }}
+          GCP_EXPORT_OUTCOME: ${{ steps.gcp_export.outcome }}
+        run: |
+          if [[ "$GCP_EXPORT_OUTCOME" == "success" ]]; then
+            echo "Cloud Logging producer receipt: exported." >> "$GITHUB_STEP_SUMMARY"
+          elif [[ "$RECEIPT_OUTCOME" != "success" ]]; then
+            echo "Cloud Logging producer receipt: missing or invalid source receipt; inspect emitter." >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::Producer receipt emitter failed; no GCP export attempted."
+          else
+            echo "Cloud Logging producer receipt: transport unavailable (auth=${GCP_AUTH_OUTCOME}, export=${GCP_EXPORT_OUTCOME}); publication is unaffected." >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::Cloud Logging export unavailable; immutable receipt remains in publication-cycle evidence if upload succeeds."
+          fi
 
       - name: Publish cycle summary
         if: always()
