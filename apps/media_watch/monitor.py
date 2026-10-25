@@ -3,12 +3,14 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import hashlib
+from datetime import datetime, timezone
 from dataclasses import asdict
 from pathlib import Path
 
 import yaml
 
-from .store import MediaObservation, MediaWatchStore, utc_now
+from .store import MediaObservation, MediaWatchStore, utc_now, safe_name
 from .youtube_api import YouTubeDataClient
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -53,6 +55,7 @@ def run_live(*, config_path: Path, store_root: Path, evidence_root: Path, limit:
     store = MediaWatchStore(store_root)
     evidence_root.mkdir(parents=True, exist_ok=True)
     observed_at = utc_now()
+    execution_started_at = datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
     all_observations: list[MediaObservation] = []
     source_results: dict[str, dict] = {}
     source_failures: list[dict] = []
@@ -82,8 +85,63 @@ def run_live(*, config_path: Path, store_root: Path, evidence_root: Path, limit:
     acceptance_green = not source_failures and not materialization_failures and not replay_failures and set(source_results) == expected_sources and all(row["observations"] >= limit for row in source_results.values())
     manifest = {"schema_name": "media_watch_m1_live_proof.v1", "observed_at": observed_at, "requested_per_source": limit, "sources": source_results, "source_failures": source_failures, "first_materialization": asdict(first), "replay_materialization": asdict(replay), "first_run_id": first_run_id, "replay_run_id": replay_run_id, "item_count_after_first": item_count_after_first, "item_count_after_replay": item_count_after_replay, "snapshot_count_after_first": snapshots_after_first, "snapshot_count_after_replay": snapshots_after_replay, "acceptance_green": acceptance_green}
     (evidence_root / "m1_manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
+    execution_finished_at = datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
+    workflow_run_id = os.environ.get("GITHUB_RUN_ID", "").strip()
+    if acceptance_green and workflow_run_id.isdecimal():
+        # This is the actual live-acquisition execution boundary. Offline
+        # fixtures, code-only CI and missing-credential runs cannot enter.
+        for identity in sorted({first_run_id, replay_run_id}):
+            try:
+                write_wp04_live_proof(
+                    store=store, run_id=identity,
+                    started_at=execution_started_at,
+                    finished_at=execution_finished_at,
+                    workflow_run_id=int(workflow_run_id),
+                )
+            except (OSError, ValueError) as exc:
+                # Noncritical metadata observation cannot negate the source
+                # materialization or its previously verified acceptance.
+                import sys
+                print(f"WP04 source proof unavailable ({type(exc).__name__})", file=sys.stderr)
     return manifest
 
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def write_wp04_live_proof(
+    *, store: MediaWatchStore, run_id: str, started_at: str,
+    finished_at: str, workflow_run_id: int,
+) -> Path:
+    """Metadata-only source-run proof for a *real* official YouTube acquisition.
+
+    Call only after the existing live gate passes. No fixture/test invocation
+    becomes cloud-admissible merely because a run manifest exists.
+    """
+    path = store.runs_dir / safe_name(run_id) / "run_manifest.json"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    if manifest.get("schema_name") != "media_materialization_run.m1.v1" or manifest.get("run_id") != run_id:
+        raise ValueError("source materialization run manifest identity mismatch")
+    if workflow_run_id <= 0:
+        raise ValueError("GitHub Actions run identity required")
+    proof = {
+        "contract": "observability:source-execution@1",
+        "producer_id": "producer.event.media-youtube-monitor",
+        "run_id": run_id,
+        "source_kind": "github_actions",
+        "workflow_run_id": workflow_run_id,
+        "started_at": started_at,
+        "finished_at": finished_at,
+        "manifest_sha256": _sha256(path),
+    }
+    out = path.parent / "source_proof.json"
+    encoded = json.dumps(proof, indent=2, sort_keys=True) + "\n"
+    if out.exists() and out.read_text(encoding="utf-8") != encoded:
+        raise ValueError("immutable source proof mismatch")
+    out.write_text(encoded, encoding="utf-8")
+    return out
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Reconcile configured YouTube channels into governed media-item/snapshot state")
