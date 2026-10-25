@@ -100,3 +100,23 @@ python3 scripts/export_media_publication_gcp.py \
 Rollback: revert the `scheduled-publication.yml` transport steps and
 remove the Media provider/WIF grant and dedicated service account, leaving
 the original producer-owned emitter and publication schedule intact.
+
+## Production acceptance — 2026-10-25 UTC
+
+WP01's first actual merged-main production exercise passed:
+
+- Merge: [PR #146](https://github.com/matuteiglesias/media_monitor/pull/146), squash commit `d51c761b4918431bce7d1870bcda24bd20aa2e0d`.
+- Genuine manual-trigger publication run: [#40146603725](https://github.com/matuteiglesias/media_monitor/actions/runs/40146603725), `SUCCESS`.
+- Existing publication/verification stages, the original semantic emitter, keyless authentication, exporter, summary, and artifact upload: all `SUCCESS`.
+- Semantic execution, artifact, terminal, scheduler: `healthy`; authority: `canonical`.
+- Receipt `run_id`: `github-actions:matuteiglesias/media_monitor:40146603725:1`.
+- Exact deterministic `insertId`: `d7462c4d9b0939e04935d33f72be753326d705ffc5bb1c0162bcef60f2a19fc0`.
+- Bucket-scoped `estate-producer-runs/_AllLogs` read: **one** matching physical entry; ingested `2026-10-25T00:26:33.201659785Z`.
+- Bucket-scoped `_Default/_AllLogs` read: **zero** matching entries.
+- Operator replay of the same **real** receipt with identical deterministic `insertId`: dry-run HTTP 200, repeat write HTTP 200, physical dedicated-bucket entry count remained **one**.
+
+**Status:** Live keyless semantic ingestion and exact-identity replay **PASS**.
+**Remaining durability observation:** A second independent *successful scheduled*
+publication cycle after deployment has not yet been checked. The first verified
+run was `workflow_dispatch`, not the cron event. No additional publication run
+was triggered solely to manufacture the second acceptance.
